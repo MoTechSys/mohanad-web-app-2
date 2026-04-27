@@ -1,0 +1,10 @@
+node_modules
+dist
+build
+coverage
+.next
+.turbo
+pnpm-lock.yaml
+**/migrations/**
+apps/web/dev-dist
+apps/web/public/fonts

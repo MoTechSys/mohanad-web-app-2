@@ -1,0 +1,105 @@
+/* ─────────────────────────────────────────────────────────────
+ * Globals — Tailwind base + خطوط محلية + RTL adjustments
+ * ───────────────────────────────────────────────────────────── */
+
+/*
+ * الخطوط (IBM Plex Sans Arabic + JetBrains Mono) ستُضاف فعلياً في المرحلة 2.
+ * في Foundation: نسقط على system-ui (graceful).
+ *
+ * @font-face declarations معطّلة لأن الملفات لم تُحمَّل بعد في public/fonts/.
+ * عند إضافة woff2 في المرحلة 2 سنُعيد تفعيلها.
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* CSS variables متاحة للكود JS عند الحاجة */
+    --color-primary: #059669;
+    --color-primary-hover: #047857;
+    --color-success: #16a34a;
+    --color-warning: #f59e0b;
+    --color-danger: #dc2626;
+    --color-info: #0284c7;
+  }
+
+  html,
+  body {
+    height: 100%;
+    direction: rtl;
+    font-family: 'IBM Plex Sans Arabic', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    font-feature-settings: 'kern', 'liga';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* أرقام جدولية (tabular-nums) لكل التطبيق */
+  body {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* أرقام إنجليزية فقط (C3) */
+  input[type='number'],
+  .num,
+  table {
+    font-feature-settings: 'tnum';
+    direction: ltr;
+    unicode-bidi: plaintext;
+  }
+
+  /* تحسين focus رؤيوية */
+  :focus-visible {
+    outline: 2px solid theme('colors.primary.600');
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: theme('colors.primary.200');
+    color: theme('colors.primary.900');
+  }
+}
+
+@layer components {
+  /* أنماط أساسية متكررة */
+  .card {
+    @apply rounded-lg bg-surface border border-gray-200 shadow-card;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium
+           transition-colors focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800;
+  }
+
+  .btn-ghost {
+    @apply btn text-gray-700 hover:bg-gray-100 active:bg-gray-200;
+  }
+
+  .badge {
+    @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
+  }
+
+  .badge-credit {
+    @apply badge bg-blue-100 text-blue-700;
+  }
+
+  .badge-debt {
+    @apply badge bg-red-100 text-red-700;
+  }
+}
+
+/* Ionic overrides — نطابق متغيراته مع نظامنا */
+:root {
+  --ion-color-primary: #059669;
+  --ion-color-primary-rgb: 5, 150, 105;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #047857;
+  --ion-color-primary-tint: #34d399;
+  --ion-font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif;
+}

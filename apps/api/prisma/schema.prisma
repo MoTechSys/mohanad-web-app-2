@@ -1,0 +1,772 @@
+// ─────────────────────────────────────────────────────────────
+//  Grocery System — Prisma Schema (Foundation v0.1.0)
+//  المرجع: docs/03-database-design.md
+//  قرارات ثابتة: docs/12-agent-memory.md
+//
+//  • Decimal @db.Decimal(14, 2) لجميع المبالغ.
+//  • cuid() للـ IDs.
+//  • لا حذف نهائي للعمليات المالية — cancelledAt / deletedAt.
+//  • constraintsJson موجود لكن غير مستخدم في v1 (B4).
+//  • storeId جاهز لـ multi-store v2.
+// ─────────────────────────────────────────────────────────────
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CORE
+// ═══════════════════════════════════════════════════════════════
+
+model Store {
+  id                        String    @id @default(cuid())
+  name                      String
+  currency                  String    @default("YER") // رمز نصي فقط (A2)
+  phone                     String?
+  address                   String?
+  defaultSaleMode           SaleMode  @default(hybrid)                @map("default_sale_mode")
+  enableInventory           Boolean   @default(false)                 @map("enable_inventory")
+  enableBehaviorAnalysis    Boolean   @default(true)                  @map("enable_behavior_analysis")
+  largeTransactionThreshold Decimal   @default(50000) @db.Decimal(14, 2) @map("large_transaction_threshold")
+  openingCashBalance        Decimal   @default(0)     @db.Decimal(14, 2) @map("opening_cash_balance")
+  openingBalanceDate        DateTime?                                  @map("opening_balance_date")
+  whatsappCountryCode       String    @default("967")                  @map("whatsapp_country_code")
+  createdAt                 DateTime  @default(now())                  @map("created_at")
+  updatedAt                 DateTime  @updatedAt                       @map("updated_at")
+
+  users                    User[]
+  roles                    Role[]
+  customers                Customer[]
+  customerTransactions     CustomerTransaction[]
+  sales                    Sale[]
+  dailyIncomes             DailyIncome[]
+  suppliers                Supplier[]
+  supplierTransactions     SupplierTransaction[]
+  purchases                Purchase[]
+  expenses                 Expense[]
+  expenseCategories        ExpenseCategory[]
+  products                 Product[]
+  stockMovements           StockMovement[]
+  notifications            Notification[]
+  notificationTemplates    NotificationTemplate[]
+  scheduledJobs            ScheduledJob[]
+  auditLogs                AuditLog[]
+  reportSnapshots          ReportSnapshot[]
+  customerBehaviorAlerts   CustomerBehaviorAlert[]
+  customerReminderSetting  CustomerReminderSetting?
+
+  @@map("stores")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  storeId      String    @map("store_id")
+  username     String    @unique
+  passwordHash String    @map("password_hash")
+  fullName     String    @map("full_name")
+  phone        String?
+  isActive     Boolean   @default(true)               @map("is_active")
+  lastLoginAt  DateTime?                              @map("last_login_at")
+  createdAt    DateTime  @default(now())              @map("created_at")
+  updatedAt    DateTime  @updatedAt                   @map("updated_at")
+  createdById  String?                                @map("created_by_id")
+  deletedAt    DateTime?                              @map("deleted_at")
+  deletedById  String?                                @map("deleted_by_id")
+
+  store         Store          @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  userRoles     UserRole[]
+  refreshTokens RefreshToken[]
+  auditLogs     AuditLog[]     @relation("AuditActor")
+  customers     Customer[]     @relation("CustomerCreatedBy")
+  sales         Sale[]         @relation("SaleCreatedBy")
+  notifications Notification[] @relation("NotificationRecipient")
+
+  @@index([storeId])
+  @@index([isActive])
+  @@map("users")
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  storeId     String   @map("store_id")
+  key         String   // owner, manager, sales_worker, ... (lowercase_snake)
+  name        String   // الاسم العربي للعرض
+  description String?
+  isSystem    Boolean  @default(false) @map("is_system") // owner لا يُحذف
+  isActive    Boolean  @default(true)  @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt      @map("updated_at")
+  createdById String?                  @map("created_by_id")
+
+  store           Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  rolePermissions RolePermission[]
+  userRoles       UserRole[]
+
+  @@unique([storeId, key])
+  @@index([storeId])
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  key         String   @unique // مثل "customers.create"
+  name        String   // الاسم العربي للمجموعة (للعرض في شاشة الأدوار)
+  module      String   // "customers", "sales", ...
+  description String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  rolePermissions RolePermission[]
+
+  @@index([module])
+  @@map("permissions")
+}
+
+model RolePermission {
+  id              String  @id @default(cuid())
+  roleId          String  @map("role_id")
+  permissionId    String  @map("permission_id")
+  // constraintsJson — موجود لكن غير مستخدم منطقياً في v1 (B4)
+  constraintsJson Json?   @map("constraints_json")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+model UserRole {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  roleId       String   @map("role_id")
+  assignedAt   DateTime @default(now()) @map("assigned_at")
+  assignedById String?                  @map("assigned_by_id")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+  @@map("user_roles")
+}
+
+model RefreshToken {
+  id         String    @id @default(cuid())
+  userId     String    @map("user_id")
+  tokenHash  String    @unique          @map("token_hash") // sha256 للقيمة الفعلية
+  expiresAt  DateTime                   @map("expires_at")
+  rememberMe Boolean   @default(false)  @map("remember_me")
+  createdAt  DateTime  @default(now())  @map("created_at")
+  revokedAt  DateTime?                  @map("revoked_at")
+  userAgent  String?                    @map("user_agent")
+  ipAddress  String?                    @map("ip_address")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CUSTOMERS
+// ═══════════════════════════════════════════════════════════════
+
+model Customer {
+  id              String         @id @default(cuid())
+  storeId         String         @map("store_id")
+  fullName        String         @map("full_name")
+  phone           String?
+  address         String?
+  notes           String?
+  // currentBalance: + مديون للبقالة، - له رصيد عند البقالة (A6)
+  currentBalance  Decimal        @default(0) @db.Decimal(14, 2) @map("current_balance")
+  openingBalance  Decimal        @default(0) @db.Decimal(14, 2) @map("opening_balance")
+  creditLimit     Decimal?                   @db.Decimal(14, 2) @map("credit_limit")
+  status          CustomerStatus @default(active)
+  isFrozen        Boolean        @default(false) @map("is_frozen")
+  graceUntil      DateTime?                       @map("grace_until")
+  lastTxAt        DateTime?                       @map("last_tx_at")
+  createdAt       DateTime       @default(now())  @map("created_at")
+  updatedAt       DateTime       @updatedAt       @map("updated_at")
+  createdById     String?                         @map("created_by_id")
+  deletedAt       DateTime?                       @map("deleted_at")
+  deletedById     String?                         @map("deleted_by_id")
+
+  store          Store                   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  createdBy      User?                   @relation("CustomerCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  transactions   CustomerTransaction[]
+  sales          Sale[]
+  behaviorAlerts CustomerBehaviorAlert[]
+
+  @@index([storeId])
+  @@index([phone])
+  @@index([status])
+  @@index([currentBalance])
+  @@map("customers")
+}
+
+model CustomerTransaction {
+  id             String         @id @default(cuid())
+  storeId        String         @map("store_id")
+  customerId     String         @map("customer_id")
+  type           CustomerTxType
+  amount         Decimal        @db.Decimal(14, 2)
+  balanceAfter   Decimal        @db.Decimal(14, 2) @map("balance_after")
+  notes          String?
+  saleId         String?        @unique             @map("sale_id")
+  occurredAt     DateTime       @default(now())     @map("occurred_at")
+  createdAt      DateTime       @default(now())     @map("created_at")
+  createdById    String?                            @map("created_by_id")
+  cancelledAt    DateTime?                          @map("cancelled_at")
+  cancelledById  String?                            @map("cancelled_by_id")
+  cancelReason   String?                            @map("cancel_reason")
+  idempotencyKey String?        @unique             @map("idempotency_key")
+
+  store    Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  sale     Sale?    @relation(fields: [saleId], references: [id], onDelete: SetNull)
+
+  @@index([customerId])
+  @@index([type])
+  @@index([occurredAt])
+  @@index([cancelledAt])
+  @@map("customer_transactions")
+}
+
+model CustomerReminderSetting {
+  id               String   @id @default(cuid())
+  storeId          String   @unique @map("store_id")
+  enabled          Boolean  @default(true)
+  daysSinceLastTx  Int      @default(7)  @map("days_since_last_tx")
+  whatsappTemplate String?               @map("whatsapp_template")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt      @map("updated_at")
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@map("customer_reminder_settings")
+}
+
+model CustomerBehaviorAlert {
+  id            String    @id @default(cuid())
+  storeId       String    @map("store_id")
+  customerId    String    @map("customer_id")
+  prevAvg       Decimal   @db.Decimal(14, 2) @map("prev_avg")
+  currentAvg    Decimal   @db.Decimal(14, 2) @map("current_avg")
+  dropRatio     Decimal   @db.Decimal(5, 4)  @map("drop_ratio") // 0.0000–1.0000
+  windowDays    Int       @default(30)        @map("window_days")
+  detectedAt    DateTime  @default(now())     @map("detected_at")
+  dismissedAt   DateTime?                     @map("dismissed_at")
+  dismissedById String?                       @map("dismissed_by_id")
+
+  store    Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, dismissedAt])
+  @@index([customerId])
+  @@map("customer_behavior_alerts")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SALES
+// ═══════════════════════════════════════════════════════════════
+
+model Sale {
+  id              String      @id @default(cuid())
+  storeId         String      @map("store_id")
+  customerId      String?     @map("customer_id")
+  mode            SaleMode
+  paymentType     PaymentType @map("payment_type")
+  status          SaleStatus  @default(active)
+  totalAmount     Decimal     @db.Decimal(14, 2) @map("total_amount")
+  paidAmount      Decimal     @default(0) @db.Decimal(14, 2) @map("paid_amount")
+  remainingAmount Decimal     @default(0) @db.Decimal(14, 2) @map("remaining_amount")
+  notes           String?
+  occurredAt      DateTime    @default(now()) @map("occurred_at")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  createdById     String?                     @map("created_by_id")
+  cancelledAt     DateTime?                   @map("cancelled_at")
+  cancelledById   String?                     @map("cancelled_by_id")
+  cancelReason    String?                     @map("cancel_reason")
+  idempotencyKey  String?     @unique         @map("idempotency_key")
+
+  store      Store                @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customer   Customer?            @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  createdBy  User?                @relation("SaleCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  items      SaleItem[]
+  customerTx CustomerTransaction?
+
+  @@index([storeId, occurredAt])
+  @@index([customerId])
+  @@index([status])
+  @@index([paymentType])
+  @@map("sales")
+}
+
+model SaleItem {
+  id          String   @id @default(cuid())
+  saleId      String   @map("sale_id")
+  productId   String?  @map("product_id")
+  description String   // free-text حتى للمنتج (snapshot الاسم)
+  quantity    Decimal  @db.Decimal(14, 3)
+  unitPrice   Decimal  @db.Decimal(14, 2) @map("unit_price")
+  unitCost    Decimal? @db.Decimal(14, 2) @map("unit_cost") // لـ accurate profit
+  lineTotal   Decimal  @db.Decimal(14, 2) @map("line_total")
+  createdAt   DateTime @default(now())    @map("created_at")
+
+  sale    Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([saleId])
+  @@index([productId])
+  @@map("sale_items")
+}
+
+model DailyIncome {
+  id               String    @id @default(cuid())
+  storeId          String    @map("store_id")
+  date             DateTime  @db.Date
+  totalAmount      Decimal   @db.Decimal(14, 2) @map("total_amount")
+  manualCogsAmount Decimal?  @db.Decimal(14, 2) @map("manual_cogs_amount") // لـ manual_cogs mode
+  notes            String?
+  createdAt        DateTime  @default(now()) @map("created_at")
+  createdById      String?                   @map("created_by_id")
+  cancelledAt      DateTime?                 @map("cancelled_at")
+  cancelledById    String?                   @map("cancelled_by_id")
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, date])
+  @@index([storeId, date])
+  @@map("daily_incomes")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SUPPLIERS / PURCHASES
+// ═══════════════════════════════════════════════════════════════
+
+model Supplier {
+  id             String   @id @default(cuid())
+  storeId        String   @map("store_id")
+  fullName       String   @map("full_name")
+  phone          String?
+  address        String?
+  notes          String?
+  // currentBalance: + البقالة مدينة له، - دفعت زيادة
+  currentBalance Decimal  @default(0) @db.Decimal(14, 2) @map("current_balance")
+  openingBalance Decimal  @default(0) @db.Decimal(14, 2) @map("opening_balance")
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt      @map("updated_at")
+  createdById    String?                  @map("created_by_id")
+  deletedAt      DateTime?                @map("deleted_at")
+  deletedById    String?                  @map("deleted_by_id")
+
+  store        Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  transactions SupplierTransaction[]
+  purchases    Purchase[]
+  expenses     Expense[] // عند supplier_payment
+
+  @@index([storeId])
+  @@index([phone])
+  @@map("suppliers")
+}
+
+model SupplierTransaction {
+  id             String         @id @default(cuid())
+  storeId        String         @map("store_id")
+  supplierId     String         @map("supplier_id")
+  type           SupplierTxType
+  amount         Decimal        @db.Decimal(14, 2)
+  balanceAfter   Decimal        @db.Decimal(14, 2) @map("balance_after")
+  notes          String?
+  purchaseId     String?        @unique             @map("purchase_id")
+  expenseId      String?        @unique             @map("expense_id")
+  occurredAt     DateTime       @default(now())     @map("occurred_at")
+  createdAt      DateTime       @default(now())     @map("created_at")
+  createdById    String?                            @map("created_by_id")
+  cancelledAt    DateTime?                          @map("cancelled_at")
+  cancelledById  String?                            @map("cancelled_by_id")
+  cancelReason   String?                            @map("cancel_reason")
+  idempotencyKey String?        @unique             @map("idempotency_key")
+
+  store    Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  supplier Supplier  @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  purchase Purchase? @relation(fields: [purchaseId], references: [id], onDelete: SetNull)
+  expense  Expense?  @relation(fields: [expenseId], references: [id], onDelete: SetNull)
+
+  @@index([supplierId])
+  @@index([type])
+  @@index([occurredAt])
+  @@map("supplier_transactions")
+}
+
+model Purchase {
+  id              String              @id @default(cuid())
+  storeId         String              @map("store_id")
+  supplierId      String?             @map("supplier_id")
+  mode            PurchaseMode
+  paymentType     PurchasePaymentType @map("payment_type")
+  totalAmount     Decimal             @db.Decimal(14, 2) @map("total_amount")
+  paidAmount      Decimal             @default(0) @db.Decimal(14, 2) @map("paid_amount")
+  remainingAmount Decimal             @default(0) @db.Decimal(14, 2) @map("remaining_amount")
+  notes           String?
+  occurredAt      DateTime            @default(now()) @map("occurred_at")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  createdById     String?                             @map("created_by_id")
+  cancelledAt     DateTime?                           @map("cancelled_at")
+  cancelledById   String?                             @map("cancelled_by_id")
+  cancelReason    String?                             @map("cancel_reason")
+  idempotencyKey  String?             @unique         @map("idempotency_key")
+
+  store      Store                @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  supplier   Supplier?            @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  items      PurchaseItem[]
+  supplierTx SupplierTransaction?
+
+  @@index([storeId, occurredAt])
+  @@index([supplierId])
+  @@map("purchases")
+}
+
+model PurchaseItem {
+  id          String   @id @default(cuid())
+  purchaseId  String   @map("purchase_id")
+  productId   String?  @map("product_id")
+  description String
+  quantity    Decimal  @db.Decimal(14, 3)
+  unitCost    Decimal  @db.Decimal(14, 2) @map("unit_cost")
+  lineTotal   Decimal  @db.Decimal(14, 2) @map("line_total")
+  createdAt   DateTime @default(now())    @map("created_at")
+
+  purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  product  Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([purchaseId])
+  @@index([productId])
+  @@map("purchase_items")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  EXPENSES
+// ═══════════════════════════════════════════════════════════════
+
+model ExpenseCategory {
+  id        String   @id @default(cuid())
+  storeId   String   @map("store_id")
+  name      String
+  isSystem  Boolean  @default(false) @map("is_system")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  store    Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  expenses Expense[]
+
+  @@unique([storeId, name])
+  @@map("expense_categories")
+}
+
+model Expense {
+  id             String      @id @default(cuid())
+  storeId        String      @map("store_id")
+  categoryId     String?     @map("category_id")
+  type           ExpenseType @default(normal)
+  supplierId     String?     @map("supplier_id") // للـ supplier_payment
+  amount         Decimal     @db.Decimal(14, 2)
+  description    String
+  notes          String?
+  occurredAt     DateTime    @default(now()) @map("occurred_at")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  createdById    String?                     @map("created_by_id")
+  cancelledAt    DateTime?                   @map("cancelled_at")
+  cancelledById  String?                     @map("cancelled_by_id")
+  cancelReason   String?                     @map("cancel_reason")
+  idempotencyKey String?     @unique         @map("idempotency_key")
+
+  store      Store                @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  category   ExpenseCategory?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  supplier   Supplier?            @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  supplierTx SupplierTransaction?
+
+  @@index([storeId, occurredAt])
+  @@index([type])
+  @@index([categoryId])
+  @@map("expenses")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PRODUCTS / INVENTORY
+// ═══════════════════════════════════════════════════════════════
+
+model Product {
+  id             String    @id @default(cuid())
+  storeId        String    @map("store_id")
+  name           String
+  barcode        String?
+  unit           String    @default("قطعة")
+  salePrice      Decimal   @default(0) @db.Decimal(14, 2) @map("sale_price")
+  costPrice      Decimal   @default(0) @db.Decimal(14, 2) @map("cost_price")
+  trackInventory Boolean   @default(false)                 @map("track_inventory")
+  currentStock   Decimal   @default(0) @db.Decimal(14, 3)  @map("current_stock")
+  minStockAlert  Decimal?              @db.Decimal(14, 3)  @map("min_stock_alert")
+  isActive       Boolean   @default(true)                  @map("is_active")
+  notes          String?
+  createdAt      DateTime  @default(now())                 @map("created_at")
+  updatedAt      DateTime  @updatedAt                      @map("updated_at")
+  createdById    String?                                   @map("created_by_id")
+  deletedAt      DateTime?                                 @map("deleted_at")
+  deletedById    String?                                   @map("deleted_by_id")
+
+  store          Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  saleItems      SaleItem[]
+  purchaseItems  PurchaseItem[]
+  stockMovements StockMovement[]
+
+  @@unique([storeId, barcode])
+  @@index([storeId])
+  @@index([isActive])
+  @@map("products")
+}
+
+model StockMovement {
+  id            String        @id @default(cuid())
+  storeId       String        @map("store_id")
+  productId     String        @map("product_id")
+  type          StockMoveType
+  quantity      Decimal       @db.Decimal(14, 3) // موجبة دائماً، النوع يحدد الاتجاه
+  stockAfter    Decimal       @db.Decimal(14, 3) @map("stock_after")
+  unitCost      Decimal?      @db.Decimal(14, 2) @map("unit_cost")
+  notes         String?
+  occurredAt    DateTime      @default(now()) @map("occurred_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  createdById   String?                       @map("created_by_id")
+  cancelledAt   DateTime?                     @map("cancelled_at")
+  cancelledById String?                       @map("cancelled_by_id")
+  refType       String?                       @map("ref_type") // "sale" | "purchase" | "adjustment"
+  refId         String?                       @map("ref_id")
+
+  store   Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([storeId, occurredAt])
+  @@index([productId])
+  @@index([type])
+  @@map("stock_movements")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  NOTIFICATIONS / AUDIT
+// ═══════════════════════════════════════════════════════════════
+
+model Notification {
+  id           String              @id @default(cuid())
+  storeId      String              @map("store_id")
+  recipientId  String?             @map("recipient_id") // null = broadcast
+  type         NotificationType
+  channel      NotificationChannel @default(internal)
+  title        String
+  body         String
+  metadataJson Json?               @map("metadata_json")
+  readAt       DateTime?           @map("read_at")
+  createdAt    DateTime            @default(now()) @map("created_at")
+
+  store     Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  recipient User? @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, recipientId, readAt])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model NotificationTemplate {
+  id        String              @id @default(cuid())
+  storeId   String              @map("store_id")
+  key       String              // مثل "customer_reminder"
+  name      String              // الاسم العربي
+  body      String              // قالب نصي مع {{customerName}} ...
+  channel   NotificationChannel @default(internal)
+  isSystem  Boolean             @default(false) @map("is_system")
+  createdAt DateTime            @default(now()) @map("created_at")
+  updatedAt DateTime            @updatedAt      @map("updated_at")
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, key])
+  @@map("notification_templates")
+}
+
+model ScheduledJob {
+  id          String    @id @default(cuid())
+  storeId     String    @map("store_id")
+  jobType     String    @map("job_type") // "behavior_scan", "low_stock_scan", ...
+  cronExpr    String?   @map("cron_expr")
+  runAt       DateTime?                 @map("run_at")
+  lastRunAt   DateTime?                 @map("last_run_at")
+  nextRunAt   DateTime?                 @map("next_run_at")
+  isActive    Boolean   @default(true)  @map("is_active")
+  payloadJson Json?                     @map("payload_json")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt      @map("updated_at")
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId])
+  @@index([nextRunAt])
+  @@map("scheduled_jobs")
+}
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  storeId    String      @map("store_id")
+  actorId    String?     @map("actor_id")
+  action     AuditAction
+  entityType String      @map("entity_type") // "Sale", "CustomerTransaction", ...
+  entityId   String?     @map("entity_id")
+  oldValues  Json?       @map("old_values")
+  newValues  Json?       @map("new_values")
+  metadata   Json?
+  ipAddress  String?     @map("ip_address")
+  userAgent  String?     @map("user_agent")
+  createdAt  DateTime    @default(now()) @map("created_at")
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  actor User? @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([storeId, createdAt])
+  @@index([actorId])
+  @@index([entityType, entityId])
+  @@index([action])
+  @@map("audit_logs")
+}
+
+model ReportSnapshot {
+  id            String   @id @default(cuid())
+  storeId       String   @map("store_id")
+  reportType    String   @map("report_type") // "daily", "monthly", "profit_loss", ...
+  periodStart   DateTime @map("period_start")
+  periodEnd     DateTime @map("period_end")
+  payloadJson   Json     @map("payload_json")
+  generatedAt   DateTime @default(now()) @map("generated_at")
+  generatedById String?                  @map("generated_by_id")
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, reportType, periodStart])
+  @@map("report_snapshots")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ENUMS
+// ═══════════════════════════════════════════════════════════════
+
+enum SaleMode {
+  detailed
+  quick_amount
+  hybrid
+}
+
+enum PaymentType {
+  cash
+  credit
+  // mixed مؤجل لـ v2
+}
+
+enum SaleStatus {
+  active
+  cancelled
+}
+
+enum CustomerTxType {
+  debt
+  payment
+  adjustment
+  opening_balance
+}
+
+enum SupplierTxType {
+  debt
+  payment
+  adjustment
+  opening_balance
+}
+
+enum PurchaseMode {
+  detailed
+  quick_total
+}
+
+enum PurchasePaymentType {
+  cash
+  credit
+}
+
+enum ExpenseType {
+  normal
+  supplier_payment
+  other
+}
+
+enum StockMoveType {
+  in
+  out
+  adjustment_in
+  adjustment_out
+  damaged
+  returned
+}
+
+enum NotificationType {
+  info
+  warning
+  danger
+  success
+  behavior_alert
+  low_stock
+  large_transaction
+  system
+}
+
+enum NotificationChannel {
+  internal
+  whatsapp_manual
+}
+
+enum AuditAction {
+  create
+  update
+  cancel
+  delete
+  restore
+  login
+  login_failed
+  logout
+  permission_denied
+  role_change
+  permission_change
+  password_reset
+  user_deactivate
+  user_reactivate
+  settings_change
+  large_transaction
+  export
+  print
+}
+
+enum CustomerStatus {
+  active
+  frozen
+  graced
+  archived
+}

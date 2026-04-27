@@ -20,13 +20,17 @@ Audit        : audit_logs, report_snapshots
 ### stores
 | الحقل | النوع | ملاحظات |
 |---|---|---|
-| id | UUID PK | |
+| id | cuid PK | |
 | name | string | اسم البقالة |
 | owner_name | string | |
 | phone | string | |
 | address | string | |
 | currency | string | مثلاً `YER`, `SAR` |
-| created_at, updated_at | timestamp | |
+| opening_cash_balance | decimal(14,2) | الرصيد النقدي الافتتاحي |
+| opening_balance_date | date | تاريخ بدء التشغيل |
+| large_transaction_threshold | decimal(14,2) | default 50000 |
+| is_active | bool | |
+| created_at, updated_at, deleted_at | timestamp | |
 
 ### users
 | الحقل | النوع | ملاحظات |
@@ -113,7 +117,8 @@ Audit        : audit_logs, report_snapshots
 | phone | string | |
 | address | string | |
 | credit_limit | decimal(14,2) | سقف الدين |
-| current_balance | decimal(14,2) | يحدّث من الباكند فقط |
+| opening_balance | decimal(14,2) | default 0 — رصيد افتتاحي |
+| current_balance | decimal(14,2) | يحدّث من الباكند فقط (مسموح سالب = البقالة عليها للعميل) |
 | status | enum: active / frozen / grace | |
 | grace_until | date nullable | |
 | notes | text | |
@@ -167,8 +172,8 @@ Audit        : audit_logs, report_snapshots
 | id | UUID PK | |
 | store_id | FK | |
 | customer_id | FK nullable | للبيع النقدي بدون عميل |
-| sale_mode | enum: detailed / quick_amount / daily_summary | |
-| payment_type | enum: cash / credit / mixed | |
+| sale_mode | enum: detailed / quick_amount | (daily_summary منفصل في daily_incomes) |
+| payment_type | enum: cash / credit | (mixed مؤجل لـ v2) |
 | total_amount | decimal | |
 | cost_amount | decimal nullable | إذا متاح |
 | profit_amount | decimal nullable | محسوب |
@@ -209,10 +214,11 @@ Audit        : audit_logs, report_snapshots
 ### suppliers
 | الحقل | النوع | |
 |---|---|---|
-| id | UUID PK | |
+| id | cuid PK | |
 | store_id | FK | |
 | name | string | |
 | phone, address | string | |
+| opening_balance | decimal(14,2) | default 0 — رصيد افتتاحي |
 | current_balance | decimal | دين البقالة على التاجر |
 | notes | text | |
 | created_by | FK | |
