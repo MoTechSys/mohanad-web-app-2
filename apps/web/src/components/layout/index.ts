@@ -1,5 +1,7 @@
 export { AppShell } from './AppShell';
 export type { AppShellProps } from './AppShell';
+export { Breadcrumbs } from './Breadcrumbs';
+export type { BreadcrumbItem, BreadcrumbsProps } from './Breadcrumbs';
 export { BottomNav } from './BottomNav';
 export type { BottomNavItem, BottomNavProps } from './BottomNav';
 export { MobileTopBar } from './MobileTopBar';

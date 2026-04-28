@@ -1,0 +1,159 @@
+=== P2-6 Manual API Tests ===
+Date: 2026-04-28T03:31:31Z
+
+─── 1. Login as Owner ───
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+TypeError: string indices must be integers, not 'str'
+
+─── 2. List users (page 1, limit 5) ───
+Total: 6 page 1 limit 5 | Items: 5
+ • inventory - مسؤول مخزون - active: True - roles: ['InventoryOfficer']
+ • purchasing - مسؤول مشتريات - active: True - roles: ['PurchasingOfficer']
+ • accountant - محاسب - active: True - roles: ['Accountant']
+ • manager - مدير - active: True - roles: ['Manager']
+ • sales - بائع - active: True - roles: ['SalesWorker']
+
+─── 3. List roles ───
+ • Owner / المالك | isSystem: True | permissions: 181 | users: 1
+ • Manager / المدير | isSystem: True | permissions: 178 | users: 1
+ • SalesWorker / عامل مبيعات | isSystem: True | permissions: 15 | users: 1
+ • Accountant / محاسب | isSystem: True | permissions: 21 | users: 1
+ • InventoryOfficer / مسؤول مخزون | isSystem: True | permissions: 15 | users: 1
+ • PurchasingOfficer / مسؤول مشتريات | isSystem: True | permissions: 20 | users: 1
+
+─── 4. Permissions catalog ───
+Total permissions: 181 | Groups: 19
+ • audit_logs                   4 permissions
+ • customer_transactions        10 permissions
+ • customers                    14 permissions
+ • daily_income                 6 permissions
+ • expense_categories           1 permissions
+ • expenses                     9 permissions
+ • inventory                    3 permissions
+ • notifications                10 permissions
+ • permissions                  1 permissions
+ • products                     9 permissions
+ • purchases                    11 permissions
+ • reports                      41 permissions
+ • roles                        7 permissions
+ • sales                        13 permissions
+ • stock_movements              6 permissions
+ • supplier_transactions        8 permissions
+ • suppliers                    9 permissions
+ • system                       10 permissions
+ • users                        9 permissions
+
+─── 5. Create user with Idempotency-Key (Owner can do this) ───
+Idempotency-Key: 8353b898-a288-4ee5-a729-12ec6b11c71d
+Username: p2_6_test_1777347091
+SalesWorker role id: cmohy8q5i00f5kb5ra5zcwx1f
+HTTP/1.1 201 Created
+X-Request-Id: 82b90f6f-8610-42a0-ba44-4d26686cc189
+Content-Type: application/json; charset=utf-8
+Created: p2_6_test_1777347091 / موظف اختبار P2-6 | roles: ['SalesWorker']
+CREATED_ID=cmoi2khat002g8ug8h2gd5f6y
+
+─── 6. Replay same Idempotency-Key with DIFFERENT body → cached ───
+HTTP/1.1 201 Created
+X-Request-Id: fd51de70-54e3-4847-b059-35455674a049
+Idempotent-Replay: true
+Replayed body username: p2_6_test_1777347091
+(should equal p2_6_test_1777347091 — confirming cached replay)
+
+─── 7. Newly created user logs in successfully ───
+Login result: ok | user: p2_6_test_1777347091 | permissions: 15
+
+─── 8. Reset user password (admin) ───
+{
+    "data": {
+        "ok": true
+    },
+    "meta": {
+        "requestId": "81c5382b-92b8-42b8-adf1-6f90e7b17a5f",
+        "timestamp": "2026-04-28T03:31:32.847Z",
+        "version": "0.1.0"
+    }
+}
+
+─── 9. Effective permissions of new user (sales) ───
+Total: 15 | Sample: ['customer_transactions.create_debt', 'customer_transactions.create_payment', 'customer_transactions.print_receipt', 'customer_transactions.view', 'customers.create']
+
+─── 10. Sales user (no users.view) tries GET /users → 403 ───
+  Status: 403 | Code: PERMISSION_DENIED | Missing: users.view
+
+─── 11. Deactivate user (revokes refresh tokens) ───
+{
+    "data": {
+        "ok": true,
+        "refreshTokensRevoked": 0
+    },
+    "meta": {
+        "requestId": "24e03ac5-8772-4f66-aa0b-c3695ebad03d",
+        "timestamp": "2026-04-28T03:31:33.408Z",
+        "version": "0.1.0"
+    }
+}
+
+─── 12. Deactivated user cannot login ───
+Error: 403 | Code: USER_INACTIVE
+
+─── 13. Re-activate, delete (soft delete) ───
+Re-activated: p2_6_test_1777347091 | isActive: True
+{
+    "data": {
+        "ok": true
+    },
+    "meta": {
+        "requestId": "709423d8-4405-4c5f-b22e-1e6de6a0930b",
+        "timestamp": "2026-04-28T03:31:33.541Z",
+        "version": "0.1.0"
+    }
+}
+
+─── 14. Clone Owner role → cloned_p2_6 ───
+Cloned: cloned_p2_6_1777347093 / Owner (نسخة) | isSystem: False | permissions: 181
+
+─── 15. Delete cloned role (non-system, allowed) ───
+{
+    "data": {
+        "ok": true
+    },
+    "meta": {
+        "requestId": "932f0de0-ac8c-4e4b-8cb4-b36546cc45af",
+        "timestamp": "2026-04-28T03:31:33.851Z",
+        "version": "0.1.0"
+    }
+}
+
+─── 16. Try to delete system role (Owner) → expected error ───
+{
+    "data": null,
+    "meta": {
+        "error": {
+            "statusCode": 403,
+            "message": "\u0644\u0627 \u064a\u0645\u0643\u0646 \u062d\u0630\u0641 \u0627\u0644\u062f\u0648\u0631 \u0627\u0644\u0646\u0638\u0627\u0645\u064a",
+            "code": "SYSTEM_ROLE_UNDELETABLE",
+            "path": "/api/v1/roles/cmohy8q2s0052kb5r9aerksyd",
+            "method": "DELETE"
+        },
+        "requestId": "4d3cd0c7-c727-449d-b624-78fae9791d47",
+        "timestamp": "2026-04-28T03:31:33.923Z",
+        "version": "0.1.0"
+    }
+}
+
+─── 17. Logout-all (token revocation) ───
+{
+    "data": {
+        "ok": true,
+        "revoked": 2
+    },
+    "meta": {
+        "requestId": "0d18719c-979c-4364-bd7e-66b1b1e53dcc",
+        "timestamp": "2026-04-28T03:31:34.003Z",
+        "version": "0.1.0"
+    }
+}
+
+=== END P2-6 ===
