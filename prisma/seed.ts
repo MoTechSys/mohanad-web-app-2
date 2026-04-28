@@ -1,20 +1,25 @@
-import { ALL_PERMISSION_CODES, SYSTEM_ROLES, describePermission } from '@grocery/shared';
 /**
- * Prisma Seed — Foundation
+ * Prisma Seed — Phase 2 (Auth + RBAC)
  *
- * Seeds the 8 Foundation models with the minimum data required for the
- * Auth phase (Phase 2):
- *   • Single store
- *   • All permissions (catalog from @grocery/shared)
- *   • System roles (catalog from @grocery/shared)
- *   • Owner user
- *   • Default settings
+ * Seeds the foundation models with everything required for authentication:
+ *   1. Default Store (env: SEED_STORE_NAME)
+ *   2. All permissions (>50) from @grocery/shared
+ *   3. Six system roles (Owner, Manager, SalesWorker, Accountant,
+ *                       PurchasingOfficer, InventoryOfficer)
+ *   4. Owner user (env: SEED_OWNER_USERNAME / SEED_OWNER_PASSWORD)
+ *   5. Default Settings (locale, timezone, large_tx_threshold,
+ *                        opening_cash_balance, …)
  *
- * Idempotent — safe to run multiple times.
- *
- * NOTE: This file is informational for Foundation. No `prisma migrate dev`
- * is run during Foundation; the seed becomes effective in Phase 2.
+ * Strictly idempotent: every operation is an upsert, so running the seed
+ * multiple times converges to the same state without duplicates.
  */
+import {
+  ALL_PERMISSION_CODES,
+  DEFAULT_SETTINGS,
+  SYSTEM_ROLES,
+  SYSTEM_ROLE_NAMES,
+  describePermission,
+} from '@grocery/shared';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 
@@ -41,17 +46,17 @@ async function main(): Promise<void> {
   });
   console.info(`  ✓ Store: ${store.name}`);
 
-  // 2. Permissions
+  // 2. Permissions (>50, from @grocery/shared)
   for (const code of ALL_PERMISSION_CODES) {
     const meta = describePermission(code);
     await prisma.permission.upsert({
       where: { key: code },
-      update: { name: meta.nameAr, module: meta.module },
+      update: { name: meta.labelAr, module: meta.module },
       create: {
         key: code,
-        name: meta.nameAr,
+        name: meta.labelAr,
         module: meta.module,
-        description: meta.description ?? null,
+        description: `${meta.groupAr} — ${meta.action}`,
       },
     });
   }
@@ -106,7 +111,7 @@ async function main(): Promise<void> {
   });
 
   const ownerRole = await prisma.role.findUniqueOrThrow({
-    where: { storeId_key: { storeId: store.id, key: 'Owner' } },
+    where: { storeId_key: { storeId: store.id, key: SYSTEM_ROLE_NAMES.OWNER } },
   });
   await prisma.userRole.upsert({
     where: { userId_roleId: { userId: owner.id, roleId: ownerRole.id } },
@@ -117,11 +122,18 @@ async function main(): Promise<void> {
 
   // 5. Default settings (key/value)
   const defaultSettings: Array<{ key: string; value: unknown }> = [
+    // Localization
+    { key: 'locale', value: 'ar' },
+    { key: 'timezone', value: 'Asia/Aden' },
+    { key: 'currency', value: DEFAULT_SETTINGS.CURRENCY },
+    // Sales / Inventory
     { key: 'default_sale_mode', value: 'hybrid' },
-    { key: 'enable_inventory', value: false },
+    { key: 'enable_inventory', value: DEFAULT_SETTINGS.INVENTORY_ENABLED },
     { key: 'enable_behavior_analysis', value: true },
-    { key: 'large_transaction_threshold', value: 50000 },
-    { key: 'opening_cash_balance', value: 0 },
+    // Financial thresholds (rationale: docs/12-agent-memory.md §15 Q10)
+    { key: 'large_transaction_threshold', value: DEFAULT_SETTINGS.LARGE_TRANSACTION_THRESHOLD },
+    { key: 'opening_cash_balance', value: DEFAULT_SETTINGS.OPENING_CASH_BALANCE },
+    // Notifications
     { key: 'whatsapp_country_code', value: '967' },
   ];
   for (const s of defaultSettings) {
@@ -133,7 +145,17 @@ async function main(): Promise<void> {
   }
   console.info(`  ✓ Settings seeded: ${defaultSettings.length}`);
 
-  console.info('🌱 Done.');
+  // 6. Final summary (visible in CI logs / DoD evidence)
+  const counts = {
+    stores: await prisma.store.count(),
+    permissions: await prisma.permission.count(),
+    roles: await prisma.role.count(),
+    rolePermissions: await prisma.rolePermission.count(),
+    users: await prisma.user.count(),
+    userRoles: await prisma.userRole.count(),
+    settings: await prisma.setting.count(),
+  };
+  console.info('🌱 Done. Final counts:', counts);
 }
 
 main()
