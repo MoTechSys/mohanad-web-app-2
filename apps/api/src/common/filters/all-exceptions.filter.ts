@@ -1,7 +1,7 @@
 import {
-  ArgumentsHost,
+  type ArgumentsHost,
   Catch,
-  ExceptionFilter,
+  type ExceptionFilter,
   HttpException,
   HttpStatus,
   Logger,
@@ -9,6 +9,19 @@ import {
 import type { Request, Response } from 'express';
 import { ZodError } from 'zod';
 
+/**
+ * Global exception filter — produces the unified error envelope:
+ *
+ *   {
+ *     data: null,
+ *     meta: {
+ *       error: { statusCode, message, code?, errors?, path, method },
+ *       requestId, timestamp, version
+ *     }
+ *   }
+ *
+ * Handles ZodError (422), NestJS HttpException, and any unknown Error.
+ */
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
@@ -19,7 +32,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message: string = 'حدث خطأ غير متوقع';
+    let message = 'حدث خطأ غير متوقع';
     let code: string | undefined;
     let errors: Array<{ path: string[]; message: string }> | undefined;
 
@@ -46,21 +59,27 @@ export class AllExceptionsFilter implements ExceptionFilter {
       }
     } else if (exception instanceof Error) {
       this.logger.error(exception.message, exception.stack);
-      message =
-        process.env.NODE_ENV === 'production' ? 'حدث خطأ غير متوقع' : exception.message;
+      message = process.env.NODE_ENV === 'production' ? 'حدث خطأ غير متوقع' : exception.message;
     }
 
-    const requestId = (request.headers['x-request-id'] as string) ?? undefined;
+    const requestId = (request.headers['x-request-id'] as string | undefined) ?? null;
+    const version = process.env.APP_VERSION ?? '0.1.0';
 
     response.status(status).json({
-      statusCode: status,
-      message,
-      code,
-      errors,
-      path: request.url,
-      method: request.method,
-      requestId,
-      timestamp: new Date().toISOString(),
+      data: null,
+      meta: {
+        error: {
+          statusCode: status,
+          message,
+          ...(code ? { code } : {}),
+          ...(errors ? { errors } : {}),
+          path: request.url,
+          method: request.method,
+        },
+        requestId,
+        timestamp: new Date().toISOString(),
+        version,
+      },
     });
   }
 }

@@ -366,16 +366,72 @@ grocery-system/
 ## 14. حالة المشروع الحالية
 
 ```text
-المرحلة          : 1 - Foundation
-الكود            : قيد التنفيذ
-Branch           : genspark_ai_developer
-آخر commit      : a93fe0f (docs only)
-السماح بـ Auth   : ❌ placeholders فقط
-السماح بـ DB push: ❌ schema validate/format فقط
+المرحلة          : 1 - Foundation (مكتملة بعد Recovery)
+الكود            : ✅ مكتمل
+Branch           : genspark_recovery
+السماح بـ Auth   : ❌ placeholders فقط (501 NOT_IMPLEMENTED)
+السماح بـ DB push: ❌ schema validate/format فقط (migrations في Phase 2)
+
+DoD checks (2026-04-28):
+  pnpm lint        → 91 ملف، 0 أخطاء (Biome)
+  pnpm typecheck   → 3 packages كلها ✅
+  pnpm test        → 70 اختبار ناجح (69 shared + 1 api)
+  test:coverage    → 100% statements / 98.14% branches
+  pnpm build       → API + web + shared ✅، PWA precache 46 entries (1814 KiB)
+  Lighthouse       → Perf 81 / A11y 92 / BP 96 / SEO 91
+                      LCP 4.1s · TBT 0ms · CLS 0
 ```
 
 ---
 
-## 15. حقوق التغيير
+## 15. Recovery Phase Decisions (2026‑04‑27)
+
+تم تنفيذ خطة الاسترداد A1‑A5 على فرع `genspark_recovery` بعد مراجعة Foundation السابقة.
+هذه القرارات نهائية ومرجعية لكل المراحل اللاحقة.
+
+| Q   | الموضوع                  | القرار                                                                                           |
+| --- | ------------------------ | ------------------------------------------------------------------------------------------------ |
+| Q1  | **Prisma schema**        | أرشفة الـ schema الكامل في `docs/legacy/foundation-schema-archive.prisma` والإبقاء على 8 موديلات فقط (Store, User, Role, Permission, RolePermission, UserRole, Setting, AuditLog) في `prisma/schema.prisma`. |
+| Q2  | **Migrations**           | حذف مجلد migrations الحالي، إضافة `prisma/migrations/` إلى `.gitignore`. لا توجد migrations في Foundation — `prisma migrate dev` يبدأ من Phase 2. |
+| Q3  | **RefreshToken model**   | مؤجَّل إلى Phase 2 (Auth). **TODO**: إضافة موديل `RefreshToken` (id, userId FK, tokenHash unique, expiresAt, createdAt, deviceInfo) عند البدء بـ JWT refresh flow. |
+| Q4  | **Router**               | البقاء على **React‑Router v5** مقفولاً بـ Ionic 8 (`@ionic/react-router@^8` يعتمد على `react-router@^5`). موثَّق في `DEVELOPMENT.md` كاستثناء واضح. ترقية v6 بانتظار دعم Ionic. |
+| Q5  | **Config files**         | الإبقاء على `tsconfig.base.json` و `biome.json` في الجذر (لا داخل `apps/*`). كل tsconfig في الباكند/الفرونت يمتد من الأساسي. |
+| Q6  | **Fonts**                | self‑host لـ IBM Plex Sans Arabic أوزان 400/500/600/700 + JetBrains Mono 400 في `apps/web/public/fonts/`. preload للوزن العادي فقط، `font-display: swap` لكل العائلة. |
+| Q7  | **404 animation**        | استبدال Lottie بـ SVG متحرك عبر `framer‑motion` (variants + stagger). |
+| Q8  | **PWA**                  | تفعيل Service Worker الأساسي عبر `vite-plugin-pwa` للـ static assets فقط. مسارات `/api/*` مستثناة بـ `NetworkOnly` strategy لعدم تخزين أي استجابة backend. |
+| Q9  | **Lighthouse**           | تشغيل عبر `pnpm lh` (npm script)، مخرج JSON إلى `apps/web/lighthouse-report.json` + screenshots داخل `apps/web/lighthouse-screenshots/`. |
+
+### تفاصيل تقنية اعتُمدت من قِبَل المساعد ضمن صلاحياته
+
+- **Animation curves**: `cubic-bezier(0.16, 1, 0.3, 1)` (Apple-style ease-out) للحركات الأساسية، و`cubic-bezier(0.34, 1.56, 0.64, 1)` (overshoot) للـ pop-in.
+- **Shadow layers**: ثلاث طبقات `shadow-card`, `shadow-card-hover`, `shadow-sheet` معرَّفة في `tailwind.config.ts`.
+- **Tailwind utility names**: استخدام `primary-{50..950}` (Emerald)، semantic `success/warning/danger/info`، و surface `default/alt/subtle`.
+- **Form field order**: username → password → rememberMe → submit (LoginPage).
+- **Icons**: `lucide-react` لكل الواجهة (مع `ionicons` متاح للأيقونات الـ Ionic-specific).
+- **Login background**: `radial-gradient` ثلاث طبقات بـ Emerald + Sky shifts فوق `linear-gradient(135deg, #ecfdf5 → #6ee7b7)`، مع طبقة CSS particles خفيفة.
+- **Stagger delays**: 60ms بين العناصر المتتابعة (StatCards, Sidebar items)، 220ms قبل ظهور النصوص الثانوية.
+- **Breakpoint**: `desktop` عند `768px` (نقطة الـ Ionic split-pane).
+- **Vite splitChunks**: vendor groups → `react-vendor`, `ionic`, `query`, `motion`.
+
+### Q10 — Settings storage (post-review, 2026‑04‑28)
+
+> **Decision**: `opening_cash_balance` and `large_transaction_threshold` are stored
+> as `Setting` entries (`key`, `value` JSON), **NOT** as columns on the `Store` model.
+>
+> **Rationale**: flexibility to add new store-level settings in later phases
+> without schema migrations. Keeps the `Store` table lean and immutable across
+> minor releases.
+>
+> **Access pattern**:
+> ```ts
+> prisma.setting.findUnique({ where: { storeId_key: { storeId, key: 'opening_cash_balance' } } });
+> prisma.setting.upsert({ where: { storeId_key: { storeId, key } }, create: { ... }, update: { value } });
+> ```
+> The compound unique `[storeId, key]` is already declared in `prisma/schema.prisma`.
+> Approved by user during recovery review (commit `bda41a9`).
+
+---
+
+## 16. حقوق التغيير
 
 أي تغيير على هذا الملف يحتاج موافقة صريحة من المستخدم. الملفات الأخرى في `docs/` يجب أن تبقى متسقة مع هذا الملف.

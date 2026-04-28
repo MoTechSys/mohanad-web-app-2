@@ -1,16 +1,23 @@
-import { Module } from '@nestjs/common';
+import { type MiddlewareConsumer, Module, type NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 
-import { HealthModule } from './modules/health/health.module';
-import { PrismaModule } from './modules/prisma/prisma.module';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { ResponseFormatInterceptor } from './common/interceptors/response-format.interceptor';
+import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { configValidationSchema } from './config/env.validation';
+import { AuthModule } from './modules/auth/auth.module';
+import { HealthModule } from './modules/health/health.module';
+import { PermissionsModule } from './modules/permissions/permissions.module';
+import { PrismaModule } from './modules/prisma/prisma.module';
+import { RolesModule } from './modules/roles/roles.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
-    // ─── Env ────────────────────────────────────
+    // ─── Env (validated by Zod) ─────────────────
     ConfigModule.forRoot({
       isGlobal: true,
       cache: true,
@@ -33,7 +40,6 @@ import { configValidationSchema } from './config/env.validation';
                 },
               }
             : undefined,
-        // لا نطبع كلمات المرور أو tokens مطلقاً
         redact: {
           paths: [
             'req.headers.authorization',
@@ -57,22 +63,31 @@ import { configValidationSchema } from './config/env.validation';
     ThrottlerModule.forRoot([
       {
         name: 'default',
-        ttl: 60_000, // 1 min
-        limit: 100, // 100 req/min
+        ttl: 60_000,
+        limit: 100,
       },
     ]),
 
     // ─── Core ───────────────────────────────────
     PrismaModule,
 
-    // ─── Feature ────────────────────────────────
+    // ─── Foundation feature modules ─────────────
     HealthModule,
+
+    // ─── Phase 2 placeholders (return 501) ──────
+    AuthModule,
+    UsersModule,
+    RolesModule,
+    PermissionsModule,
   ],
   providers: [
-    {
-      provide: APP_GUARD,
-      useClass: ThrottlerGuard,
-    },
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_FILTER, useClass: AllExceptionsFilter },
+    { provide: APP_INTERCEPTOR, useClass: ResponseFormatInterceptor },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(RequestIdMiddleware).forRoutes('*');
+  }
+}

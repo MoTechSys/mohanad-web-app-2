@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
-import { HealthController } from './health.controller';
 import { PrismaService } from '../prisma/prisma.service';
+import { HealthController } from './health.controller';
 
 describe('HealthController', () => {
   let controller: HealthController;
@@ -22,7 +22,8 @@ describe('HealthController', () => {
   it('returns ok when DB is up', async () => {
     const res = await controller.check();
     expect(res.status).toBe('ok');
-    expect(res.database).toBe('ok');
+    expect(res.database.status).toBe('ok');
+    expect(typeof res.database.latencyMs).toBe('number');
     expect(typeof res.uptimeSeconds).toBe('number');
     expect(typeof res.timestamp).toBe('string');
   });

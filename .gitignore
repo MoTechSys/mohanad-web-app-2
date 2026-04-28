@@ -40,7 +40,8 @@ coverage/
 .eslintcache
 
 # Prisma
-apps/api/prisma/migrations/dev/
+prisma/migrations/
+apps/api/prisma/migrations/
 *.db
 *.db-journal
 

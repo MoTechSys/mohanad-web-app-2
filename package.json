@@ -13,35 +13,44 @@
     "dev": "pnpm -r --parallel dev",
     "dev:api": "pnpm --filter @grocery/api dev",
     "dev:web": "pnpm --filter @grocery/web dev",
-    "lint": "eslint . --max-warnings=0",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\" --ignore-path .gitignore",
-    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\" --ignore-path .gitignore",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
     "prepare": "husky || true",
-    "db:generate": "pnpm --filter @grocery/api prisma:generate",
-    "db:migrate": "pnpm --filter @grocery/api prisma:migrate",
-    "db:seed": "pnpm --filter @grocery/api prisma:seed",
-    "db:studio": "pnpm --filter @grocery/api prisma:studio"
+    "db:generate": "prisma generate --schema=./prisma/schema.prisma",
+    "db:format": "prisma format --schema=./prisma/schema.prisma",
+    "db:validate": "prisma validate --schema=./prisma/schema.prisma",
+    "db:migrate": "prisma migrate dev --schema=./prisma/schema.prisma",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:studio": "prisma studio --schema=./prisma/schema.prisma",
+    "lh": "node scripts/lighthouse.mjs"
   },
   "devDependencies": {
-    "@eslint/js": "^9.14.0",
+    "@biomejs/biome": "1.9.4",
     "@types/node": "^20.14.10",
-    "eslint": "^9.14.0",
-    "globals": "^15.12.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.2.10",
-    "prettier": "^3.3.3",
-    "prettier-plugin-tailwindcss": "^0.6.8",
-    "typescript": "^5.5.4",
-    "typescript-eslint": "^8.13.0"
+    "prisma": "^5.22.0",
+    "puppeteer-core": "23",
+    "tsx": "^4.19.1",
+    "typescript": "^5.5.4"
   },
   "lint-staged": {
-    "*.{ts,tsx}": [
-      "prettier --write"
+    "*.{ts,tsx,js,jsx,json}": [
+      "biome check --write --no-errors-on-unmatched"
     ],
-    "*.{js,jsx,json,md}": [
-      "prettier --write"
+    "*.md": [
+      "biome format --write --no-errors-on-unmatched"
     ]
+  },
+  "prisma": {
+    "schema": "prisma/schema.prisma",
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "5.22.0"
   }
 }

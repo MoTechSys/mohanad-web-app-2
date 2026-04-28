@@ -3,7 +3,7 @@
  * المرجع: docs/04-rbac-permissions.md (القسم 5).
  */
 
-import { PERMISSIONS, ALL_PERMISSION_CODES } from './permissions';
+import { ALL_PERMISSION_CODES, PERMISSIONS } from './permissions';
 
 export const SYSTEM_ROLE_NAMES = {
   OWNER: 'Owner',

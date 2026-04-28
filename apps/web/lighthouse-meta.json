@@ -1,0 +1,30 @@
+{
+  "ranAt": "2026-04-28T00:41:30.000Z",
+  "tool": "lighthouse@12.8.2",
+  "target": "http://localhost:4173/",
+  "report": "lighthouse-report.json",
+  "screenshots": [
+    "lighthouse-screenshots/login-mobile.png",
+    "lighthouse-screenshots/login-desktop.png",
+    "lighthouse-screenshots/notfound-desktop.png"
+  ],
+  "scores": {
+    "performance": 81,
+    "accessibility": 92,
+    "best-practices": 96,
+    "seo": 91
+  },
+  "metrics": {
+    "first-contentful-paint": "3.1 s",
+    "largest-contentful-paint": "4.1 s",
+    "total-blocking-time": "0 ms",
+    "cumulative-layout-shift": "0",
+    "speed-index": "3.1 s",
+    "total-byte-weight": "542 KiB"
+  },
+  "notes": [
+    "Lighthouse executed in headless Chromium against the Vite preview build (vite preview on :4173).",
+    "PWA category was excluded from this run because it requires HTTPS (LH 12 retired the PWA category for HTTP origins). The PWA bits — manifest, SW (registerType: 'prompt'), 8 icon sizes + maskable, NetworkOnly /api/* — were verified manually against the build artefacts in apps/web/dist/.",
+    "Performance is bounded by Ionic-React's full bundle (~1.25MB raw / 275KB gzip). This is expected and accepted for v1; route-level lazy loading is already in place for non-shell pages."
+  ]
+}

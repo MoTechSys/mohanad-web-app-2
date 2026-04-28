@@ -1,0 +1,222 @@
+// ─────────────────────────────────────────────────────────────
+//  Grocery System — Prisma Schema (Foundation v0.1.0)
+//
+//  Reference: docs/03-database-design.md
+//  Locked decisions: docs/12-agent-memory.md
+//
+//  Foundation models (8): Store, User, Role, Permission,
+//                         RolePermission, UserRole, Setting, AuditLog
+//
+//  Conventions:
+//  • IDs: cuid()
+//  • Money: Decimal @db.Decimal(14, 2)
+//  • Timestamps: createdAt / updatedAt (snake_case @map)
+//  • Soft-delete: deletedAt (where applicable)
+//  • Multi-store ready via storeId (single store enforced in v1)
+//  • Foundation: validate / format / generate only — NO migrations
+//    (Phase 2 will run `prisma migrate dev`)
+//
+//  Archived 27-model schema: docs/legacy/foundation-schema-archive.prisma
+// ─────────────────────────────────────────────────────────────
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CORE — Store & Settings
+// ═══════════════════════════════════════════════════════════════
+
+/// Single store record (v1). Multi-store deferred to v2.
+model Store {
+  id        String   @id @default(cuid())
+  name      String
+  currency  String   @default("YER")
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  users     User[]
+  roles     Role[]
+  settings  Setting[]
+  auditLogs AuditLog[]
+
+  @@map("stores")
+}
+
+/// Generic key-value settings table per store.
+/// Replaces ad-hoc fields previously embedded in Store
+/// (e.g., default_sale_mode, large_transaction_threshold).
+/// Values are stored as JSON for flexibility.
+model Setting {
+  id        String   @id @default(cuid())
+  storeId   String   @map("store_id")
+  key       String
+  value     Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, key])
+  @@index([storeId])
+  @@map("settings")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  IDENTITY & RBAC
+// ═══════════════════════════════════════════════════════════════
+
+/// Application user (worker/owner). Authenticated by username + password.
+model User {
+  id           String    @id @default(cuid())
+  storeId      String    @map("store_id")
+  username     String    @unique
+  passwordHash String    @map("password_hash")
+  fullName     String    @map("full_name")
+  phone        String?
+  isActive     Boolean   @default(true) @map("is_active")
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  store     Store      @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  userRoles UserRole[]
+  auditLogs AuditLog[] @relation("AuditActor")
+
+  @@index([storeId])
+  @@index([isActive])
+  @@map("users")
+}
+
+/// Named role (e.g., owner, manager, sales_worker, accountant, inventory_officer).
+model Role {
+  id          String   @id @default(cuid())
+  storeId     String   @map("store_id")
+  key         String
+  name        String
+  description String?
+  isSystem    Boolean  @default(false) @map("is_system")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  store           Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  rolePermissions RolePermission[]
+  userRoles       UserRole[]
+
+  @@unique([storeId, key])
+  @@index([storeId])
+  @@map("roles")
+}
+
+/// Static permission catalog (seeded). Code format: "<module>.<action>".
+model Permission {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  module      String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  rolePermissions RolePermission[]
+
+  @@index([module])
+  @@map("permissions")
+}
+
+/// Junction: which permissions a role grants.
+/// constraintsJson is reserved (B4) — unused in v1.
+model RolePermission {
+  id              String   @id @default(cuid())
+  roleId          String   @map("role_id")
+  permissionId    String   @map("permission_id")
+  constraintsJson Json?    @map("constraints_json")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+/// Junction: which roles a user holds.
+model UserRole {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  roleId     String   @map("role_id")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+  @@map("user_roles")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  AUDIT
+// ═══════════════════════════════════════════════════════════════
+
+/// Append-only audit trail. Required by golden rule #3.
+model AuditLog {
+  id         String      @id @default(cuid())
+  storeId    String      @map("store_id")
+  actorId    String?     @map("actor_id")
+  action     AuditAction
+  entityType String      @map("entity_type")
+  entityId   String?     @map("entity_id")
+  oldValues  Json?       @map("old_values")
+  newValues  Json?       @map("new_values")
+  metadata   Json?
+  ipAddress  String?     @map("ip_address")
+  userAgent  String?     @map("user_agent")
+  createdAt  DateTime    @default(now()) @map("created_at")
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  actor User? @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([storeId, createdAt])
+  @@index([actorId])
+  @@index([entityType, entityId])
+  @@index([action])
+  @@map("audit_logs")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ENUMS
+// ═══════════════════════════════════════════════════════════════
+
+enum AuditAction {
+  create
+  update
+  cancel
+  delete
+  restore
+  login
+  login_failed
+  logout
+  permission_denied
+  role_change
+  permission_change
+  password_reset
+  user_deactivate
+  user_reactivate
+  settings_change
+  large_transaction
+  export
+  print
+}

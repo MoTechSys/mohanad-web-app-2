@@ -1,0 +1,107 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": true,
+    "ignore": [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/build/**",
+      "**/.next/**",
+      "**/coverage/**",
+      "**/*.tsbuildinfo",
+      "apps/web/dist/**",
+      "apps/web/dev-dist/**",
+      "apps/api/dist/**",
+      "packages/shared/dist/**",
+      "prisma/migrations/**",
+      "docs/legacy/**",
+      "**/*.svg",
+      "**/*.woff2",
+      "**/*.css",
+      "**/*.webmanifest",
+      "apps/web/public/**"
+    ]
+  },
+  "organizeImports": {
+    "enabled": true
+  },
+  "formatter": {
+    "enabled": true,
+    "formatWithErrors": false,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100,
+    "lineEnding": "lf"
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "jsxQuoteStyle": "double",
+      "semicolons": "always",
+      "trailingCommas": "all",
+      "arrowParentheses": "always",
+      "bracketSpacing": true
+    },
+    "globals": ["NodeJS"]
+  },
+  "json": {
+    "formatter": {
+      "indentWidth": 2,
+      "lineWidth": 100
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "suspicious": {
+        "noExplicitAny": "warn",
+        "noConsoleLog": "off",
+        "noConsole": "off"
+      },
+      "style": {
+        "useImportType": "off",
+        "useNodejsImportProtocol": "warn",
+        "noNonNullAssertion": "warn"
+      },
+      "complexity": {
+        "noBannedTypes": "warn"
+      },
+      "correctness": {
+        "noUnusedVariables": "warn",
+        "useExhaustiveDependencies": "warn"
+      },
+      "a11y": {
+        "useKeyWithClickEvents": "off",
+        "useButtonType": "warn",
+        "useSemanticElements": "off"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "include": [
+        "**/*.test.ts",
+        "**/*.spec.ts",
+        "**/*.test.tsx",
+        "**/*.spec.tsx",
+        "prisma/seed.ts"
+      ],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off"
+          },
+          "correctness": {
+            "noUnusedVariables": "off"
+          }
+        }
+      }
+    }
+  ]
+}

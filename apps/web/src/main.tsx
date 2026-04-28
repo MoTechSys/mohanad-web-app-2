@@ -1,9 +1,9 @@
+import { setupIonicReact } from '@ionic/react';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { setupIonicReact } from '@ionic/react';
 
-// Ionic CSS (الترتيب مهم)
+// Ionic CSS (order matters)
 import '@ionic/react/css/core.css';
 import '@ionic/react/css/normalize.css';
 import '@ionic/react/css/structure.css';
@@ -15,28 +15,14 @@ import '@ionic/react/css/text-transformation.css';
 import '@ionic/react/css/flex-utils.css';
 import '@ionic/react/css/display.css';
 
-import './styles/globals.css';
 import { App } from './App';
+import { queryClient } from './lib/queryClient';
+import './styles/globals.css';
 
 setupIonicReact({
-  // RTL — Ionic يلتقطه من <html dir="rtl"> تلقائياً
-  // لكن نحدّد القيم الأساسية:
-  mode: 'md', // Material Design (يعمل أنظف مع RTL من iOS)
+  mode: 'md',
   rippleEffect: true,
   animated: true,
-});
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-      staleTime: 30_000,
-    },
-    mutations: {
-      retry: 0,
-    },
-  },
 });
 
 const rootEl = document.getElementById('root');
@@ -49,3 +35,14 @@ createRoot(rootEl).render(
     </QueryClientProvider>
   </StrictMode>,
 );
+
+// Hide the splash screen on the next animation frame after React mounted —
+// gives the LoginPage motion variants a single frame to attach so the
+// transition feels continuous.
+requestAnimationFrame(() => {
+  const splash = document.getElementById('splash');
+  if (splash) {
+    splash.dataset.hidden = 'true';
+    setTimeout(() => splash.remove(), 320);
+  }
+});

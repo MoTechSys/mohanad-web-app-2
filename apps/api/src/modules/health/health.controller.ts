@@ -4,8 +4,22 @@ import { SkipThrottle } from '@nestjs/throttler';
 
 import { PrismaService } from '../prisma/prisma.service';
 
+/**
+ * Health endpoint — published at `/api/v1/health` after the global
+ * prefix is applied. Throttling is skipped so monitors don't get rate limited.
+ *
+ * Returned shape (raw — the global ResponseFormatInterceptor wraps it):
+ *
+ *   {
+ *     status: 'ok' | 'degraded',
+ *     uptimeSeconds: number,
+ *     timestamp: string (ISO),
+ *     version: string,
+ *     database: { status: 'ok' | 'down', latencyMs: number }
+ *   }
+ */
 @ApiTags('Health')
-@SkipThrottle() // health دائماً متاح
+@SkipThrottle()
 @Controller('health')
 export class HealthController {
   private readonly startedAt = Date.now();
@@ -18,22 +32,31 @@ export class HealthController {
     description: 'Service status',
     schema: {
       example: {
-        status: 'ok',
-        uptimeSeconds: 12,
-        timestamp: '2026-04-27T22:30:00.000Z',
-        version: '0.1.0',
-        database: 'ok',
+        data: {
+          status: 'ok',
+          uptimeSeconds: 12,
+          timestamp: '2026-04-27T22:30:00.000Z',
+          version: '0.1.0',
+          database: { status: 'ok', latencyMs: 3 },
+        },
+        meta: {
+          requestId: '4c…b2',
+          timestamp: '2026-04-27T22:30:00.000Z',
+          version: '0.1.0',
+        },
       },
     },
   })
   async check() {
+    const start = Date.now();
     const dbOk = await this.prisma.pingDb();
+    const latencyMs = Date.now() - start;
     return {
-      status: dbOk ? 'ok' : 'degraded',
+      status: dbOk ? ('ok' as const) : ('degraded' as const),
       uptimeSeconds: Math.floor((Date.now() - this.startedAt) / 1000),
       timestamp: new Date().toISOString(),
       version: process.env.APP_VERSION ?? '0.1.0',
-      database: dbOk ? 'ok' : 'down',
+      database: { status: dbOk ? ('ok' as const) : ('down' as const), latencyMs },
     };
   }
 }
