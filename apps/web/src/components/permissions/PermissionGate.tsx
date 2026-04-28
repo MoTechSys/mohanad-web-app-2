@@ -3,27 +3,40 @@ import { type ReactNode } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 
 /**
- * PermissionGate — RBAC visibility wrapper (Foundation placeholder).
+ * PermissionGate — Phase 2 P2-5 RBAC visibility wrapper.
  *
- * Real RBAC enforcement (matching the backend `PermissionGuard`) ships in
- * Phase 2. The Foundation version reads from the in-memory Zustand store and
- * gracefully assumes "show everything" while the user has not authenticated
- * yet, so designers can preview every page during recovery.
+ * Mirrors the backend `PermissionsGuard`:
+ *   • `permission` — single code that MUST be present.
+ *   • `allOf`     — every code must be present.
+ *   • `anyOf`     — at least one code is sufficient.
  *
- *   <PermissionGate need="customers.create">
+ * If multiple props are supplied they are combined with logical AND.
+ * If none of them are supplied, the children render as long as the
+ * user is authenticated.
+ *
+ * Behavior when not authenticated: renders nothing (vs. the older
+ * Foundation default which rendered children for design previews).
+ *
+ *   <PermissionGate permission="customers.create">
  *     <Button>إضافة عميل</Button>
  *   </PermissionGate>
  *
- *   <PermissionGate any={['sales.view', 'sales.create']}>
+ *   <PermissionGate anyOf={['sales.view', 'sales.create']}>
  *     <SalesWidget />
  *   </PermissionGate>
  */
 export interface PermissionGateProps {
   /** Single permission code that must be present. */
-  need?: string;
+  permission?: string;
   /** ALL of the listed codes must be present. */
-  all?: string[];
+  allOf?: string[];
   /** ANY of the listed codes is sufficient. */
+  anyOf?: string[];
+  /** @deprecated use `permission` */
+  need?: string;
+  /** @deprecated use `allOf` */
+  all?: string[];
+  /** @deprecated use `anyOf` */
   any?: string[];
   /** Rendered when the check fails. Defaults to nothing. */
   fallback?: ReactNode;
@@ -31,23 +44,27 @@ export interface PermissionGateProps {
 }
 
 export function PermissionGate({
+  permission,
+  allOf,
+  anyOf,
   need,
   all,
   any,
   fallback = null,
   children,
 }: PermissionGateProps): JSX.Element {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, hasPermission, hasAnyPermission, hasAllPermissions } = useAuthStore();
 
-  // Foundation behaviour: when nobody is logged in yet, render children so
-  // designers can audit pages. Phase 2 will flip this default.
-  if (!isAuthenticated || !user) return <>{children}</>;
+  if (!isAuthenticated) return <>{fallback}</>;
 
-  const perms = new Set(user.permissions);
+  const single = permission ?? need;
+  const allList = allOf ?? all;
+  const anyList = anyOf ?? any;
+
   const ok =
-    (need ? perms.has(need) : true) &&
-    (all ? all.every((p) => perms.has(p)) : true) &&
-    (any ? any.some((p) => perms.has(p)) : true);
+    (single ? hasPermission(single) : true) &&
+    (allList ? hasAllPermissions(allList) : true) &&
+    (anyList ? hasAnyPermission(anyList) : true);
 
   return <>{ok ? children : fallback}</>;
 }

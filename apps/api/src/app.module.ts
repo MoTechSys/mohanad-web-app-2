@@ -1,11 +1,13 @@
 import { type MiddlewareConsumer, Module, type NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { ResponseFormatInterceptor } from './common/interceptors/response-format.interceptor';
+import { IdempotencyMiddleware } from './common/middleware/idempotency.middleware';
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { configValidationSchema } from './config/env.validation';
 import { AuthModule } from './modules/auth/auth.module';
@@ -70,6 +72,9 @@ import { UsersModule } from './modules/users/users.module';
 
     // ─── Core ───────────────────────────────────
     PrismaModule,
+    // JwtModule registered globally so middleware (IdempotencyMiddleware)
+    // can decode access tokens to scope the cache to the correct user.
+    JwtModule.register({ global: true }),
 
     // ─── Foundation feature modules ─────────────
     HealthModule,
@@ -88,6 +93,9 @@ import { UsersModule } from './modules/users/users.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
+    // Order matters: requestId first (logs all requests), then idempotency
+    // (which may short-circuit replays before the guards/handlers run).
     consumer.apply(RequestIdMiddleware).forRoutes('*');
+    consumer.apply(IdempotencyMiddleware).forRoutes('*');
   }
 }

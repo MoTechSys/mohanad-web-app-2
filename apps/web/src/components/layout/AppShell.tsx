@@ -28,11 +28,11 @@ export function AppShell({
   children,
   className,
 }: AppShellProps): JSX.Element {
-  const { user, clearSession } = useAuthStore();
+  const { user, logout } = useAuthStore();
 
   return (
     <div className={cn('min-h-screen flex bg-surface-alt', className)}>
-      <Sidebar onLogout={clearSession} />
+      <Sidebar onLogout={() => void logout()} />
 
       <div className="flex-1 min-w-0 flex flex-col">
         <div className="desktop:hidden">

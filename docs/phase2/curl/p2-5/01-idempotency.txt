@@ -1,0 +1,49 @@
+================================================================
+ Test: Idempotency Middleware (Phase 2 P2-5)
+ Endpoint: POST /api/v1/auth/logout-all
+================================================================
+
+Bearer: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpX…
+Idempotency-Key: c6f42ce1-7753-4bd2-b06f-2c5ac3963752
+
+=== 1st request ===
+HTTP_STATUS:200
+HTTP/1.1 200 OK
+X-Request-Id: 6e0a418c-ca4c-4640-9ad6-14581105ff69
+Content-Length: 149
+BODY: {"data":{"ok":true,"revoked":2},"meta":{"requestId":"6e0a418c-ca4c-4640-9ad6-14581105ff69","timestamp":"2026-04-28T02:46:20.059Z","version":"0.1.0"}}
+
+=== DB row after 1st request ===
+                 key                  | status_code |           endpoint           |       expires_at       
+--------------------------------------+-------------+------------------------------+------------------------
+ c6f42ce1-7753-4bd2-b06f-2c5ac3963752 |         200 | POST /api/v1/auth/logout-all | 2026-04-29 02:46:20.06
+(1 row)
+
+=== 2nd request (same key) ===
+HTTP_STATUS:200
+HTTP/1.1 200 OK
+X-Request-Id: 12a89293-fbcb-4d4f-a215-23f3dd86aac7
+Idempotent-Replay: true
+Content-Length: 149
+BODY: {"data":{"ok":true,"revoked":2},"meta":{"version":"0.1.0","requestId":"6e0a418c-ca4c-4640-9ad6-14581105ff69","timestamp":"2026-04-28T02:46:20.059Z"}}
+
+=== Verification ===
+data field call #1: {"ok": true, "revoked": 2}
+data field call #2: {"ok": true, "revoked": 2}
+✓ data payload IDENTICAL
+✓ Idempotent-Replay header present on 2nd
+meta.requestId #1: 6e0a418c-ca4c-4640-9ad6-14581105ff69
+meta.requestId #2: 6e0a418c-ca4c-4640-9ad6-14581105ff69  (replayed body keeps the original)
+✓ requestId in body matches → confirms replay (no handler re-execution)
+
+Rows for this key: 1
+
+=== 3rd request with DIFFERENT Idempotency-Key (separate request) ===
+Idempotency-Key: d484479a-a22e-4325-b157-d03ac81c34f3 (new)
+{"data":{"ok":true,"revoked":0},"meta":{"requestId":"54f89a83-8228-43a9-bf9e-7696790ffa8b","timestamp":"2026-04-28T02:46:20.672Z","version":"0.1.0"}}
+HTTP_STATUS:200
+Total rows in idempotency_keys: 2
+
+=== 4th request without Idempotency-Key header (no-op middleware) ===
+{"data":{"status":"ok","uptimeSeconds":71,"timestamp":"2026-04-28T02:46:20.820Z","version":"0.1.0","database":{"status":"ok","latencyMs":2}},"meta":{"requestId":"8f4200cd-96af-4793-963d-8022d5729c1b","timestamp":"2026-04-28T02:46:20.820Z","version":"0.1.0"}}HTTP_STATUS:200
+(GET requests are skipped by middleware — no idempotency_keys insert.)

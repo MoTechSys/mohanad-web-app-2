@@ -25,6 +25,7 @@
     "db:validate": "prisma validate --schema=./prisma/schema.prisma",
     "db:migrate": "prisma migrate dev --schema=./prisma/schema.prisma",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed:test-users": "tsx prisma/seed-test-users.ts",
     "db:studio": "prisma studio --schema=./prisma/schema.prisma",
     "lh": "node scripts/lighthouse.mjs"
   },
@@ -33,6 +34,7 @@
     "@types/node": "^20.14.10",
     "husky": "^9.1.7",
     "lint-staged": "^15.2.10",
+    "playwright": "^1.59.1",
     "prisma": "^5.22.0",
     "puppeteer-core": "23",
     "tsx": "^4.19.1",
@@ -48,5 +50,10 @@
   },
   "dependencies": {
     "@prisma/client": "5.22.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "zod": "3.23.8"
+    }
   }
 }

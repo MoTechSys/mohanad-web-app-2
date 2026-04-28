@@ -43,7 +43,10 @@ const dict = {
     forgotPassword: 'نسيت كلمة المرور؟',
     submit: 'دخول',
     submitting: 'جاري الدخول…',
-    notImplemented: 'تسجيل الدخول الفعلي يبدأ في المرحلة 2',
+    invalidCredentials: 'اسم المستخدم أو كلمة المرور غير صحيحة',
+    networkError: 'تعذّر الاتصال بالخادم',
+    lockedUntil: 'الحساب مقفل مؤقتاً، حاول بعد',
+    welcome: 'مرحباً',
   },
   dashboard: {
     title: 'لوحة التحكم',

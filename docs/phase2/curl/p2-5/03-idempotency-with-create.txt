@@ -1,0 +1,49 @@
+Test 7: Idempotency Middleware (Phase 2 P2-5)
+=============================================
+
+Idempotency-Key: 95f7a476-a884-452f-ab31-74f9873e69a0
+Username (random): idem_5931
+
+── DB BEFORE ──
+ key | endpoint | status_code | expires_at 
+-----+----------+-------------+------------
+(0 rows)
+
+
+── 1st POST /users (with Idempotency-Key) ──
+{"data":{"id":"cmoi10al200118ug8yqfy4pjq","username":"idem_5931","fullName":"مستخدم Idempotency","phone":null,"isActive":true,"lastLoginAt":null,"failedLoginAttempts":0,"lockedUntil":null,"createdAt":"2026-04-28T02:47:50.678Z","updatedAt":"2026-04-28T02:47:50.678Z","roles":[{"id":"cmohy8q5i00f5kb5ra5zcwx1f","key":"SalesWorker","name":"عامل مبيعات","isSystem":true,"assignedAt":"2026-04-28T02:47:50.680Z"}]},"meta":{"requestId":"85b3fcc1-3008-46ea-b711-55af6bd6eed7","timestamp":"2026-04-28T02:47:50.684Z","version":"0.1.0"}}
+STATUS:201
+
+Response headers (Idempotent-Replay should be ABSENT):
+(no idempotent-replay header — first request, correct)
+
+── DB AFTER 1st request ──
+                 key                  |      endpoint      | status_code | resp_size |     ttl      
+--------------------------------------+--------------------+-------------+-----------+--------------
+ 95f7a476-a884-452f-ab31-74f9873e69a0 | POST /api/v1/users |         201 |       564 | 23:59:59.999
+(1 row)
+
+
+── 2nd POST /users with SAME Idempotency-Key (replay) ──
+Body altered to verify cached response is returned (not re-executed):
+{"data":{"id":"cmoi10al200118ug8yqfy4pjq","phone":null,"roles":[{"id":"cmohy8q5i00f5kb5ra5zcwx1f","key":"SalesWorker","name":"عامل مبيعات","isSystem":true,"assignedAt":"2026-04-28T02:47:50.680Z"}],"fullName":"مستخدم Idempotency","isActive":true,"username":"idem_5931","createdAt":"2026-04-28T02:47:50.678Z","updatedAt":"2026-04-28T02:47:50.678Z","lastLoginAt":null,"lockedUntil":null,"failedLoginAttempts":0},"meta":{"version":"0.1.0","requestId":"85b3fcc1-3008-46ea-b711-55af6bd6eed7","timestamp":"2026-04-28T02:47:50.684Z"}}
+STATUS:201
+
+Response headers (Idempotent-Replay: true expected):
+Idempotent-Replay: true
+
+── Verify only ONE user actually created in DB ──
+    username     |     full_name      
+-----------------+--------------------
+ idem_5931       | مستخدم Idempotency
+ idem_test       | Idempotency Tester
+ idem_1777344160 | اختبار التكرار
+(3 rows)
+
+
+── 3rd POST: SAFE method (GET /users) ignores Idempotency-Key ──
+GET should not be intercepted → no Idempotent-Replay header on GET:
+(no idempotent-replay on GET, correct)
+STATUS line: STATUS:200
+✅ Idempotency test complete → docs/phase2/curl/07-idempotency.txt
+48 docs/phase2/curl/07-idempotency.txt
