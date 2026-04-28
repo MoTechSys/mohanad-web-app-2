@@ -430,6 +430,34 @@ DoD checks (2026-04-28):
 > The compound unique `[storeId, key]` is already declared in `prisma/schema.prisma`.
 > Approved by user during recovery review (commit `bda41a9`).
 
+### Phase 2 Decisions Log (2026‑04‑28)
+
+تجميع رسمي لكل القرارات النهائية المتّخذة خلال P2-1 → P2-7.
+أي تعديل لاحق يحتاج موافقة المستخدم وفق §16.
+
+| #   | القرار                                          | المرحلة | الملاحظة |
+| --- | ----------------------------------------------- | ------- | -------- |
+| D1  | **عدد modules الصلاحيات = 19** (لا 17 كما في docs/04 الأصلي) | P2-2 | كل صلاحية تُسجَّل في `packages/shared/src/constants/permissions.ts` بحقل `module` ثابت — هذا هو المصدر الوحيد. الإجمالي 181. |
+| D2  | **Single Source of Truth في PermissionsService** | P2-4 | `apps/api/src/modules/permissions/permissions.service.ts` يبني المجموعات ديناميكيًا من جدول `Permission`؛ Permissions Editor على الواجهة يقرأ من `GET /api/v1/permissions` ولا يحتفظ بأي قائمة ثابتة. |
+| D3  | **System roles = 6** بأسماء PascalCase (`Owner`, `Manager`, `SalesWorker`, `Accountant`, `PurchasingOfficer`, `InventoryOfficer`) | P2-2 | الحقل `key` في الـ DB هو نفس الاسم بالضبط. UI يعرض الترجمة العربية بدون تغيير المفاتيح. |
+| D4  | **System role guardrails مزدوجة** (UI + Backend) | P2-6 | UI يخفي زر الحذف ويُجمّد حقول الاسم/المفتاح للأدوار `isSystem=true`؛ الباك‑إند يرفض DELETE/rename عبر `SYSTEM_ROLE_UNDELETABLE` و`SYSTEM_ROLE_RENAME_FORBIDDEN`. |
+| D5  | **Idempotency-Key TTL = 24h** + استثناء غير 2xx من التخزين | P2-5 | الميدلوير `IdempotencyMiddleware` يحفظ فقط الاستجابات 2xx، يُعيد رأس `Idempotent-Replay: true` على الـ replay، ويرفع 409 `IDEMPOTENCY_KEY_CONFLICT` على endpoint/user مختلف. |
+| D6  | **JWT TTL** | P2-3 | access = 15m، refresh = 7d، remember‑me = 30d. كلها قابلة للضبط من `.env`. |
+| D7  | **Lockout policy** | P2-3 | بعد 5 محاولات خاطئة خلال 15 دقيقة → قفل 15 دقيقة، عداد تنازلي حيّ على الواجهة (`useLockoutCountdown`). |
+| D8  | **Refresh token rotation** | P2-3 | كل refresh ينشئ token جديد ويُلغي السابق (`replacedByTokenHash`). محاولة replay → 401 `REFRESH_TOKEN_REUSED`. |
+| D9  | **bcrypt rounds = 12** | P2-3 | جميع كلمات المرور (login, create user, reset, change). |
+| D10 | **Pagination shape**: `{ items: [...], meta: { page, limit, total } }` | P2-4 | لا يوجد `totalPages` في الباك‑إند — الواجهة تحسبه: `Math.ceil(total / limit)`. |
+| D11 | **Role list payload**: `permissionsCount`, `usersCount` (plural) | P2-4 | الواجهة تستخدم نفس الأسماء بالضبط في `RoleListItem`. |
+| D12 | **`RolesApi.list` يقبل الشكلين** (مصفوفة مباشرة أو `{ items }`) | P2-6 | للتكيّف مع أي تغيير لاحق على envelope الباك‑إند. |
+| D13 | **ResponsiveDialog breakpoint = 768px** | P2-6 | فوقه: Modal مركزي. تحته: BottomSheet متجاوب. الـ hook `useIsDesktop` هو المرجع الوحيد. |
+| D14 | **Account profile = read-only** | P2-6 | فقط change‑password قابل للتعديل في `/account`؛ تعديل الاسم/الدور يكون من `/admin/users/:id` للمسؤولين فقط. |
+| D15 | **Zod مثبَّت على 3.23.8** عبر `pnpm.overrides` | P2-5 | لتفادي تعارض API breakage في v4 الذي يخرج تجريبيًا. |
+| D16 | **Permissions Editor — search ديناميكي** يطابق `key` و`name` معًا | P2-6 | بحث `users.create` يفلتر فقط داخل users module ويُخفي البقية. |
+| D17 | **Test count baseline P2-7**: shared 69 + api 70 + web 69 = **208 اختبار** | P2-7 | كلها passing. هدف ≥190 محقق. |
+
+> 📌 **مرجع كامل لـ 19 module:** انظر `docs/04-rbac-permissions.md` §4 (الفقرة المُضافة في P2-7).
+> 📌 **تقرير Phase 2 الشامل:** `docs/recovery-report.md` §"Phase 2 Summary".
+
 ---
 
 ## 16. حقوق التغيير

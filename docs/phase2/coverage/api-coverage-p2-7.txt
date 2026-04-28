@@ -1,0 +1,72 @@
+
+> @grocery/api@0.1.0 test:cov /home/user/webapp/apps/api
+> jest --coverage
+
+PASS src/modules/auth/__tests__/permissions.guard.spec.ts
+PASS src/modules/users/__tests__/users.service.spec.ts
+PASS src/modules/health/health.controller.spec.ts
+PASS src/common/middleware/__tests__/idempotency.middleware.spec.ts
+[33m[Nest] 79202  - [39m04/28/2026, 4:05:45 AM [33m   WARN[39m [38;5;3m[IdempotencyMiddleware] [39m[33mIdempotency save failed: unexpected[39m
+PASS src/modules/roles/__tests__/roles.service.spec.ts
+PASS src/modules/auth/__tests__/auth.service.spec.ts
+---------------------------------|---------|----------|---------|---------|-------------------------
+File                             | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s       
+---------------------------------|---------|----------|---------|---------|-------------------------
+All files                        |   45.31 |    39.69 |    46.3 |    46.1 |                         
+ src                             |       0 |        0 |       0 |       0 |                         
+  app.module.ts                  |       0 |        0 |       0 |       0 | 1-99                    
+  main.ts                        |       0 |        0 |       0 |       0 | 14-100                  
+ src/common/filters              |       0 |        0 |       0 |       0 |                         
+  all-exceptions.filter.ts       |       0 |        0 |       0 |       0 | 1-85                    
+ src/common/interceptors         |       0 |        0 |       0 |       0 |                         
+  response-format.interceptor.ts |       0 |        0 |       0 |       0 | 1-43                    
+ src/common/middleware           |   82.89 |     64.7 |      75 |   88.23 |                         
+  idempotency.middleware.ts      |   95.45 |    78.57 |   85.71 |     100 | 83-88,112,168           
+  request-id.middleware.ts       |       0 |        0 |       0 |       0 | 1-12                    
+ src/common/pipes                |       0 |        0 |       0 |       0 |                         
+  zod-validation.pipe.ts         |       0 |        0 |       0 |       0 | 1-37                    
+ src/config                      |       0 |        0 |       0 |       0 |                         
+  env.config.ts                  |       0 |        0 |       0 |       0 | 4-48                    
+  env.validation.ts              |       0 |      100 |       0 |       0 | 1-35                    
+ src/modules/auth                |   47.29 |    34.48 |   35.48 |   47.05 |                         
+  auth.controller.ts             |       0 |        0 |       0 |       0 | 1-235                   
+  auth.module.ts                 |       0 |      100 |       0 |       0 | 1-46                    
+  auth.service.ts                |   94.89 |    83.33 |    90.9 |    96.7 | 146,205,343             
+  token.service.ts               |   21.05 |        0 |   11.11 |      16 | 24-32,40-154            
+ src/modules/auth/decorators     |   66.66 |      100 |      25 |   57.14 |                         
+  current-user.decorator.ts      |       0 |      100 |       0 |       0 | 1-15                    
+  permissions.decorator.ts       |   77.77 |      100 |       0 |   71.42 | 14,23                   
+  public.decorator.ts            |     100 |      100 |     100 |     100 |                         
+ src/modules/auth/dto            |       0 |      100 |       0 |       0 |                         
+  change-password.dto.ts         |       0 |      100 |       0 |       0 | 1-15                    
+  login.dto.ts                   |       0 |      100 |       0 |       0 | 1-19                    
+ src/modules/auth/guards         |   70.45 |    93.33 |      75 |   72.97 |                         
+  jwt-auth.guard.ts              |       0 |        0 |       0 |       0 | 1-25                    
+  permissions.guard.ts           |     100 |      100 |     100 |     100 |                         
+ src/modules/auth/strategies     |       0 |        0 |       0 |       0 |                         
+  jwt.strategy.ts                |       0 |        0 |       0 |       0 | 1-81                    
+ src/modules/health              |      75 |       50 |     100 |   81.25 |                         
+  health.controller.ts           |     100 |       50 |     100 |     100 | 57-61                   
+  health.module.ts               |       0 |      100 |     100 |       0 | 1-7                     
+ src/modules/permissions         |       0 |        0 |       0 |       0 |                         
+  permissions.controller.ts      |       0 |      100 |       0 |       0 | 8-24                    
+  permissions.module.ts          |       0 |      100 |     100 |       0 | 1-11                    
+  permissions.service.ts         |       0 |        0 |       0 |       0 | 12-60                   
+ src/modules/prisma              |    23.8 |      100 |       0 |   17.64 |                         
+  prisma.module.ts               |       0 |      100 |     100 |       0 | 1-9                     
+  prisma.service.ts              |   31.25 |      100 |       0 |   21.42 | 14-43                   
+ src/modules/roles               |   69.09 |    73.33 |   74.19 |      71 |                         
+  roles.controller.ts            |       0 |      100 |       0 |       0 | 13-108                  
+  roles.module.ts                |       0 |      100 |     100 |       0 | 1-11                    
+  roles.service.ts               |    96.2 |    73.33 |     100 |   97.26 | 190,263                 
+ src/modules/users               |   61.98 |    48.14 |    60.6 |   62.83 |                         
+  users.controller.ts            |       0 |      100 |       0 |       0 | 18-157                  
+  users.module.ts                |       0 |      100 |     100 |       0 | 1-11                    
+  users.service.ts               |   90.36 |    48.14 |    90.9 |   89.87 | 199-208,236,249-254,307 
+---------------------------------|---------|----------|---------|---------|-------------------------
+
+Test Suites: 6 passed, 6 total
+Tests:       70 passed, 70 total
+Snapshots:   0 total
+Time:        9.322 s
+Ran all test suites.

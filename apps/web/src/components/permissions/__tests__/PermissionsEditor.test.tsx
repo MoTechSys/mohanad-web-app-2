@@ -123,4 +123,61 @@ describe('<PermissionsEditor />', () => {
     expect(screen.getByRole('button', { name: 'حفظ التغييرات' })).toBeDisabled();
     expect(screen.getByText('لا توجد تغييرات')).toBeInTheDocument();
   });
+
+  it('matches search by permission CODE (e.g. "users.create")', async () => {
+    render(<PermissionsEditor groups={groups} selected={[]} onChange={() => {}} />);
+    const search = screen.getByPlaceholderText('ابحث في الصلاحيات…');
+    fireEvent.change(search, { target: { value: 'users.create' } });
+    // <AnimatePresence> keeps exiting sections until the exit animation
+    // finishes. Wait for the non-matching group to be removed.
+    await waitForElementToBeRemoved(() => screen.queryByTestId('permissions-group-roles'), {
+      timeout: 1000,
+    });
+    const usersGroup = within(screen.getByTestId('permissions-group-users'));
+    expect(usersGroup.getByText('users.create')).toBeInTheDocument();
+    expect(usersGroup.queryByText('users.view')).not.toBeInTheDocument();
+  });
+
+  it('global "تحديد الكل" selects every permission across every module', () => {
+    const onChange = vi.fn();
+    render(<PermissionsEditor groups={groups} selected={[]} onChange={onChange} />);
+    // The 1st "تحديد الكل" button is the GLOBAL one in the toolbar.
+    const allBtns = screen.getAllByRole('button', { name: 'تحديد الكل' });
+    const firstBtn = allBtns[0];
+    if (!firstBtn) throw new Error('no "تحديد الكل" button rendered');
+    fireEvent.click(firstBtn);
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const codes = onChange.mock.calls[0]?.[0] as string[];
+    expect(codes).toEqual(
+      expect.arrayContaining([
+        'users.view',
+        'users.create',
+        'users.update',
+        'roles.view',
+        'roles.create',
+      ]),
+    );
+    expect(codes.length).toBe(5);
+  });
+
+  it('per-group "إلغاء الكل" only clears that module, not others', () => {
+    const onChange = vi.fn();
+    render(
+      <PermissionsEditor
+        groups={groups}
+        // All 3 users permissions selected → users group toggle shows
+        // "إلغاء الكل" (all-on state).
+        selected={['users.view', 'users.create', 'users.update', 'roles.view']}
+        onChange={onChange}
+      />,
+    );
+    const usersGroup = within(screen.getByTestId('permissions-group-users'));
+    fireEvent.click(usersGroup.getByRole('button', { name: 'إلغاء الكل' }));
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const next = onChange.mock.calls[0]?.[0] as string[];
+    expect(next).not.toContain('users.view');
+    expect(next).not.toContain('users.create');
+    expect(next).not.toContain('users.update');
+    expect(next).toContain('roles.view'); // untouched
+  });
 });
