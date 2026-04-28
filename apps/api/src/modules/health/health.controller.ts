@@ -2,6 +2,7 @@ import { Controller, Get } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 
+import { Public } from '../auth/decorators/public.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 
 /**
@@ -19,6 +20,7 @@ import { PrismaService } from '../prisma/prisma.service';
  *   }
  */
 @ApiTags('Health')
+@Public()
 @SkipThrottle()
 @Controller('health')
 export class HealthController {

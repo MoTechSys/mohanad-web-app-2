@@ -35,6 +35,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
     let message = 'حدث خطأ غير متوقع';
     let code: string | undefined;
     let errors: Array<{ path: string[]; message: string }> | undefined;
+    // Extra contextual fields surfaced by domain exceptions (e.g. lockedUntil,
+    // retryAfterSec, missingPermissions). Whitelisted to avoid leaking internals.
+    const extras: Record<string, unknown> = {};
+    const PASSTHROUGH_KEYS = [
+      'lockedUntil',
+      'retryAfterSec',
+      'missingPermissions',
+      'requiredPermissions',
+    ] as const;
 
     if (exception instanceof ZodError) {
       status = HttpStatus.UNPROCESSABLE_ENTITY;
@@ -56,6 +65,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
         if (Array.isArray(r.errors)) {
           errors = r.errors as Array<{ path: string[]; message: string }>;
         }
+        for (const k of PASSTHROUGH_KEYS) {
+          if (r[k] !== undefined) extras[k] = r[k];
+        }
       }
     } else if (exception instanceof Error) {
       this.logger.error(exception.message, exception.stack);
@@ -65,6 +77,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const requestId = (request.headers['x-request-id'] as string | undefined) ?? null;
     const version = process.env.APP_VERSION ?? '0.1.0';
 
+    // Hint clients about retry timing for 429 responses.
+    if (status === HttpStatus.TOO_MANY_REQUESTS && typeof extras.retryAfterSec === 'number') {
+      response.setHeader('Retry-After', String(extras.retryAfterSec));
+    }
+
     response.status(status).json({
       data: null,
       meta: {
@@ -73,6 +90,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
           message,
           ...(code ? { code } : {}),
           ...(errors ? { errors } : {}),
+          ...extras,
           path: request.url,
           method: request.method,
         },

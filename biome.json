@@ -51,6 +51,9 @@
       "arrowParentheses": "always",
       "bracketSpacing": true
     },
+    "parser": {
+      "unsafeParameterDecoratorsEnabled": true
+    },
     "globals": ["NodeJS"]
   },
   "json": {
