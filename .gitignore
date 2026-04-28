@@ -40,8 +40,9 @@ coverage/
 .eslintcache
 
 # Prisma
-prisma/migrations/
-apps/api/prisma/migrations/
+# (Phase 2+) Migrations are tracked in git. Only ignore local-only artefacts.
+prisma/migrations/dev.db*
+apps/api/prisma/migrations/dev.db*
 *.db
 *.db-journal
 

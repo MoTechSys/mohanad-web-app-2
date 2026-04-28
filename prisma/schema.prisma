@@ -76,21 +76,25 @@ model Setting {
 
 /// Application user (worker/owner). Authenticated by username + password.
 model User {
-  id           String    @id @default(cuid())
-  storeId      String    @map("store_id")
-  username     String    @unique
-  passwordHash String    @map("password_hash")
-  fullName     String    @map("full_name")
-  phone        String?
-  isActive     Boolean   @default(true) @map("is_active")
-  lastLoginAt  DateTime? @map("last_login_at")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
-  deletedAt    DateTime? @map("deleted_at")
+  id                  String    @id @default(cuid())
+  storeId             String    @map("store_id")
+  username            String    @unique
+  passwordHash        String    @map("password_hash")
+  fullName            String    @map("full_name")
+  phone               String?
+  isActive            Boolean   @default(true) @map("is_active")
+  lastLoginAt         DateTime? @map("last_login_at")
+  // Phase 2 — Account lockout / brute-force defense
+  failedLoginAttempts Int       @default(0) @map("failed_login_attempts")
+  lockedUntil         DateTime? @map("locked_until")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  deletedAt           DateTime? @map("deleted_at")
 
-  store     Store      @relation(fields: [storeId], references: [id], onDelete: Restrict)
-  userRoles UserRole[]
-  auditLogs AuditLog[] @relation("AuditActor")
+  store         Store          @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  userRoles     UserRole[]
+  refreshTokens RefreshToken[]
+  auditLogs     AuditLog[]     @relation("AuditActor")
 
   @@index([storeId])
   @@index([isActive])
@@ -165,6 +169,53 @@ model UserRole {
   @@index([userId])
   @@index([roleId])
   @@map("user_roles")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  AUTH — Refresh tokens & idempotency (Phase 2)
+// ═══════════════════════════════════════════════════════════════
+
+/// Hashed refresh tokens (SHA-256). One row per active session.
+/// Rotation: each /auth/refresh issues a new row and revokes the old one.
+/// Cleanup: expired rows are pruned on login.
+model RefreshToken {
+  id          String    @id @default(cuid())
+  userId      String    @map("user_id")
+  tokenHash   String    @unique @map("token_hash")
+  deviceLabel String?   @map("device_label")
+  ipAddress   String?   @map("ip_address")
+  userAgent   String?   @map("user_agent")
+  rememberMe  Boolean   @default(false) @map("remember_me")
+  expiresAt   DateTime  @map("expires_at")
+  revokedAt   DateTime? @map("revoked_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([expiresAt])
+  @@index([revokedAt])
+  @@map("refresh_tokens")
+}
+
+/// Idempotency cache for mutating endpoints. TTL = 24h.
+/// The frontend sends `Idempotency-Key: <uuid>` on POST/PUT/PATCH/DELETE.
+/// If the key was seen before, the cached response is returned.
+model IdempotencyKey {
+  id         String   @id @default(cuid())
+  key        String   @unique
+  userId     String?  @map("user_id")
+  endpoint   String
+  statusCode Int      @map("status_code")
+  response   Json
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([key])
+  @@index([expiresAt])
+  @@map("idempotency_keys")
 }
 
 // ═══════════════════════════════════════════════════════════════
