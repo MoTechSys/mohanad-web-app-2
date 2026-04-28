@@ -53,3 +53,5 @@ apps/web/stats.html
 
 # Misc
 .husky/_/
+core
+**/core

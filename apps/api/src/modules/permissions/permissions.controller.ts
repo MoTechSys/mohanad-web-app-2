@@ -1,16 +1,26 @@
-import { Controller, Get, HttpException, HttpStatus } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+/**
+ * PermissionsController — read-only catalog endpoint.
+ *
+ * Used by the role editor UI to render the permission tree (grouped by module).
+ * Required permission: `permissions.view`.
+ */
 
-/** Permissions Module Placeholder (Phase 2). */
+import { Controller, Get } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+
+import { RequirePermission } from '../auth/decorators/permissions.decorator';
+import { PermissionsService } from './permissions.service';
+
 @ApiTags('Permissions')
+@ApiBearerAuth('access-token')
 @Controller('permissions')
 export class PermissionsController {
+  constructor(private readonly permissions: PermissionsService) {}
+
   @Get()
-  @ApiOperation({ summary: 'GET /api/v1/permissions (Phase 2)' })
-  list(): never {
-    throw new HttpException(
-      { message: 'سيتم تفعيله في المرحلة 2', code: 'NOT_IMPLEMENTED' },
-      HttpStatus.NOT_IMPLEMENTED,
-    );
+  @RequirePermission('permissions.view')
+  @ApiOperation({ summary: 'كل الصلاحيات (مُجمَّعة حسب الوحدة) — للمُحرِّر' })
+  list() {
+    return this.permissions.listAll();
   }
 }

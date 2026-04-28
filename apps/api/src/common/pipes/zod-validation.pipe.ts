@@ -13,10 +13,27 @@ import type { ZodSchema } from 'zod';
  * to HTTP 422 with the unified error envelope.
  */
 @Injectable()
-export class ZodValidationPipe<T> implements PipeTransform<unknown, T> {
-  constructor(private readonly schema: ZodSchema<T>) {}
+export class ZodValidationPipe<T> implements PipeTransform<unknown, T | unknown> {
+  constructor(
+    private readonly schema: ZodSchema<T>,
+    /**
+     * Restrict which `@nestjs/common` parameter type triggers validation.
+     * Default `'body'` — applied via `@UsePipes` to controller methods, this
+     * prevents the pipe from attempting to parse `@Param`/`@Query` values
+     * (which arrive as plain strings) against an object schema.
+     *
+     * Pass `'query'` to validate query objects, or `null` to validate any
+     * value the pipe receives (legacy behaviour).
+     */
+    private readonly target: 'body' | 'query' | 'param' | null = 'body',
+  ) {}
 
-  transform(value: unknown, _metadata: ArgumentMetadata): T {
+  transform(value: unknown, metadata: ArgumentMetadata): T | unknown {
+    if (this.target !== null && metadata.type !== this.target) {
+      return value;
+    }
+    // eslint-disable-next-line no-console
+    console.log('[zod-pipe]', metadata.type, JSON.stringify(value));
     return this.schema.parse(value);
   }
 }
