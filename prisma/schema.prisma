@@ -43,10 +43,12 @@ model Store {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  users     User[]
-  roles     Role[]
-  settings  Setting[]
-  auditLogs AuditLog[]
+  users         User[]
+  roles         Role[]
+  settings      Setting[]
+  auditLogs     AuditLog[]
+  customers     Customer[]
+  notifications Notification[]
 
   @@map("stores")
 }
@@ -95,6 +97,12 @@ model User {
   userRoles     UserRole[]
   refreshTokens RefreshToken[]
   auditLogs     AuditLog[]     @relation("AuditActor")
+
+  // Phase 3 relations
+  customersCreated      Customer[]            @relation("CustomerCreatedBy")
+  transactionsCreated   CustomerTransaction[] @relation("TxCreatedBy")
+  transactionsCancelled CustomerTransaction[] @relation("TxCancelledBy")
+  notifications         Notification[]
 
   @@index([storeId])
   @@index([isActive])
@@ -245,6 +253,151 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([action])
   @@map("audit_logs")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CUSTOMERS — Phase 3 (P3-1)
+// ═══════════════════════════════════════════════════════════════
+
+/// A retail customer who can carry a debt balance.
+/// `currentBalance` is the source of truth (denormalised from transactions
+/// for fast reads). All mutations go through `prisma.$transaction` with
+/// row locking to keep it consistent with the immutable transaction log.
+model Customer {
+  id            String  @id @default(cuid())
+  storeId       String  @map("store_id")
+  name          String
+  phone         String?
+  address       String?
+  whatsappPhone String? @map("whatsapp_phone")
+
+  // Financial — Decimal(14,2) per docs/03 currency rules.
+  openingBalance Decimal  @default(0) @map("opening_balance") @db.Decimal(14, 2)
+  currentBalance Decimal  @default(0) @map("current_balance") @db.Decimal(14, 2)
+  creditLimit    Decimal? @map("credit_limit") @db.Decimal(14, 2)
+
+  // Lifecycle / status
+  status     CustomerStatus @default(ACTIVE)
+  graceUntil DateTime?      @map("grace_until")
+
+  // Metadata
+  notes       String?
+  createdById String    @map("created_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  store            Store                     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  createdBy        User                      @relation("CustomerCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  transactions     CustomerTransaction[]
+  reminderSettings CustomerReminderSettings?
+
+  @@index([storeId])
+  @@index([status])
+  @@index([phone])
+  @@index([deletedAt])
+  @@map("customers")
+}
+
+enum CustomerStatus {
+  ACTIVE
+  FROZEN
+  GRACE_PERIOD
+}
+
+/// Append-only ledger of customer balance movements.
+/// `balanceBefore` / `balanceAfter` are snapshots of `Customer.currentBalance`
+/// taken inside the same DB transaction that mutates the parent row, so the
+/// timeline is fully reconstructible even if `Customer.currentBalance` is
+/// out of sync (it never should be).
+model CustomerTransaction {
+  id            String                  @id @default(cuid())
+  customerId    String                  @map("customer_id")
+  type          CustomerTransactionType
+  amount        Decimal                 @db.Decimal(14, 2)
+  balanceBefore Decimal                 @map("balance_before") @db.Decimal(14, 2)
+  balanceAfter  Decimal                 @map("balance_after") @db.Decimal(14, 2)
+  notes         String?
+
+  // Cancellation (soft — original row preserved for audit)
+  cancelledAt   DateTime? @map("cancelled_at")
+  cancelledById String?   @map("cancelled_by_id")
+  cancelReason  String?   @map("cancel_reason")
+
+  // Optional reference to a future Sale (Phase 6)
+  referenceType String? @map("reference_type")
+  referenceId   String? @map("reference_id")
+
+  createdById String   @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdBy   User     @relation("TxCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  cancelledBy User?    @relation("TxCancelledBy", fields: [cancelledById], references: [id], onDelete: SetNull)
+
+  @@index([customerId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([cancelledAt])
+  @@map("customer_transactions")
+}
+
+enum CustomerTransactionType {
+  DEBT
+  PAYMENT
+  ADJUSTMENT
+  OPENING
+}
+
+/// Per-customer reminder configuration (WhatsApp). Templates are looked up
+/// by `templateId` once a template registry is added (deferred to P4+).
+model CustomerReminderSettings {
+  id         String    @id @default(cuid())
+  customerId String    @unique @map("customer_id")
+  enabled    Boolean   @default(false)
+  frequency  String    @default("monthly") // "weekly" | "monthly"
+  lastSentAt DateTime? @map("last_sent_at")
+  templateId String?   @map("template_id")
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("customer_reminder_settings")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  NOTIFICATIONS — Phase 3 (P3-1)
+// ═══════════════════════════════════════════════════════════════
+
+/// In-app notification. `userId = null` means broadcast (all managers / owners).
+/// `metadata` carries arbitrary structured context (e.g., customer / amount).
+model Notification {
+  id       String           @id @default(cuid())
+  userId   String?          @map("user_id")
+  storeId  String           @map("store_id")
+  type     NotificationType
+  title    String
+  body     String
+  metadata Json?
+
+  readAt DateTime? @map("read_at")
+  sentAt DateTime  @default(now()) @map("sent_at")
+
+  user  User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([storeId])
+  @@index([type])
+  @@index([sentAt])
+  @@map("notifications")
+}
+
+enum NotificationType {
+  CREDIT_LIMIT_EXCEEDED
+  GRACE_PERIOD_ENDING
+  CUSTOMER_INACTIVE
+  CUSTOMER_DEBT_HIGH
+  // Additional types are added in later phases.
 }
 
 // ═══════════════════════════════════════════════════════════════

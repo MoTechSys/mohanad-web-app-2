@@ -11,7 +11,9 @@ import { IdempotencyMiddleware } from './common/middleware/idempotency.middlewar
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { configValidationSchema } from './config/env.validation';
 import { AuthModule } from './modules/auth/auth.module';
+import { CustomersModule } from './modules/customers/customers.module';
 import { HealthModule } from './modules/health/health.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
 import { PrismaModule } from './modules/prisma/prisma.module';
 import { RolesModule } from './modules/roles/roles.module';
@@ -84,6 +86,10 @@ import { UsersModule } from './modules/users/users.module';
     UsersModule,
     RolesModule,
     PermissionsModule,
+
+    // ─── Phase 3 ────────────────────────────────
+    CustomersModule,
+    NotificationsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
