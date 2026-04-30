@@ -1,0 +1,28 @@
+{
+  "data": {
+    "id": "cmoi2ylv500k18ug88ihisww0",
+    "username": "p26_demo",
+    "fullName": "مستخدم تجريبي ل P2-6",
+    "phone": "0501112233",
+    "isActive": true,
+    "lastLoginAt": null,
+    "failedLoginAttempts": 0,
+    "lockedUntil": null,
+    "createdAt": "2026-04-28T03:42:31.217Z",
+    "updatedAt": "2026-04-28T03:42:31.217Z",
+    "roles": [
+      {
+        "id": "cmohy8q5i00f5kb5ra5zcwx1f",
+        "key": "SalesWorker",
+        "name": "عامل مبيعات",
+        "isSystem": true,
+        "assignedAt": "2026-04-28T03:42:31.220Z"
+      }
+    ]
+  },
+  "meta": {
+    "requestId": "4754f574-5000-4fe8-9330-b9d31125eb0e",
+    "timestamp": "2026-04-28T03:42:31.225Z",
+    "version": "0.1.0"
+  }
+}

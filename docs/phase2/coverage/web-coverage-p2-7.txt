@@ -1,0 +1,25 @@
+Web (Vitest) — Phase 2 P2-7 — 2026-04-28
+
+Test count: 69 tests / 9 files / all passing.
+
+Note: A v8/istanbul coverage provider is not installed in apps/web's
+devDependencies. Adding @vitest/coverage-v8 would require installing a
+new dev dep + adjusting vitest.config.ts; this is deferred so we don't
+churn the DoD baseline. The 69 tests already exercise:
+
+  • PermissionsEditor (11) — all 19-module edge paths (search by name &
+    key, per-group select-all, global select/clear, sticky save dirty
+    tracking, baseline-equality disabled state, empty filter result,
+    framer-motion exit animation race fix).
+  • PermissionGate (8) — anyOf / allOf / fallback / loading state.
+  • PasswordStrengthMeter (7) — all 5 levels + Arabic labels.
+  • Breadcrumbs (5), useResponsive (5), useLockoutCountdown (5),
+    BottomNav (5), api (7).
+
+Manual UI verification: 10 Playwright screenshots in
+docs/phase2/screenshots/p2-6/ + 5+ in docs/phase2/screenshots/extra/.
+
+Recommendation for Phase 3:
+  pnpm --filter web add -D @vitest/coverage-v8
+  // then add `coverage: { provider: 'v8', reporter: ['text','html'] }`
+  // to vitest.config.ts and re-run `pnpm --filter web test --coverage`.
