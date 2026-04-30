@@ -10,6 +10,8 @@
 
 export * from './auth';
 export * from './common';
+export * from './customers';
+export * from './notifications';
 export * from './roles';
 export * from './users';
 
