@@ -37,6 +37,15 @@ user_roles           ← (user_id, role_id, assigned_by, assigned_at)
 
 > الصيغة: `module.action` أو `module.entity.action`.
 
+> **📊 ملاحظة (Phase 2 / P2-2 → P2-6):** المصدر الرسمي للصلاحيات هو ملف `packages/shared/src/constants/permissions.ts`. عند إجراء `pnpm db:seed` يُنشئ النظام **181 صلاحية موزّعة على 19 وحدة (modules)** — هذا هو "Single Source of Truth" المُعتمد في الكود وفي اختبارات Phase 2.
+>
+> الوحدات الـ 19 هي (بالترتيب الأبجدي): `audit_logs` (4) — `customer_transactions` (10) — `customers` (14) — `daily_income` (6) — `expense_categories` (1) — `expenses` (9) — `inventory` (3) — `notifications` (10) — `permissions` (1) — `products` (9) — `purchases` (11) — `reports` (41) — `roles` (7) — `sales` (13) — `stock_movements` (6) — `supplier_transactions` (8) — `suppliers` (9) — `system` (10) — `users` (9). المجموع = **181**.
+>
+> الفروقات بين هذا الجدول النصّي والكود:
+> 1. **`inventory`** يعرض بشكل مستقل في `permissions.ts` (3 صلاحيات: `inventory.toggle`, `inventory.movements.view`, `inventory.adjustment.create`) لكنه مُدمج هنا في §4.12 "المنتجات والمخزون" لأغراض القراءة.
+> 2. **`permissions`** module يحتوي على صلاحية واحدة فقط (`permissions.view` — قراءة كتالوج الصلاحيات للأدوار) ولا يملك قسمًا مستقلًا في هذا الجدول؛ الـ 19 وحدة الفعلية تُعرض في **Permissions Editor** على الواجهة (P2-6) وفي ناتج `GET /api/v1/permissions` (مجموعة بحقل `module`).
+> 3. تطبيق **Permissions Editor** على الواجهة (`apps/web/src/components/permissions/PermissionsEditor.tsx`) يقرأ المجموعات ديناميكيًا من الـ API، فيكفي إضافة صلاحية جديدة في `permissions.ts` لتظهر تلقائيًا في الواجهة بعد re-seed.
+
 ### 4.1 النظام والإعدادات
 ```
 system.dashboard.view

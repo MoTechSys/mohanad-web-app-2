@@ -35,6 +35,7 @@ Thumbs.db
 
 # Coverage / cache
 coverage/
+!docs/phase2/coverage/
 .nyc_output/
 .cache/
 .eslintcache

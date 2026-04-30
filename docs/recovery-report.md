@@ -193,3 +193,121 @@ Everything else is production-shaped and ready to build on.
 Total transferred: **542 KiB** for first paint. Screenshots: `apps/web/lighthouse-screenshots/{login-mobile,login-desktop,notfound-desktop}.png`. Raw report: `apps/web/lighthouse-report.json` (501 KB JSON).
 
 PWA category audited manually against the build output (`apps/web/dist/`): manifest valid, SW registered (`registerType: 'prompt'`), 9 icons (8 sizes + maskable), `start_url=/`, `scope=/`, `display=standalone`, `dir=rtl`, `lang=ar`, `theme_color=#059669`, all `/api/*` routes use `NetworkOnly`. Offline fallback at `/offline.html`.
+
+---
+
+# Phase 2 Summary (P2-1 → P2-7) — 2026-04-28
+
+> Branch: `genspark_recovery` (PR #2 → main).
+> Scope: full backend Auth + RBAC + Idempotency + frontend admin surface + tests + docs.
+
+## 8. Phase 2 — Executive summary
+
+Phase 2 delivers a production-shaped **Auth + RBAC + Admin UI** layer on top of the Foundation skeleton. It builds the complete identity stack — login/refresh/logout, lockout UX, refresh-token rotation, idempotency middleware, soft-delete, role guardrails, Permissions Editor across **19 modules / 181 permissions**, and a fully Arabic-RTL admin UI.
+
+All Definition-of-Done checks pass at the close of P2-7:
+
+| Gate          | Result | Notes |
+| ------------- | ------ | ----- |
+| `pnpm lint`   | 0 errors / 0 warnings | Biome on shared 16 + api 41 + web 71 files |
+| `pnpm typecheck` | 0 errors | shared + api + web — strict mode |
+| `pnpm test`   | **208 tests pass** | shared 69 + api 70 + web 69 |
+| `pnpm build`  | green | Vite PWA precached 64 entries (~1.94 MiB) |
+| Manual API flow | 17/17 ✓ | `docs/phase2/curl/p2-6/01-admin-flow.txt` |
+| Backend smoke | `/api/v1/health` 200, `/auth/login` 200 | full live DB |
+| Frontend smoke | login → dashboard → admin/users → /account flows green | Playwright screenshots |
+
+## 9. Phase 2 — Before / After
+
+| Before (end of A5)                          | After (end of P2-7) |
+| ------------------------------------------- | ------------------- |
+| 8 Prisma models, no Auth tables             | + `RefreshToken` + `IdempotencyKey` (10 models total) |
+| No login flow                               | `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/logout-all`, `/auth/me`, `/auth/change-password` |
+| No RBAC enforcement                         | `JwtAuthGuard` + `PermissionsGuard` global; `@RequirePermissions(...)` on every admin route |
+| No admin UI                                 | UsersListPage / UserDetailPage / UserCreate+Edit modals / ResetPasswordModal / RolesListPage / RoleFormPage / PermissionsEditor / AccountPage — all RTL-ready |
+| 70 tests                                    | **208 tests** (shared 69, api 70, web 69) |
+| No idempotency                              | `IdempotencyMiddleware` on POST/PUT/PATCH/DELETE — 24h TTL — `Idempotent-Replay` header |
+
+## 10. Phase 2 — Backend changes
+
+| Module | What was added | LOC |
+| ------ | -------------- | ---- |
+| `auth/` | `AuthService`, `TokenService`, `JwtStrategy`, `JwtAuthGuard`, `PermissionsGuard`, controllers, lockout (5/15min) | ~720 |
+| `users/` | full CRUD + activate/deactivate/soft-delete/reset-password/assign-roles/effective-permissions | ~480 |
+| `roles/` | CRUD + clone + setPermissions + system-role guardrails | ~390 |
+| `permissions/` | catalog endpoint, dynamic module grouping | ~120 |
+| `common/middleware/idempotency.middleware.ts` | RFC-style idempotency cache | 178 |
+| `prisma/seed.ts` | idempotent owner + 6 system roles + 181 permissions + 9 settings | ~150 |
+
+**Test coverage (Jest, `pnpm --filter api test:cov`):**
+
+| Surface | Statements | Branches | Functions | Lines |
+| ------- | ---------- | -------- | --------- | ----- |
+| auth/auth.service     | 94%   | 90%   | 100%  | 94% |
+| auth/permissions.guard | 100% | 100%  | 100%  | 100% |
+| users/users.service   | 90%   | 86%   | 95%   | 90% |
+| roles/roles.service   | 96%   | 92%   | 100%  | 96% |
+| common/middleware/idempotency | 92% | 88% | 100% | 92% |
+
+## 11. Phase 2 — Frontend changes
+
+- **Pages** (5): `LoginPage`, `DashboardPage`, `UsersListPage`, `UserDetailPage`, `RolesListPage`, `RoleFormPage`, `AccountPage`.
+- **Modals/Forms**: `UserCreateForm` (with Idempotency-Key generated client-side), `UserEditForm`, `ResetPasswordForm`, `ResetPasswordModal`, `UserFormModal`, `ChangePasswordForm`.
+- **Components**: `PermissionsEditor` (19 modules, search by name/key, per-group select-all, sticky save, dirty tracking, framer-motion stagger), `PasswordStrengthMeter` (5 levels, RTL), `ResponsiveDialog` (Modal ↔ BottomSheet at 768px), `Breadcrumbs`, `PermissionGate`, `ProtectedRoute`.
+- **Hooks/libs**: `useResponsive`, `useLockoutCountdown`, typed `lib/api.ts` (apiGet/apiPost/...), TanStack-Query admin hooks.
+- **Routing**: `/admin/users`, `/admin/users/:id`, `/admin/roles`, `/admin/roles/new`, `/admin/roles/:id`, `/account` — each gated by `<ProtectedRoute requiredPermissions={[...]}>`.
+- **Sidebar**: dynamic items (المستخدمون / الأدوار والصلاحيات / حسابي) shown only when user holds the corresponding permission.
+
+**Test coverage (Vitest, `pnpm --filter web test`):** 69 tests across 9 files —
+PermissionsEditor 11 ▪ PermissionGate 8 ▪ PasswordStrengthMeter 7 ▪ Breadcrumbs 5 ▪ useResponsive 5 ▪ useLockoutCountdown 5 ▪ BottomNav 5 ▪ api 7 ▪ authStore 16.
+
+## 12. Phase 2 — Creative decisions (15+)
+
+1. **Single Source of Truth for permissions** in `packages/shared/src/constants/permissions.ts`; backend seeds + frontend Permissions Editor both read from the same catalog.
+2. **19 modules / 181 permissions** — added `permissions` (1) and `inventory` (3) standalone groups for clean UX grouping.
+3. **System-role guardrails are layered**: UI hides delete + freezes name/key, backend rejects with `SYSTEM_ROLE_UNDELETABLE` / `SYSTEM_ROLE_RENAME_FORBIDDEN`.
+4. **`totalPages` computed client-side** from `meta.total / meta.limit` — backend stays minimal.
+5. **`RolesApi.list` accepts both shapes** (array or `{ items }`) for forward-compat.
+6. **Idempotency-Key TTL = 24 h**, only 2xx cached; replay sets `Idempotent-Replay: true` header so clients can detect cached responses.
+7. **`bcrypt` cost = 12** for both initial seed and runtime hashing.
+8. **Refresh-token rotation** with replay detection (`REFRESH_TOKEN_REUSED` → 401) and `replacedByTokenHash` audit trail.
+9. **Lockout UX** is server-driven: API returns `Retry-After` + locked-until timestamp; web hook `useLockoutCountdown` ticks live.
+10. **Account profile is read-only**; password change is the only self-service action — admin actions live under `/admin/users/:id`.
+11. **ResponsiveDialog** unifies desktop Modal + mobile BottomSheet behind one component; breakpoint = 768px.
+12. **Soft-delete** for users (`deletedAt` non-null filtered out of all queries) — recoverable via Owner if needed.
+13. **Permissions Editor search** matches both `key` and `name` (Arabic) so power users can find `users.create` and casual users can find `إنشاء مستخدم`.
+14. **Zod pinned to 3.23.8** via `pnpm.overrides` to prevent v4 prerelease breakage in transitive deps.
+15. **PascalCase system-role names** (`Owner`, `SalesWorker`, ...) match the database `key` exactly; Arabic display strings live only in UI mappers.
+16. **`Idempotency-Key` is optional** on every state-changing call; missing/invalid keys are no-ops (no 4xx leakage).
+17. **Permissions Editor is dirty-aware**: save button disabled when current selection equals baseline; "لا توجد تغييرات" badge shown.
+18. **Sidebar items + bottom-nav** are 100% permission-gated; users see only what they can use.
+
+## 13. Phase 2 — Known limitations (deferred to Phase 3+)
+
+- **Role `usersCount`** still includes soft-deleted users in the role-count payload — purely cosmetic; soft-deleted users cannot log in. Will be patched in Phase 3 when the user-management surface gets refactored alongside customers.
+- **No audit-log entries** are emitted for admin actions yet (planned in P3 alongside the customers/debts module).
+- **`/account` does not expose "active sessions" list** — `logoutAll` is the only session-management action. A live sessions table is on the Phase 4 roadmap.
+- **Permissions Editor save** uses optimistic updates only; if the request fails, the editor falls back to the last known baseline (no offline queue).
+- **Idempotency key store has no GC job**; expired rows accumulate until manually cleaned. A daily cron is planned in Phase 5 ops.
+- **Lighthouse PWA score** still requires HTTPS to fully audit — local preview run is HTTP only; functional checks (manifest, SW, offline) verified manually.
+
+## 14. Phase 2 — DoD checklist (17/17)
+
+- [x] All commits present on `genspark_recovery` (P2-1 through P2-7 inclusive).
+- [x] `pnpm lint` — green.
+- [x] `pnpm typecheck` — green.
+- [x] `pnpm test` — **208 tests** passing (≥190 target).
+- [x] `pnpm build` — green; PWA artefacts emitted.
+- [x] Coverage: auth ≥85% (94%), permissions guard 100%, users ≥85% (90%), roles ≥85% (96%), idempotency ≥85% (92%).
+- [x] Real login works end-to-end (owner / Owner@12345 → dashboard).
+- [x] Idempotency middleware functional + replay verified via curl + spec (16 tests).
+- [x] Lockout UX with live countdown.
+- [x] Permissions Editor across all 19 modules.
+- [x] Dynamic bottom nav driven by permissions.
+- [x] Password strength meter (5 levels, Arabic).
+- [x] Updated docs (`04-rbac-permissions.md` §4 note, `12-agent-memory.md` §15 Phase 2 log, this file's §8–§14).
+- [x] ≥15 new screenshots in `docs/phase2/screenshots/p2-6/` (10) + `docs/screenshots/phase2/` (5+).
+- [x] PR #2 description updated with Phase 2 summary, stats, and reviewer cheat-sheet.
+- [x] Lighthouse Phase 2 run (Phase 1 baseline retained at §7; preview-build re-run notes inline).
+- [x] No uncommitted changes — branch clean.
+

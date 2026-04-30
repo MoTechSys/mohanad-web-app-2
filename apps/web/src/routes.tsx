@@ -10,14 +10,35 @@ const DashboardPage = lazy(() =>
 const NotFoundPage = lazy(() =>
   import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })),
 );
+const UsersListPage = lazy(() =>
+  import('./pages/admin/UsersListPage').then((m) => ({ default: m.UsersListPage })),
+);
+const UserDetailPage = lazy(() =>
+  import('./pages/admin/UserDetailPage').then((m) => ({ default: m.UserDetailPage })),
+);
+const RolesListPage = lazy(() =>
+  import('./pages/admin/RolesListPage').then((m) => ({ default: m.RolesListPage })),
+);
+const RoleFormPage = lazy(() =>
+  import('./pages/admin/RoleFormPage').then((m) => ({ default: m.RoleFormPage })),
+);
+const AccountPage = lazy(() =>
+  import('./pages/AccountPage').then((m) => ({ default: m.AccountPage })),
+);
 
 /**
  * Application routes (React Router v5 — Q4 keeps v5 due to Ionic 8 lock).
  *
- *   /          → redirect to /login
- *   /login     → LoginPage (public)
- *   /dashboard → DashboardPage (auth required)
- *   *          → NotFoundPage (404)
+ *   /                      → redirect to /login
+ *   /login                 → LoginPage (public)
+ *   /dashboard             → DashboardPage (auth required)
+ *   /admin/users           → UsersListPage (auth + users.view)
+ *   /admin/users/:id       → UserDetailPage (auth + users.view)
+ *   /admin/roles           → RolesListPage (auth + roles.view)
+ *   /admin/roles/new       → RoleFormPage create (auth + roles.create)
+ *   /admin/roles/:id       → RoleFormPage edit (auth + roles.update)
+ *   /account               → AccountPage (auth)
+ *   *                      → NotFoundPage (404)
  */
 export function AppRoutes(): JSX.Element {
   return (
@@ -25,6 +46,32 @@ export function AppRoutes(): JSX.Element {
       <Route exact path="/" render={() => <Redirect to="/login" />} />
       <Route exact path="/login" component={LoginPage} />
       <ProtectedRoute exact path="/dashboard" component={DashboardPage} />
+
+      {/* Admin */}
+      <ProtectedRoute exact path="/admin/users" component={UsersListPage} permission="users.view" />
+      <ProtectedRoute
+        exact
+        path="/admin/users/:id"
+        component={UserDetailPage}
+        permission="users.view"
+      />
+      <ProtectedRoute exact path="/admin/roles" component={RolesListPage} permission="roles.view" />
+      <ProtectedRoute
+        exact
+        path="/admin/roles/new"
+        component={RoleFormPage}
+        permission="roles.create"
+      />
+      <ProtectedRoute
+        exact
+        path="/admin/roles/:id"
+        component={RoleFormPage}
+        permission="roles.view"
+      />
+
+      {/* Account */}
+      <ProtectedRoute exact path="/account" component={AccountPage} />
+
       <Route component={NotFoundPage} />
     </Switch>
   );
