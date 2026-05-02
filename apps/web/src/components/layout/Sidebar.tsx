@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  DollarSign,
   LayoutDashboard,
   LogOut,
   type LucideIcon,
@@ -68,6 +69,12 @@ const defaultItems: SidebarItem[] = [
     anyOf: ['expenses.view', 'expense_categories.view'],
   },
   { to: '/products', label: 'المنتجات', icon: Package, permission: 'products.view' },
+  {
+    to: '/daily-income',
+    label: 'الإيرادات',
+    icon: DollarSign,
+    anyOf: ['expenses.view', 'expenses.create'],
+  },
   { to: '/reports', label: 'التقارير', icon: BarChart3, permission: 'reports.view' },
   { to: '/settings', label: 'الإعدادات', icon: Settings, permission: 'system.settings.view' },
   // ─── Admin section ───

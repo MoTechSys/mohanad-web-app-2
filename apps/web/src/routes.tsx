@@ -48,6 +48,9 @@ const ReportsPage = lazy(() =>
 const SettingsPage = lazy(() =>
   import('./pages/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })),
 );
+const DailyIncomePage = lazy(() =>
+  import('./pages/daily-income/DailyIncomePage').then((m) => ({ default: m.DailyIncomePage })),
+);
 const ProductsPage = lazy(() =>
   import('./pages/products/ProductsPage').then((m) => ({ default: m.ProductsPage })),
 );
@@ -97,6 +100,12 @@ export function AppRoutes(): JSX.Element {
         anyOf={['inventory.view', 'products.view']}
       />
       <ProtectedRoute exact path="/products" component={ProductsPage} permission="products.view" />
+      <ProtectedRoute
+        exact
+        path="/daily-income"
+        component={DailyIncomePage}
+        anyOf={['expenses.view', 'expenses.create']}
+      />
       <ProtectedRoute
         exact
         path="/reports"
