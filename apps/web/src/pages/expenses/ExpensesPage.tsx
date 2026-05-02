@@ -15,7 +15,7 @@ interface Expense {
   type: string;
   cancelledAt?: string | null;
   expenseDate: string;
-  description?: string;
+  detailsText?: string;
   category?: { name: string } | null;
   createdBy: { fullName: string };
 }
@@ -42,7 +42,7 @@ export function ExpensesPage(): JSX.Element {
 
   const columns: Column<Expense>[] = [
     { key: 'cat', header: 'التصنيف', render: (r) => r.category?.name ?? '—' },
-    { key: 'desc', header: 'الوصف', render: (r) => r.description ?? '—' },
+    { key: 'desc', header: 'الوصف', render: (r) => r.detailsText ?? '—' },
     {
       key: 'amount',
       header: 'المبلغ',
