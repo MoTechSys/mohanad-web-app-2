@@ -383,4 +383,37 @@ export class CustomersService {
     }
     return c;
   }
+  // ─── Record customer payment ───────────────────────────────
+  async recordPayment(scope: CustomerScope, id: string, input: { amount: number; notes?: string }) {
+    const customer = await this.assertExists(scope, id);
+    const amount = Number(input.amount);
+    if (amount <= 0) throw new BadRequestException('مبلغ الدفع يجب أن يكون موجباً');
+    const before = Number(customer.currentBalance);
+    const after = before - amount;
+    return this.prisma.$transaction(async (tx) => {
+      await tx.customer.update({ where: { id }, data: { currentBalance: after } });
+      const tx_ = await tx.customerTransaction.create({
+        data: {
+          customerId: id,
+          type: 'PAYMENT',
+          amount,
+          balanceBefore: before,
+          balanceAfter: after,
+          notes: input.notes ?? null,
+          createdById: scope.actorId,
+        },
+      });
+      await tx.auditLog.create({
+        data: {
+          storeId: scope.storeId,
+          actorId: scope.actorId,
+          action: 'large_transaction',
+          entityType: 'customer',
+          entityId: id,
+          metadata: { amount, balanceBefore: before, balanceAfter: after },
+        },
+      });
+      return tx_;
+    });
+  }
 }
