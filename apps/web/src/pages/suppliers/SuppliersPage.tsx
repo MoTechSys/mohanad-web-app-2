@@ -8,6 +8,7 @@ import { apiGet } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
+import { CreateSupplierModal } from './CreateSupplierModal';
 
 interface Supplier {
   id: string;
@@ -22,6 +23,7 @@ interface ListResult {
 }
 
 export function SuppliersPage(): JSX.Element {
+  const [showCreate, setShowCreate] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const { data, isLoading } = useQuery({
@@ -62,7 +64,11 @@ export function SuppliersPage(): JSX.Element {
         title="الموردون"
         description={`${data?.meta.total ?? 0} مورد`}
         actions={
-          <button type="button" className="btn-primary flex items-center gap-2">
+          <button
+            type="button"
+            className="btn-primary flex items-center gap-2"
+            onClick={() => setShowCreate(true)}
+          >
             <Plus className="h-4 w-4" /> مورد جديد
           </button>
         }
@@ -109,6 +115,7 @@ export function SuppliersPage(): JSX.Element {
           </div>
         )}
       </Card>
+      <CreateSupplierModal open={showCreate} onClose={() => setShowCreate(false)} />
     </AppShell>
   );
 }

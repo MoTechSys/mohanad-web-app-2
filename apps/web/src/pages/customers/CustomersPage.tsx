@@ -8,6 +8,7 @@ import { apiGet } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 import { UserPlus } from 'lucide-react';
 import { useState } from 'react';
+import { CreateCustomerModal } from './CreateCustomerModal';
 
 interface Customer {
   id: string;
@@ -24,6 +25,7 @@ interface ListResult {
 }
 
 export function CustomersPage(): JSX.Element {
+  const [showCreate, setShowCreate] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
 
@@ -75,7 +77,11 @@ export function CustomersPage(): JSX.Element {
         title="العملاء"
         description={`${data?.meta.total ?? 0} عميل`}
         actions={
-          <button type="button" className="btn-primary flex items-center gap-2">
+          <button
+            type="button"
+            className="btn-primary flex items-center gap-2"
+            onClick={() => setShowCreate(true)}
+          >
             <UserPlus className="h-4 w-4" /> عميل جديد
           </button>
         }
@@ -122,6 +128,7 @@ export function CustomersPage(): JSX.Element {
           </div>
         )}
       </Card>
+      <CreateCustomerModal open={showCreate} onClose={() => setShowCreate(false)} />
     </AppShell>
   );
 }
