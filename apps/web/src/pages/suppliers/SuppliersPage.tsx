@@ -17,7 +17,6 @@ interface Supplier {
   name: string;
   phone?: string;
   currentBalance: number;
-  status: string;
 }
 interface ListResult {
   items: Supplier[];
@@ -58,15 +57,7 @@ export function SuppliersPage(): JSX.Element {
         </Badge>
       ),
     },
-    {
-      key: 'status',
-      header: 'الحالة',
-      render: (r) => (
-        <Badge variant={r.status === 'ACTIVE' ? 'success' : 'neutral'}>
-          {r.status === 'ACTIVE' ? 'نشط' : 'موقوف'}
-        </Badge>
-      ),
-    },
+
   ];
 
   return (

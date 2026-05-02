@@ -13,7 +13,7 @@ interface Expense {
   id: string;
   amount: number;
   type: string;
-  status: string;
+  cancelledAt?: string | null;
   expenseDate: string;
   description?: string;
   category?: { name: string } | null;
@@ -53,8 +53,8 @@ export function ExpensesPage(): JSX.Element {
       key: 'type',
       header: 'النوع',
       render: (r) => (
-        <Badge variant={r.type === 'FIXED' ? 'primary' : 'neutral'}>
-          {r.type === 'FIXED' ? 'ثابت' : 'متغير'}
+        <Badge variant={r.type === 'NORMAL' ? 'primary' : 'warning'}>
+          {r.type === 'NORMAL' ? 'عادي' : r.type === 'SUPPLIER_PAYMENT' ? 'دفع مورد' : r.type}
         </Badge>
       ),
     },
@@ -62,8 +62,8 @@ export function ExpensesPage(): JSX.Element {
       key: 'status',
       header: 'الحالة',
       render: (r) => (
-        <Badge variant={r.status === 'ACTIVE' ? 'success' : 'danger'}>
-          {r.status === 'ACTIVE' ? 'نشط' : 'ملغي'}
+        <Badge variant={!r.cancelledAt ? 'success' : 'danger'}>
+          {!r.cancelledAt ? 'نشط' : 'ملغي'}
         </Badge>
       ),
     },
