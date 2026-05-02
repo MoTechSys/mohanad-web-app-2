@@ -1,4 +1,5 @@
 import {
+  Archive,
   BarChart3,
   Bell,
   DollarSign,
@@ -77,6 +78,7 @@ const defaultItems: SidebarItem[] = [
     anyOf: ['expenses.view', 'expenses.create'],
   },
   { to: '/reports', label: 'التقارير', icon: BarChart3, permission: 'reports.view' },
+  { to: '/notifications', label: 'الإشعارات', icon: Bell },
   { to: '/settings', label: 'الإعدادات', icon: Settings, permission: 'system.settings.view' },
   // ─── Admin section ───
   {
@@ -87,6 +89,7 @@ const defaultItems: SidebarItem[] = [
     sectionLabel: 'الإدارة',
   },
   { to: '/admin/roles', label: 'الأدوار والصلاحيات', icon: ShieldCheck, permission: 'roles.view' },
+  { to: '/audit', label: 'سجل المراجعة', icon: ShieldCheck, permission: 'audit_logs.view' },
   // ─── Account ───
   { to: '/account', label: 'حسابي', icon: UserCircle, sectionLabel: 'الحساب' },
 ];
