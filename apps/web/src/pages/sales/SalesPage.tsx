@@ -12,9 +12,8 @@ import { CreateSaleModal } from './CreateSaleModal';
 interface Sale {
   id: string;
   invoiceNumber: string;
-  mode: string;
   paymentType: string;
-  totalAmount: number;
+  netAmount: number;
   status: string;
   createdAt: string;
   customer?: { name: string } | null;
@@ -52,11 +51,11 @@ export function SalesPage(): JSX.Element {
       render: (r) => r.customer?.name ?? <span className="text-gray-400">نقدي</span>,
     },
     {
-      key: 'mode',
+      key: 'paymentType',
       header: 'نوع الدفع',
       render: (r) => (
-        <Badge variant={r.mode === 'CASH' ? 'success' : 'warning'}>
-          {modeLabel[r.mode] ?? r.mode}
+        <Badge variant={r.paymentType === 'CASH' ? 'success' : 'warning'}>
+          {modeLabel[r.paymentType] ?? r.paymentType}
         </Badge>
       ),
     },
@@ -64,7 +63,7 @@ export function SalesPage(): JSX.Element {
       key: 'total',
       header: 'الإجمالي',
       numeric: true,
-      render: (r) => `${r.totalAmount.toLocaleString('ar-SA')} ر.س`,
+      render: (r) => `${Number(r.netAmount).toLocaleString('ar-SA')} ر.س`,
     },
     {
       key: 'status',

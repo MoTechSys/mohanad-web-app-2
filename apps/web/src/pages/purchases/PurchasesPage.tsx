@@ -12,7 +12,6 @@ import { CreatePurchaseModal } from './CreatePurchaseModal';
 interface Purchase {
   id: string;
   invoiceNumber?: string;
-  mode: string;
   paymentType: string;
   totalAmount: number;
   status: string;
@@ -48,7 +47,7 @@ export function PurchasesPage(): JSX.Element {
       key: 'total',
       header: 'الإجمالي',
       numeric: true,
-      render: (r) => `${r.totalAmount.toLocaleString('ar-SA')} ر.س`,
+      render: (r) => `${Number(r.totalAmount).toLocaleString('ar-SA')} ر.س`,
     },
     {
       key: 'status',

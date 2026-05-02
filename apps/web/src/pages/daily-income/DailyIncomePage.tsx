@@ -64,7 +64,7 @@ export function DailyIncomePage(): JSX.Element {
       key: 'amount',
       header: 'المبلغ',
       numeric: true,
-      render: (r) => `${r.amount.toLocaleString('ar-SA')} ر.س`,
+      render: (r) => `${Number(r.amount).toLocaleString('ar-SA')} ر.س`,
     },
     {
       key: 'approved',
