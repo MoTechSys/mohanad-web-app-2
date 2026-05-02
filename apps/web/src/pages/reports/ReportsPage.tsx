@@ -23,7 +23,7 @@ interface Debtor {
   id: string;
   name: string;
   phone?: string;
-  balance: number;
+  currentBalance: number;
 }
 
 export function ReportsPage(): JSX.Element {
@@ -44,7 +44,7 @@ export function ReportsPage(): JSX.Element {
       header: 'المديونية',
       numeric: true,
       render: (r) => (
-        <Badge variant="debt">{Math.abs(r.balance).toLocaleString('ar-SA')} ر.س</Badge>
+        <Badge variant="debt">{Math.abs(r.currentBalance).toLocaleString('ar-SA')} ر.س</Badge>
       ),
     },
   ];

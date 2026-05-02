@@ -16,7 +16,7 @@ interface Customer {
   id: string;
   name: string;
   phone?: string;
-  balance: number;
+  currentBalance: number;
   creditLimit: number;
   status: string;
   createdAt: string;
@@ -59,8 +59,8 @@ export function CustomersPage(): JSX.Element {
       header: 'الرصيد',
       numeric: true,
       render: (r) => (
-        <Badge variant={r.balance > 0 ? 'debt' : 'success'}>
-          {Math.abs(r.balance).toLocaleString('ar-SA')} ر.س
+        <Badge variant={r.currentBalance > 0 ? 'debt' : 'success'}>
+          {Math.abs(r.currentBalance).toLocaleString('ar-SA')} ر.س
         </Badge>
       ),
     },
@@ -74,7 +74,7 @@ export function CustomersPage(): JSX.Element {
       key: 'pay',
       header: '',
       render: (r) =>
-        r.status === 'ACTIVE' && Number(r.balance) > 0 ? (
+        r.status === 'ACTIVE' && Number(r.currentBalance) > 0 ? (
           <button
             type="button"
             className="btn-ghost text-xs py-1 px-2"
