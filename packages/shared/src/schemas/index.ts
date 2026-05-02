@@ -31,3 +31,4 @@ export const positiveMoneySchema = moneySchema.positive('يجب أن يكون أ
 export * from './suppliers';
 export * from './purchases';
 export * from './sales';
+export * from './daily-income';
