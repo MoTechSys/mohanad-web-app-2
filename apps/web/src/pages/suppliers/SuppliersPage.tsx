@@ -16,7 +16,7 @@ interface Supplier {
   id: string;
   name: string;
   phone?: string;
-  balance: number;
+  currentBalance: number;
   status: string;
 }
 interface ListResult {
@@ -53,8 +53,8 @@ export function SuppliersPage(): JSX.Element {
       header: 'المديونية',
       numeric: true,
       render: (r) => (
-        <Badge variant={r.balance > 0 ? 'warning' : 'success'}>
-          {Math.abs(r.balance).toLocaleString('ar-SA')} ر.س
+        <Badge variant={r.currentBalance > 0 ? 'warning' : 'success'}>
+          {Math.abs(r.currentBalance).toLocaleString('ar-SA')} ر.س
         </Badge>
       ),
     },
