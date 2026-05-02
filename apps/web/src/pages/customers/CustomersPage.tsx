@@ -9,6 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 import { UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { CreateCustomerModal } from './CreateCustomerModal';
+import { CustomerPaymentModal } from './CustomerPaymentModal';
 
 interface Customer {
   id: string;
@@ -26,6 +27,7 @@ interface ListResult {
 
 export function CustomersPage(): JSX.Element {
   const [showCreate, setShowCreate] = useState(false);
+  const [paymentTarget, setPaymentTarget] = useState<{ id: string; name: string } | null>(null);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
 
@@ -59,6 +61,20 @@ export function CustomersPage(): JSX.Element {
       header: 'حد الائتمان',
       numeric: true,
       render: (r) => r.creditLimit.toLocaleString('ar-SA'),
+    },
+    {
+      key: 'pay',
+      header: '',
+      render: (r) =>
+        r.status === 'ACTIVE' && Number(r.balance) > 0 ? (
+          <button
+            type="button"
+            className="btn-ghost text-xs py-1 px-2"
+            onClick={() => setPaymentTarget({ id: r.id, name: r.name })}
+          >
+            تسديد
+          </button>
+        ) : null,
     },
     {
       key: 'status',
@@ -129,6 +145,12 @@ export function CustomersPage(): JSX.Element {
         )}
       </Card>
       <CreateCustomerModal open={showCreate} onClose={() => setShowCreate(false)} />
+      <CustomerPaymentModal
+        open={paymentTarget !== null}
+        onClose={() => setPaymentTarget(null)}
+        customerId={paymentTarget?.id ?? ''}
+        customerName={paymentTarget?.name ?? ''}
+      />
     </AppShell>
   );
 }
