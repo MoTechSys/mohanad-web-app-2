@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  Bell,
   DollarSign,
   LayoutDashboard,
   LogOut,
