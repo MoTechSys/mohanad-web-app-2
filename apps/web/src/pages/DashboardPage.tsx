@@ -23,6 +23,7 @@ import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { t } from '@/i18n/ar';
+import { apiGet } from '@/lib/api';
 import { http } from '@/lib/http';
 import { formatMoney } from '@grocery/shared';
 
@@ -39,6 +40,18 @@ interface HealthEnvelope {
   meta: { requestId: string | null; timestamp: string; version: string };
 }
 
+interface DashboardReport {
+  today: {
+    sales: { total: number; count: number };
+    expenses: { total: number; count: number };
+    income: { total: number; count: number };
+    net: number;
+  };
+  outstanding: {
+    customersDebt: { total: number; count: number };
+    suppliersDebt: { total: number; count: number };
+  };
+}
 async function fetchHealth(): Promise<HealthPayload> {
   const res = await http.get<HealthEnvelope>('/api/v1/health');
   return res.data.data;
@@ -77,10 +90,16 @@ export function DashboardPage(): JSX.Element {
     refetchInterval: 30_000,
   });
 
+  const { data: dashData } = useQuery({
+    queryKey: ['dashboard-report'],
+    queryFn: () => apiGet<DashboardReport>('/api/v1/reports/dashboard'),
+    refetchInterval: 60_000,
+  });
+
   const stats = [
     {
       label: t('dashboard.todayIncome'),
-      value: formatMoney(48250),
+      value: formatMoney(dashData?.today.sales.total ?? 0),
       delta: '+12.4%',
       trend: 'up' as const,
       icon: TrendingUp,
@@ -88,7 +107,7 @@ export function DashboardPage(): JSX.Element {
     },
     {
       label: t('dashboard.todayExpenses'),
-      value: formatMoney(12480),
+      value: formatMoney(dashData?.today.expenses.total ?? 0),
       delta: '+3.2%',
       trend: 'up' as const,
       icon: Wallet,
@@ -97,7 +116,7 @@ export function DashboardPage(): JSX.Element {
     },
     {
       label: t('dashboard.netProfit'),
-      value: formatMoney(35770),
+      value: formatMoney(dashData?.today.net ?? 0),
       delta: '+18.1%',
       trend: 'up' as const,
       icon: CircleDollarSign,
@@ -106,7 +125,7 @@ export function DashboardPage(): JSX.Element {
     },
     {
       label: t('dashboard.customersWithDebt'),
-      value: '28',
+      value: String(dashData?.outstanding.customersDebt.count ?? 0),
       delta: '-4.0%',
       trend: 'down' as const,
       icon: Users,
@@ -202,28 +221,36 @@ export function DashboardPage(): JSX.Element {
               description="بيع نقدي سريع"
               icon={Receipt}
               tone="primary"
-              onClick={() => toast.info('سيُفعَّل في المرحلة 6 (Sales)')}
+              onClick={() => {
+                window.location.href = '/sales';
+              }}
             />
             <QuickActionCard
               label={t('dashboard.addDebt')}
               description="تسجيل دين على عميل"
               icon={Plus}
               tone="warning"
-              onClick={() => toast.info('سيُفعَّل في المرحلة 3 (Customers)')}
+              onClick={() => {
+                window.location.href = '/customers';
+              }}
             />
             <QuickActionCard
               label={t('dashboard.recordPayment')}
               description="استلام سداد"
               icon={CircleDollarSign}
               tone="success"
-              onClick={() => toast.info('سيُفعَّل في المرحلة 3 (Customers)')}
+              onClick={() => {
+                window.location.href = '/customers';
+              }}
             />
             <QuickActionCard
               label={t('dashboard.addExpense')}
               description="تسجيل مصروف يومي"
               icon={UserPlus}
               tone="info"
-              onClick={() => toast.info('سيُفعَّل في المرحلة 5 (Expenses)')}
+              onClick={() => {
+                window.location.href = '/expenses';
+              }}
             />
           </div>
         </div>
