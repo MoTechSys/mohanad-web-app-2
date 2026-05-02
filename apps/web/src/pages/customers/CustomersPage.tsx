@@ -8,6 +8,7 @@ import { apiGet } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 import { UserPlus } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { CreateCustomerModal } from './CreateCustomerModal';
 import { CustomerPaymentModal } from './CustomerPaymentModal';
 
@@ -43,7 +44,14 @@ export function CustomersPage(): JSX.Element {
     {
       key: 'name',
       header: 'الاسم',
-      render: (r) => <span className="font-medium text-ink">{r.name}</span>,
+      render: (r) => (
+        <Link
+          to={'/customers/' + r.id}
+          className="font-medium text-ink hover:text-primary hover:underline"
+        >
+          {r.name}
+        </Link>
+      ),
     },
     { key: 'phone', header: 'الجوال', render: (r) => r.phone ?? '—' },
     {
