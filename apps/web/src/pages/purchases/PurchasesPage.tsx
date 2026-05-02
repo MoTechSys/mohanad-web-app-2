@@ -14,7 +14,7 @@ interface Purchase {
   invoiceNumber?: string;
   paymentType: string;
   totalAmount: number;
-  status: string;
+  cancelledAt?: string | null;
   purchaseDate: string;
   supplier: { name: string };
 }
@@ -53,8 +53,8 @@ export function PurchasesPage(): JSX.Element {
       key: 'status',
       header: 'الحالة',
       render: (r) => (
-        <Badge variant={r.status === 'ACTIVE' ? 'success' : 'danger'}>
-          {r.status === 'ACTIVE' ? 'نشط' : 'ملغي'}
+        <Badge variant={!r.cancelledAt ? 'success' : 'danger'}>
+          {!r.cancelledAt ? 'نشط' : 'ملغي'}
         </Badge>
       ),
     },

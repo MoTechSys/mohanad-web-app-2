@@ -14,7 +14,7 @@ interface Sale {
   invoiceNumber: string;
   paymentType: string;
   netAmount: number;
-  status: string;
+  cancelledAt?: string | null;
   createdAt: string;
   customer?: { name: string } | null;
   createdBy: { fullName: string };
@@ -25,11 +25,6 @@ interface ListResult {
 }
 
 const modeLabel: Record<string, string> = { CASH: 'نقدي', CREDIT: 'آجل' };
-const statusLabel: Record<string, string> = { ACTIVE: 'نشط', CANCELLED: 'ملغي' };
-const statusVariant: Record<string, 'success' | 'danger'> = {
-  ACTIVE: 'success',
-  CANCELLED: 'danger',
-};
 
 export function SalesPage(): JSX.Element {
   const [showCreate, setShowCreate] = useState(false);
@@ -69,8 +64,8 @@ export function SalesPage(): JSX.Element {
       key: 'status',
       header: 'الحالة',
       render: (r) => (
-        <Badge variant={statusVariant[r.status] ?? 'neutral'}>
-          {statusLabel[r.status] ?? r.status}
+        <Badge variant={!r.cancelledAt ? 'success' : 'danger'}>
+          {!r.cancelledAt ? 'نشط' : 'ملغي'}
         </Badge>
       ),
     },
