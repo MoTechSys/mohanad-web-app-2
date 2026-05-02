@@ -16,6 +16,7 @@ import { ExpensesModule } from './modules/expenses/expenses.module';
 import { SalesModule } from './modules/sales/sales.module';
 import { DailyIncomeModule } from './modules/daily-income/daily-income.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
 import { HealthModule } from './modules/health/health.module';
 import { ProductsModule } from './modules/products/products.module';
 import { PurchasesModule } from './modules/purchases/purchases.module';
@@ -110,6 +111,9 @@ import { UsersModule } from './modules/users/users.module';
     // ─── Phase 6 ────────────────────────────────────────────
     DailyIncomeModule,
     ReportsModule,
+
+    // ─── Phase 7 ────────────────────────────────────────────
+    InventoryModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

@@ -124,6 +124,10 @@ model User {
   dailyIncomeApproved  DailyIncome[] @relation("DailyIncomeApprovedBy")
   dailyIncomeCancelled DailyIncome[] @relation("DailyIncomeCancelledBy")
 
+  // Phase 7 relations
+  stockMovementsCreated   StockMovement[] @relation("StockMovementCreatedBy")
+  stockMovementsCancelled StockMovement[] @relation("StockMovementCancelledBy")
+
   @@index([storeId])
   @@index([isActive])
   @@map("users")
@@ -596,8 +600,9 @@ model Product {
   deletedAt       DateTime?     @map("deleted_at")
 
   createdBy     User           @relation("ProductCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
-  purchaseItems PurchaseItem[]
-  saleItems     SaleItem[]
+  purchaseItems  PurchaseItem[]
+  saleItems      SaleItem[]
+  stockMovements StockMovement[]
 
   @@index([storeId])
   @@index([barcode])
@@ -758,4 +763,46 @@ model DailyIncome {
   @@index([isApproved])
   @@index([cancelledAt])
   @@map("daily_incomes")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  STOCK MOVEMENTS — Phase 7 (P7-1)
+//  حركات المخزون (وارد / صادر / تعديل)
+// ═══════════════════════════════════════════════════════════════
+
+model StockMovement {
+  id           String              @id @default(cuid())
+  storeId      String              @map("store_id")
+  productId    String              @map("product_id")
+  type         StockMovementType
+  quantityBefore Decimal           @map("quantity_before") @db.Decimal(14, 3)
+  quantityChange Decimal           @map("quantity_change") @db.Decimal(14, 3)
+  quantityAfter  Decimal           @map("quantity_after")  @db.Decimal(14, 3)
+  reason        String?
+  referenceType String?            @map("reference_type") // 'PURCHASE' | 'SALE' | 'ADJUSTMENT' | 'RETURN'
+  referenceId   String?            @map("reference_id")
+  createdById   String             @map("created_by_id")
+  createdAt     DateTime           @default(now()) @map("created_at")
+  cancelledAt   DateTime?          @map("cancelled_at")
+  cancelledById String?            @map("cancelled_by_id")
+  cancelReason  String?            @map("cancel_reason")
+
+  product     Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  createdBy   User    @relation("StockMovementCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  cancelledBy User?   @relation("StockMovementCancelledBy", fields: [cancelledById], references: [id], onDelete: SetNull)
+
+  @@index([storeId])
+  @@index([productId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([referenceType, referenceId])
+  @@map("stock_movements")
+}
+
+enum StockMovementType {
+  IN         // وارد (شراء / استلام)
+  OUT        // صادر (بيع / استخدام)
+  ADJUSTMENT // تعديل يدوي
+  RETURN     // مرتجع
+  LOSS       // خسارة / تلف
 }
