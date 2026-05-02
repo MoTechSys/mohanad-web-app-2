@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   LogOut,
   type LucideIcon,
+  Package,
   Receipt,
   Settings,
   ShieldCheck,
@@ -66,6 +67,7 @@ const defaultItems: SidebarItem[] = [
     icon: Wallet,
     anyOf: ['expenses.view', 'expense_categories.view'],
   },
+  { to: '/products', label: 'المنتجات', icon: Package, permission: 'products.view' },
   { to: '/reports', label: 'التقارير', icon: BarChart3, permission: 'reports.view' },
   { to: '/settings', label: 'الإعدادات', icon: Settings, permission: 'system.settings.view' },
   // ─── Admin section ───
