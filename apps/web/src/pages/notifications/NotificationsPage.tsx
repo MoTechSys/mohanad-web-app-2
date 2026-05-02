@@ -12,9 +12,8 @@ interface Notification {
   title: string;
   body: string;
   type: string;
-  isRead: boolean;
   readAt?: string | null;
-  createdAt: string;
+  sentAt: string;
 }
 interface ListResult {
   items: Notification[];
@@ -55,7 +54,7 @@ export function NotificationsPage(): JSX.Element {
       key: 'status',
       header: '',
       render: (r) =>
-        r.isRead ? (
+        !r.readAt ? (
           <BellOff className="h-4 w-4 text-gray-300" />
         ) : (
           <Bell className="h-4 w-4 text-primary animate-pulse" />
@@ -73,7 +72,7 @@ export function NotificationsPage(): JSX.Element {
       key: 'title',
       header: 'العنوان',
       render: (r) => (
-        <span className={r.isRead ? 'text-gray-500' : 'font-semibold text-ink'}>{r.title}</span>
+        <span className={!r.readAt ? 'text-gray-500' : 'font-semibold text-ink'}>{r.title}</span>
       ),
     },
     {
@@ -85,16 +84,14 @@ export function NotificationsPage(): JSX.Element {
       key: 'date',
       header: 'الوقت',
       render: (r) => (
-        <span className="text-xs text-gray-400">
-          {new Date(r.createdAt).toLocaleString('ar-SA')}
-        </span>
+        <span className="text-xs text-gray-400">{new Date(r.sentAt).toLocaleString('ar-SA')}</span>
       ),
     },
     {
       key: 'actions',
       header: '',
       render: (r) =>
-        !r.isRead ? (
+        !r.readAt ? (
           <button
             type="button"
             className="btn-ghost text-xs py-1 px-2"
