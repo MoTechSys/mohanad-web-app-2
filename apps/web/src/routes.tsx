@@ -51,6 +51,12 @@ const SettingsPage = lazy(() =>
 const NotificationsPage = lazy(() =>
   import('./pages/notifications/NotificationsPage').then((m) => ({ default: m.NotificationsPage })),
 );
+const CustomerDetailPage = lazy(() =>
+  import('./pages/customers/CustomerDetailPage').then((m) => ({ default: m.CustomerDetailPage })),
+);
+const SupplierDetailPage = lazy(() =>
+  import('./pages/suppliers/SupplierDetailPage').then((m) => ({ default: m.SupplierDetailPage })),
+);
 const AuditPage = lazy(() =>
   import('./pages/audit/AuditPage').then((m) => ({ default: m.AuditPage })),
 );

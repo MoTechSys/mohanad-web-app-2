@@ -6,6 +6,8 @@ import { type Column, DataTable } from '@/components/ui/DataTable';
 import { apiGet } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, Boxes, Package } from 'lucide-react';
+import { useState } from 'react';
+import { AddStockMovementModal } from './AddStockMovementModal';
 
 interface Product {
   id: string;
@@ -23,6 +25,7 @@ interface Stats {
 }
 
 export function InventoryPage(): JSX.Element {
+  const [showAddMovement, setShowAddMovement] = useState(false);
   const { data: stats } = useQuery({
     queryKey: ['inv-stats'],
     queryFn: () => apiGet<Stats>('/api/v1/inventory/stats'),
@@ -117,6 +120,7 @@ export function InventoryPage(): JSX.Element {
           emptyTitle="جميع المنتجات لديها مخزون كافٍ"
         />
       </Card>
+      <AddStockMovementModal open={showAddMovement} onClose={() => setShowAddMovement(false)} />
     </AppShell>
   );
 }

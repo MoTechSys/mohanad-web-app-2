@@ -8,6 +8,7 @@ import { apiGet } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { CreateSupplierModal } from './CreateSupplierModal';
 import { SupplierPaymentModal } from './SupplierPaymentModal';
 
@@ -37,7 +38,15 @@ export function SuppliersPage(): JSX.Element {
   });
 
   const columns: Column<Supplier>[] = [
-    { key: 'name', header: 'الاسم', render: (r) => <span className="font-medium">{r.name}</span> },
+    {
+      key: 'name',
+      header: 'الاسم',
+      render: (r) => (
+        <Link to={'/suppliers/' + r.id} className="font-medium hover:text-primary hover:underline">
+          {r.name}
+        </Link>
+      ),
+    },
     { key: 'phone', header: 'الجوال', render: (r) => r.phone ?? '—' },
     {
       key: 'balance',
