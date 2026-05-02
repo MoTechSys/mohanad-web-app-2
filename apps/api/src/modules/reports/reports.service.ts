@@ -88,12 +88,14 @@ export class ReportsService {
       this.prisma.sale.groupBy({
         by: ['paymentType'],
         where: { storeId, cancelledAt: null, saleDate: { gte: dateFrom, lte: dateTo } },
+        orderBy: { paymentType: 'asc' },
         _sum: { netAmount: true },
         _count: true,
       }),
       this.prisma.expense.groupBy({
         by: ['type'],
         where: { storeId, cancelledAt: null, expenseDate: { gte: dateFrom, lte: dateTo } },
+        orderBy: { type: 'asc' },
         _sum: { amount: true },
         _count: true,
       }),
@@ -104,10 +106,10 @@ export class ReportsService {
       }),
     ]);
 
-    const totalSales = sales.reduce((s, g) => s + Number(g._sum.netAmount ?? 0), 0);
-    const cashSales = sales.find((g) => g.paymentType === 'CASH')?._sum.netAmount ?? 0;
-    const creditSales = sales.find((g) => g.paymentType === 'CREDIT')?._sum.netAmount ?? 0;
-    const totalExpenses = expenses.reduce((s, g) => s + Number(g._sum.amount ?? 0), 0);
+    const totalSales = sales.reduce((s, g) => s + Number(g._sum?.netAmount ?? 0), 0);
+    const cashSales = sales.find((g) => g.paymentType === 'CASH')?._sum?.netAmount ?? 0;
+    const creditSales = sales.find((g) => g.paymentType === 'CREDIT')?._sum?.netAmount ?? 0;
+    const totalExpenses = expenses.reduce((s, g) => s + Number(g._sum?.amount ?? 0), 0);
     const totalIncome = Number(incomes._sum.amount ?? 0);
 
     return {
@@ -116,15 +118,15 @@ export class ReportsService {
         total: totalSales,
         cash: Number(cashSales),
         credit: Number(creditSales),
-        count: sales.reduce((s, g) => s + g._count, 0),
+        count: sales.reduce((s, g) => s + Number(g._count ?? 0), 0),
       },
       expenses: {
         total: totalExpenses,
-        count: expenses.reduce((s, g) => s + g._count, 0),
+        count: expenses.reduce((s, g) => s + Number(g._count ?? 0), 0),
         byType: expenses.map((g) => ({
           type: g.type,
-          total: Number(g._sum.amount ?? 0),
-          count: g._count,
+          total: Number(g._sum?.amount ?? 0),
+          count: Number(g._count ?? 0),
         })),
       },
       income: { total: totalIncome, count: incomes._count ?? 0 },

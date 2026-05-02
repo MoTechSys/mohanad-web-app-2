@@ -88,7 +88,7 @@ export class SettingsService {
         enabled: true,
       },
       include: {
-        customer: { select: { id: true, name: true, phone: true, balance: true } },
+        customer: { select: { id: true, name: true, phone: true, currentBalance: true } },
       },
       orderBy: { lastSentAt: 'asc' },
     });
