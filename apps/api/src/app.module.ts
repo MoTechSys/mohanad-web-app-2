@@ -12,7 +12,12 @@ import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { configValidationSchema } from './config/env.validation';
 import { AuthModule } from './modules/auth/auth.module';
 import { CustomersModule } from './modules/customers/customers.module';
+import { ExpensesModule } from './modules/expenses/expenses.module';
+import { SalesModule } from './modules/sales/sales.module';
 import { HealthModule } from './modules/health/health.module';
+import { ProductsModule } from './modules/products/products.module';
+import { PurchasesModule } from './modules/purchases/purchases.module';
+import { SuppliersModule } from './modules/suppliers/suppliers.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
 import { PrismaModule } from './modules/prisma/prisma.module';
@@ -90,6 +95,15 @@ import { UsersModule } from './modules/users/users.module';
     // ─── Phase 3 ────────────────────────────────
     CustomersModule,
     NotificationsModule,
+
+    // ─── Phase 4 ────────────────────────────────────────────
+    SuppliersModule,
+    PurchasesModule,
+    ProductsModule,
+    ExpensesModule,
+
+    // ─── Phase 5 ────────────────────────────────────────────
+    SalesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
