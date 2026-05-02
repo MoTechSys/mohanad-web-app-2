@@ -49,6 +49,7 @@ model Store {
   auditLogs     AuditLog[]
   customers     Customer[]
   notifications Notification[]
+  suppliers     Supplier[]
 
   @@map("stores")
 }
@@ -103,6 +104,20 @@ model User {
   transactionsCreated   CustomerTransaction[] @relation("TxCreatedBy")
   transactionsCancelled CustomerTransaction[] @relation("TxCancelledBy")
   notifications         Notification[]
+
+  // Phase 4 relations
+  suppliersCreated    Supplier[]            @relation("SupplierCreatedBy")
+  supplierTxCreated   SupplierTransaction[] @relation("SupplierTxCreatedBy")
+  supplierTxCancelled SupplierTransaction[] @relation("SupplierTxCancelledBy")
+  purchasesCreated    Purchase[]            @relation("PurchaseCreatedBy")
+  purchasesCancelled  Purchase[]            @relation("PurchaseCancelledBy")
+  productsCreated     Product[]             @relation("ProductCreatedBy")
+  expensesCreated     Expense[]             @relation("ExpenseCreatedBy")
+  expensesCancelled   Expense[]             @relation("ExpenseCancelledBy")
+
+  // Phase 5 relations
+  salesCreated    Sale[] @relation("SaleCreatedBy")
+  salesCancelled  Sale[] @relation("SaleCancelledBy")
 
   @@index([storeId])
   @@index([isActive])
@@ -290,6 +305,7 @@ model Customer {
   store            Store                     @relation(fields: [storeId], references: [id], onDelete: Cascade)
   createdBy        User                      @relation("CustomerCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   transactions     CustomerTransaction[]
+  sales            Sale[]
   reminderSettings CustomerReminderSettings?
 
   @@index([storeId])
@@ -423,4 +439,285 @@ enum AuditAction {
   large_transaction
   export
   print
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+//  SUPPLIERS — Phase 4 (P4-1)
+// ═══════════════════════════════════════════════════════════════
+
+model Supplier {
+  id             String    @id @default(cuid())
+  storeId        String    @map("store_id")
+  name           String
+  phone          String?
+  address        String?
+  openingBalance Decimal   @default(0) @map("opening_balance") @db.Decimal(14, 2)
+  currentBalance Decimal   @default(0) @map("current_balance") @db.Decimal(14, 2)
+  notes          String?
+  createdById    String    @map("created_by_id")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  store        Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  createdBy    User                  @relation("SupplierCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  transactions SupplierTransaction[]
+  purchases    Purchase[]
+  expenses     Expense[]
+
+  @@index([storeId])
+  @@index([deletedAt])
+  @@index([name])
+  @@map("suppliers")
+}
+
+model SupplierTransaction {
+  id            String                  @id @default(cuid())
+  storeId       String                  @map("store_id")
+  supplierId    String                  @map("supplier_id")
+  type          SupplierTransactionType
+  amount        Decimal                 @db.Decimal(14, 2)
+  balanceBefore Decimal                 @map("balance_before") @db.Decimal(14, 2)
+  balanceAfter  Decimal                 @map("balance_after") @db.Decimal(14, 2)
+  notes         String?
+  referenceType String?                 @map("reference_type")
+  referenceId   String?                 @map("reference_id")
+  cancelledAt   DateTime?               @map("cancelled_at")
+  cancelledById String?                 @map("cancelled_by_id")
+  cancelReason  String?                 @map("cancel_reason")
+  createdById   String                  @map("created_by_id")
+  createdAt     DateTime                @default(now()) @map("created_at")
+
+  supplier    Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  createdBy   User     @relation("SupplierTxCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  cancelledBy User?    @relation("SupplierTxCancelledBy", fields: [cancelledById], references: [id], onDelete: SetNull)
+
+  @@index([supplierId])
+  @@index([storeId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("supplier_transactions")
+}
+
+enum SupplierTransactionType {
+  CREDIT_PURCHASE
+  PAYMENT
+  ADJUSTMENT
+  OPENING
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PURCHASES — Phase 4 (P4-2)
+// ═══════════════════════════════════════════════════════════════
+
+model Purchase {
+  id                 String       @id @default(cuid())
+  storeId            String       @map("store_id")
+  supplierId         String?      @map("supplier_id")
+  supplierNameManual String?      @map("supplier_name_manual")
+  purchaseMode       PurchaseMode @map("purchase_mode")
+  paymentType        PaymentType  @map("payment_type")
+  totalAmount        Decimal      @map("total_amount") @db.Decimal(14, 2)
+  detailsText        String?      @map("details_text")
+  invoiceNumber      String?      @map("invoice_number")
+  purchaseDate       DateTime     @default(now()) @map("purchase_date")
+  createdById        String       @map("created_by_id")
+  createdAt          DateTime     @default(now()) @map("created_at")
+  updatedAt          DateTime     @updatedAt @map("updated_at")
+  cancelledAt        DateTime?    @map("cancelled_at")
+  cancelledById      String?      @map("cancelled_by_id")
+  cancelReason       String?      @map("cancel_reason")
+
+  supplier    Supplier?      @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  createdBy   User           @relation("PurchaseCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  cancelledBy User?          @relation("PurchaseCancelledBy", fields: [cancelledById], references: [id], onDelete: SetNull)
+  items       PurchaseItem[]
+  expenses    Expense[]
+
+  @@index([storeId])
+  @@index([supplierId])
+  @@index([purchaseDate])
+  @@map("purchases")
+}
+
+model PurchaseItem {
+  id           String   @id @default(cuid())
+  purchaseId   String   @map("purchase_id")
+  productId    String?  @map("product_id")
+  nameSnapshot String   @map("name_snapshot")
+  quantity     Decimal  @db.Decimal(14, 3)
+  unitCost     Decimal  @map("unit_cost") @db.Decimal(14, 2)
+  totalCost    Decimal  @map("total_cost") @db.Decimal(14, 2)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  product  Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([purchaseId])
+  @@map("purchase_items")
+}
+
+enum PurchaseMode {
+  TOTAL_ONLY
+  DETAILED_ITEMS
+}
+
+enum PaymentType {
+  CASH
+  CREDIT
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PRODUCTS — Phase 4 (P4-3)
+// ═══════════════════════════════════════════════════════════════
+
+model Product {
+  id              String        @id @default(cuid())
+  storeId         String        @map("store_id")
+  name            String
+  barcode         String?
+  unit            String        @default("حبة")
+  purchasePrice   Decimal       @default(0) @map("purchase_price") @db.Decimal(14, 2)
+  salePrice       Decimal       @default(0) @map("sale_price") @db.Decimal(14, 2)
+  currentQuantity Decimal       @default(0) @map("current_quantity") @db.Decimal(14, 3)
+  minQuantity     Decimal       @default(0) @map("min_quantity") @db.Decimal(14, 3)
+  trackInventory  Boolean       @default(true) @map("track_inventory")
+  status          ProductStatus @default(ACTIVE)
+  notes           String?
+  createdById     String        @map("created_by_id")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  deletedAt       DateTime?     @map("deleted_at")
+
+  createdBy     User           @relation("ProductCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  purchaseItems PurchaseItem[]
+  saleItems     SaleItem[]
+
+  @@index([storeId])
+  @@index([barcode])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("products")
+}
+
+enum ProductStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  EXPENSES — Phase 4 (P4-4)
+// ═══════════════════════════════════════════════════════════════
+
+model ExpenseCategory {
+  id        String   @id @default(cuid())
+  storeId   String   @map("store_id")
+  name      String
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  expenses Expense[]
+
+  @@unique([storeId, name])
+  @@index([storeId])
+  @@map("expense_categories")
+}
+
+model Expense {
+  id          String      @id @default(cuid())
+  storeId     String      @map("store_id")
+  type        ExpenseType
+  categoryId  String?     @map("category_id")
+  supplierId  String?     @map("supplier_id")
+  purchaseId  String?     @map("purchase_id")
+  amount      Decimal     @db.Decimal(14, 2)
+  detailsText String?     @map("details_text")
+  expenseDate DateTime    @default(now()) @map("expense_date")
+  createdById String      @map("created_by_id")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  cancelledAt   DateTime? @map("cancelled_at")
+  cancelledById String?   @map("cancelled_by_id")
+  cancelReason  String?   @map("cancel_reason")
+
+  category    ExpenseCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  supplier    Supplier?        @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  purchase    Purchase?        @relation(fields: [purchaseId], references: [id], onDelete: SetNull)
+  createdBy   User             @relation("ExpenseCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  cancelledBy User?            @relation("ExpenseCancelledBy", fields: [cancelledById], references: [id], onDelete: SetNull)
+
+  @@index([storeId])
+  @@index([type])
+  @@index([expenseDate])
+  @@index([supplierId])
+  @@map("expenses")
+}
+
+enum ExpenseType {
+  NORMAL
+  SUPPLIER_PAYMENT
+  CASH_PURCHASE
+  OTHER
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SALES — Phase 5 (P5-1)
+// ═══════════════════════════════════════════════════════════════
+
+model Sale {
+  id          String      @id @default(cuid())
+  storeId     String      @map("store_id")
+  customerId  String?     @map("customer_id")
+  saleMode    SaleMode    @default(TOTAL_ONLY) @map("sale_mode")
+  paymentType PaymentType @map("payment_type")
+  totalAmount Decimal     @db.Decimal(14, 2) @map("total_amount")
+  discountAmount Decimal  @default(0) @db.Decimal(14, 2) @map("discount_amount")
+  netAmount   Decimal     @db.Decimal(14, 2) @map("net_amount")
+  detailsText String?     @map("details_text")
+  invoiceNumber String?   @unique @map("invoice_number")
+  saleDate    DateTime    @default(now()) @map("sale_date")
+  createdById String      @map("created_by_id")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  cancelledAt   DateTime? @map("cancelled_at")
+  cancelledById String?   @map("cancelled_by_id")
+  cancelReason  String?   @map("cancel_reason")
+
+  customer    Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  createdBy   User       @relation("SaleCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  cancelledBy User?      @relation("SaleCancelledBy", fields: [cancelledById], references: [id], onDelete: SetNull)
+  items       SaleItem[]
+
+  @@index([storeId])
+  @@index([customerId])
+  @@index([paymentType])
+  @@index([saleDate])
+  @@index([cancelledAt])
+  @@map("sales")
+}
+
+model SaleItem {
+  id             String   @id @default(cuid())
+  saleId         String   @map("sale_id")
+  productId      String?  @map("product_id")
+  nameSnapshot   String   @map("name_snapshot")
+  quantity       Decimal  @db.Decimal(14, 3)
+  unitPrice      Decimal  @db.Decimal(14, 2) @map("unit_price")
+  totalPrice     Decimal  @db.Decimal(14, 2) @map("total_price")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  sale    Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([saleId])
+  @@index([productId])
+  @@map("sale_items")
+}
+
+enum SaleMode {
+  TOTAL_ONLY
+  DETAILED_ITEMS
 }
