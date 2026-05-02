@@ -119,6 +119,11 @@ model User {
   salesCreated    Sale[] @relation("SaleCreatedBy")
   salesCancelled  Sale[] @relation("SaleCancelledBy")
 
+  // Phase 6 relations
+  dailyIncomeCreated   DailyIncome[] @relation("DailyIncomeCreatedBy")
+  dailyIncomeApproved  DailyIncome[] @relation("DailyIncomeApprovedBy")
+  dailyIncomeCancelled DailyIncome[] @relation("DailyIncomeCancelledBy")
+
   @@index([storeId])
   @@index([isActive])
   @@map("users")
@@ -720,4 +725,37 @@ model SaleItem {
 enum SaleMode {
   TOTAL_ONLY
   DETAILED_ITEMS
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  DAILY INCOME — Phase 6 (P6-1)
+//  إيرادات يومية من مصادر غير المبيعات (نقدية يدوية)
+// ═══════════════════════════════════════════════════════════════
+
+model DailyIncome {
+  id          String    @id @default(cuid())
+  storeId     String    @map("store_id")
+  amount      Decimal   @db.Decimal(14, 2)
+  source      String    @default("نقدي") // مصدر الإيراد
+  detailsText String?   @map("details_text")
+  incomeDate  DateTime  @default(now()) @map("income_date")
+  isApproved  Boolean   @default(false) @map("is_approved")
+  approvedById String?  @map("approved_by_id")
+  approvedAt   DateTime? @map("approved_at")
+  createdById  String   @map("created_by_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  cancelledAt  DateTime? @map("cancelled_at")
+  cancelledById String? @map("cancelled_by_id")
+  cancelReason  String? @map("cancel_reason")
+
+  createdBy   User  @relation("DailyIncomeCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  approvedBy  User? @relation("DailyIncomeApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  cancelledBy User? @relation("DailyIncomeCancelledBy", fields: [cancelledById], references: [id], onDelete: SetNull)
+
+  @@index([storeId])
+  @@index([incomeDate])
+  @@index([isApproved])
+  @@index([cancelledAt])
+  @@map("daily_incomes")
 }
