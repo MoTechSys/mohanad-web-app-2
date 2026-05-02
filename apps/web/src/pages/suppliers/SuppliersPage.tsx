@@ -52,8 +52,8 @@ export function SuppliersPage(): JSX.Element {
       header: 'المديونية',
       numeric: true,
       render: (r) => (
-        <Badge variant={r.currentBalance > 0 ? 'warning' : 'success'}>
-          {Math.abs(r.currentBalance).toLocaleString('ar-SA')} ر.س
+        <Badge variant={(r.currentBalance ?? 0) > 0 ? 'warning' : 'success'}>
+          {Math.abs(r.currentBalance ?? 0).toLocaleString('ar-SA')} ر.س
         </Badge>
       ),
     },
