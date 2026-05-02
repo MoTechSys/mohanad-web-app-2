@@ -76,7 +76,7 @@ export default defineConfig({
     port: 5173,
     host: '0.0.0.0',
     strictPort: true,
-    allowedHosts: ['.sandbox.novita.ai', '.railway.app', '.vercel.app', 'localhost', '127.0.0.1'],
+    allowedHosts: true,
     proxy: {
       '/api': {
         target: process.env.VITE_API_URL ?? 'http://localhost:3001',
