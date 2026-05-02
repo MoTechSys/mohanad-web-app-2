@@ -11,12 +11,12 @@ import { useState } from 'react';
 interface AuditLog {
   id: string;
   action: string;
-  entity: string;
+  entityType: string;
   entityId?: string;
   changes?: Record<string, unknown>;
   ipAddress?: string;
   createdAt: string;
-  user?: { fullName: string; username: string };
+  actor?: { fullName: string; username: string };
 }
 interface ListResult {
   items: AuditLog[];
@@ -42,7 +42,7 @@ export function AuditPage(): JSX.Element {
     queryKey: ['audit', page, search],
     queryFn: () =>
       apiGet<ListResult>(
-        `/api/v1/audit?page=${page}&limit=30${search ? `&entity=${encodeURIComponent(search)}` : ''}`,
+        `/api/v1/audit?page=${page}&limit=30${search ? `&entityType=${encodeURIComponent(search)}` : ''}`,
       ),
   });
 
@@ -58,7 +58,7 @@ export function AuditPage(): JSX.Element {
     {
       key: 'entity',
       header: 'الكيان',
-      render: (r) => <span className="font-mono text-xs">{r.entity}</span>,
+      render: (r) => <span className="font-mono text-xs">{r.entityType}</span>,
     },
     {
       key: 'entityId',
@@ -71,9 +71,9 @@ export function AuditPage(): JSX.Element {
       key: 'user',
       header: 'المستخدم',
       render: (r) =>
-        r.user ? (
+        r.actor ? (
           <span>
-            {r.user.fullName} <span className="text-gray-400 text-xs">@{r.user.username}</span>
+            {r.actor.fullName} <span className="text-gray-400 text-xs">@{r.actor.username}</span>
           </span>
         ) : (
           <span className="text-gray-400">نظام</span>
