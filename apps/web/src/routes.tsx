@@ -153,6 +153,24 @@ export function AppRoutes(): JSX.Element {
         permission="roles.view"
       />
 
+      {/* Notifications & Audit */}
+      <ProtectedRoute exact path="/notifications" component={NotificationsPage} />
+      <ProtectedRoute exact path="/audit" component={AuditPage} permission="audit_logs.view" />
+
+      {/* Detail pages */}
+      <ProtectedRoute
+        exact
+        path="/customers/:id"
+        component={CustomerDetailPage}
+        permission="customers.view"
+      />
+      <ProtectedRoute
+        exact
+        path="/suppliers/:id"
+        component={SupplierDetailPage}
+        permission="suppliers.view"
+      />
+
       {/* Account */}
       <ProtectedRoute exact path="/account" component={AccountPage} />
 
