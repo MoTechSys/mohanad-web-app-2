@@ -94,7 +94,7 @@ export function ExpensesPage(): JSX.Element {
           <Card>
             <p className="text-xs text-gray-500">مصاريف اليوم</p>
             <p className="text-2xl font-bold text-ink mt-1">
-              {todayStats.total.toLocaleString('ar-SA')}{' '}
+              {(todayStats.total ?? 0).toLocaleString('ar-SA')}{' '}
               <span className="text-sm font-normal text-gray-500">ر.س</span>
             </p>
           </Card>

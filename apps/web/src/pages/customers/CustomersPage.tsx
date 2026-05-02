@@ -16,8 +16,8 @@ interface Customer {
   id: string;
   name: string;
   phone?: string;
-  currentBalance: number;
-  creditLimit: number;
+  currentBalance: number | null;
+  creditLimit: number | null;
   status: string;
   createdAt: string;
 }
@@ -59,8 +59,8 @@ export function CustomersPage(): JSX.Element {
       header: 'الرصيد',
       numeric: true,
       render: (r) => (
-        <Badge variant={r.currentBalance > 0 ? 'debt' : 'success'}>
-          {Math.abs(r.currentBalance).toLocaleString('ar-SA')} ر.س
+        <Badge variant={(r.currentBalance ?? 0) > 0 ? 'debt' : 'success'}>
+          {Math.abs(r.currentBalance ?? 0).toLocaleString('ar-SA')} ر.س
         </Badge>
       ),
     },
@@ -68,7 +68,7 @@ export function CustomersPage(): JSX.Element {
       key: 'creditLimit',
       header: 'حد الائتمان',
       numeric: true,
-      render: (r) => r.creditLimit.toLocaleString('ar-SA'),
+      render: (r) => (r.creditLimit ?? 0).toLocaleString('ar-SA'),
     },
     {
       key: 'pay',
