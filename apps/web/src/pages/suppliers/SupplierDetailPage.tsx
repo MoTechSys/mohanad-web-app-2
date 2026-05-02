@@ -28,6 +28,7 @@ interface Transaction {
   createdBy: { fullName: string };
 }
 interface TxList {
+  supplier: Supplier;
   items: Transaction[];
   meta: { total: number; totalPages: number };
 }
@@ -55,7 +56,7 @@ export function SupplierDetailPage(): JSX.Element {
 
   const { data: txList, isLoading: txLoading } = useQuery({
     queryKey: ['supplier-transactions', id, txPage],
-    queryFn: () => apiGet<TxList>(`/api/v1/suppliers/${id}/transactions?page=${txPage}&limit=20`),
+    queryFn: () => apiGet<TxList>(`/api/v1/suppliers/${id}/statement?page=${txPage}&limit=20`),
     enabled: !!id,
   });
 
@@ -72,15 +73,17 @@ export function SupplierDetailPage(): JSX.Element {
       key: 'amount',
       header: 'المبلغ',
       numeric: true,
-      render: (r) => `${r.amount.toLocaleString('ar-SA')} ر.س`,
+      render: (r) => `${Number(r.amount).toLocaleString('ar-SA')} ر.س`,
     },
     {
       key: 'balanceAfter',
       header: 'الرصيد بعده',
       numeric: true,
       render: (r) => (
-        <span className={r.balanceAfter > 0 ? 'text-red-600 font-medium' : 'text-green-600'}>
-          {r.balanceAfter.toLocaleString('ar-SA')} ر.س
+        <span
+          className={Number(r.balanceAfter) > 0 ? 'text-red-600 font-medium' : 'text-green-600'}
+        >
+          {Number(r.balanceAfter).toLocaleString('ar-SA')} ر.س
         </span>
       ),
     },
@@ -114,7 +117,7 @@ export function SupplierDetailPage(): JSX.Element {
         title={supplier.name}
         description={supplier.phone ?? ''}
         actions={
-          isActive && supplier.currentBalance > 0 ? (
+          isActive && Number(supplier.currentBalance) > 0 ? (
             <button type="button" className="btn-primary" onClick={() => setShowPayment(true)}>
               تسجيل دفع
             </button>
@@ -126,9 +129,9 @@ export function SupplierDetailPage(): JSX.Element {
         <Card>
           <p className="text-xs text-gray-500">الدَّين المستحق</p>
           <p
-            className={`text-2xl font-bold mt-1 ${supplier.currentBalance > 0 ? 'text-red-600' : 'text-green-600'}`}
+            className={`text-2xl font-bold mt-1 ${Number(supplier.currentBalance) > 0 ? 'text-red-600' : 'text-green-600'}`}
           >
-            {supplier.currentBalance.toLocaleString('ar-SA')}{' '}
+            {Number(supplier.currentBalance).toLocaleString('ar-SA')}{' '}
             <span className="text-sm font-normal text-gray-400">ر.س</span>
           </p>
         </Card>

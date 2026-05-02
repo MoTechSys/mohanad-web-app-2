@@ -31,6 +31,7 @@ interface Transaction {
   createdBy: { fullName: string };
 }
 interface TxList {
+  customer: Customer;
   items: Transaction[];
   meta: { total: number; totalPages: number };
 }
@@ -58,7 +59,7 @@ export function CustomerDetailPage(): JSX.Element {
 
   const { data: txList, isLoading: txLoading } = useQuery({
     queryKey: ['customer-transactions', id, txPage],
-    queryFn: () => apiGet<TxList>(`/api/v1/customers/${id}/transactions?page=${txPage}&limit=20`),
+    queryFn: () => apiGet<TxList>(`/api/v1/customers/${id}/statement?page=${txPage}&limit=20`),
     enabled: !!id,
   });
 
@@ -75,15 +76,17 @@ export function CustomerDetailPage(): JSX.Element {
       key: 'amount',
       header: 'المبلغ',
       numeric: true,
-      render: (r) => `${r.amount.toLocaleString('ar-SA')} ر.س`,
+      render: (r) => `${Number(r.amount).toLocaleString('ar-SA')} ر.س`,
     },
     {
       key: 'balanceAfter',
       header: 'الرصيد بعده',
       numeric: true,
       render: (r) => (
-        <span className={r.balanceAfter > 0 ? 'text-red-600 font-medium' : 'text-green-600'}>
-          {r.balanceAfter.toLocaleString('ar-SA')} ر.س
+        <span
+          className={Number(r.balanceAfter) > 0 ? 'text-red-600 font-medium' : 'text-green-600'}
+        >
+          {Number(r.balanceAfter).toLocaleString('ar-SA')} ر.س
         </span>
       ),
     },
@@ -127,16 +130,16 @@ export function CustomerDetailPage(): JSX.Element {
         <Card>
           <p className="text-xs text-gray-500">الرصيد الحالي</p>
           <p
-            className={`text-2xl font-bold mt-1 ${customer.currentBalance > 0 ? 'text-red-600' : 'text-green-600'}`}
+            className={`text-2xl font-bold mt-1 ${Number(customer.currentBalance) > 0 ? 'text-red-600' : 'text-green-600'}`}
           >
-            {Math.abs(customer.currentBalance).toLocaleString('ar-SA')}{' '}
+            {Math.abs(Number(customer.currentBalance)).toLocaleString('ar-SA')}{' '}
             <span className="text-sm font-normal text-gray-400">ر.س</span>
           </p>
         </Card>
         <Card>
           <p className="text-xs text-gray-500">حد الائتمان</p>
           <p className="text-2xl font-bold text-ink mt-1">
-            {customer.creditLimit.toLocaleString('ar-SA')}{' '}
+            {Number(customer.creditLimit).toLocaleString('ar-SA')}{' '}
             <span className="text-sm font-normal text-gray-400">ر.س</span>
           </p>
         </Card>
