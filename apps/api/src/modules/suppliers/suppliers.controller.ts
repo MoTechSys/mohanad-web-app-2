@@ -110,4 +110,17 @@ export class SuppliersController {
   restore(@CurrentUser() actor: AuthUser, @Param('id') id: string) {
     return this.suppliers.restore({ storeId: actor.storeId, actorId: actor.id }, id);
   }
+
+  // ─── Record payment ─────────────────────────────────────────
+  @Post(':id/transactions/payment')
+  @RequirePermission('suppliers.record_payment')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'تسجيل دفعة للمورد' })
+  recordPayment(
+    @CurrentUser() actor: AuthUser,
+    @Param('id') id: string,
+    @Body() body: { amount: number; notes?: string },
+  ) {
+    return this.suppliers.recordPayment({ storeId: actor.storeId, actorId: actor.id }, id, body);
+  }
 }
