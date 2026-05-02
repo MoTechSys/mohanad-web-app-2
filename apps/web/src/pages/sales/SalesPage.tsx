@@ -7,6 +7,7 @@ import { apiGet } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
+import { CreateSaleModal } from './CreateSaleModal';
 
 interface Sale {
   id: string;
@@ -32,6 +33,7 @@ const statusVariant: Record<string, 'success' | 'danger'> = {
 };
 
 export function SalesPage(): JSX.Element {
+  const [showCreate, setShowCreate] = useState(false);
   const [page, setPage] = useState(1);
   const { data, isLoading } = useQuery({
     queryKey: ['sales', page],
@@ -86,7 +88,11 @@ export function SalesPage(): JSX.Element {
         title="المبيعات"
         description={`${data?.meta.total ?? 0} فاتورة`}
         actions={
-          <button type="button" className="btn-primary flex items-center gap-2">
+          <button
+            type="button"
+            className="btn-primary flex items-center gap-2"
+            onClick={() => setShowCreate(true)}
+          >
             <Plus className="h-4 w-4" /> بيع جديد
           </button>
         }
@@ -123,6 +129,7 @@ export function SalesPage(): JSX.Element {
           </div>
         )}
       </Card>
+      <CreateSaleModal open={showCreate} onClose={() => setShowCreate(false)} />
     </AppShell>
   );
 }

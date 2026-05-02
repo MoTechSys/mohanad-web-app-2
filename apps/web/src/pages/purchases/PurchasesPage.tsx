@@ -7,6 +7,7 @@ import { apiGet } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
+import { CreatePurchaseModal } from './CreatePurchaseModal';
 
 interface Purchase {
   id: string;
@@ -24,6 +25,7 @@ interface ListResult {
 }
 
 export function PurchasesPage(): JSX.Element {
+  const [showCreate, setShowCreate] = useState(false);
   const [page, setPage] = useState(1);
   const { data, isLoading } = useQuery({
     queryKey: ['purchases', page],
@@ -70,7 +72,11 @@ export function PurchasesPage(): JSX.Element {
         title="المشتريات"
         description={`${data?.meta.total ?? 0} فاتورة`}
         actions={
-          <button type="button" className="btn-primary flex items-center gap-2">
+          <button
+            type="button"
+            className="btn-primary flex items-center gap-2"
+            onClick={() => setShowCreate(true)}
+          >
             <Plus className="h-4 w-4" /> مشتريات جديدة
           </button>
         }
@@ -107,6 +113,7 @@ export function PurchasesPage(): JSX.Element {
           </div>
         )}
       </Card>
+      <CreatePurchaseModal open={showCreate} onClose={() => setShowCreate(false)} />
     </AppShell>
   );
 }

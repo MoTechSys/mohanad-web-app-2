@@ -7,6 +7,7 @@ import { apiGet } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
+import { CreateExpenseModal } from './CreateExpenseModal';
 
 interface Expense {
   id: string;
@@ -28,6 +29,7 @@ interface TodayStats {
 }
 
 export function ExpensesPage(): JSX.Element {
+  const [showCreate, setShowCreate] = useState(false);
   const [page, setPage] = useState(1);
   const { data, isLoading } = useQuery({
     queryKey: ['expenses', page],
@@ -78,7 +80,11 @@ export function ExpensesPage(): JSX.Element {
         title="المصاريف"
         description={`${data?.meta.total ?? 0} سجل`}
         actions={
-          <button type="button" className="btn-primary flex items-center gap-2">
+          <button
+            type="button"
+            className="btn-primary flex items-center gap-2"
+            onClick={() => setShowCreate(true)}
+          >
             <Plus className="h-4 w-4" /> مصروف جديد
           </button>
         }
@@ -130,6 +136,7 @@ export function ExpensesPage(): JSX.Element {
           </div>
         )}
       </Card>
+      <CreateExpenseModal open={showCreate} onClose={() => setShowCreate(false)} />
     </AppShell>
   );
 }
