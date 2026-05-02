@@ -33,3 +33,4 @@ export * from './purchases';
 export * from './sales';
 export * from './daily-income';
 export * from './inventory';
+export * from './settings';
