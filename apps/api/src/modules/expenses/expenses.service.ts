@@ -223,4 +223,25 @@ export class ExpensesService {
     });
     return this.findOne(scope, id);
   }
+
+  // ─── Stats: today ─────────────────────────────────────────
+  async todayStats(scope: ExpenseScope) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const agg = await this.prisma.expense.aggregate({
+      where: {
+        storeId: scope.storeId,
+        cancelledAt: null,
+        expenseDate: { gte: today, lt: tomorrow },
+      },
+      _sum: { amount: true },
+      _count: true,
+    });
+    return {
+      total: Number(agg._sum.amount ?? 0),
+      count: agg._count,
+    };
+  }
 }
