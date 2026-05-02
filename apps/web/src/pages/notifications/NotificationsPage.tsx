@@ -24,10 +24,10 @@ const TYPE_LABELS: Record<
   string,
   { label: string; variant: 'warning' | 'danger' | 'neutral' | 'success' }
 > = {
-  DEBT_ALERT: { label: 'تنبيه دَين', variant: 'danger' },
-  PAYMENT_REMINDER: { label: 'تذكير سداد', variant: 'warning' },
-  LOW_STOCK: { label: 'مخزون منخفض', variant: 'warning' },
-  SYSTEM: { label: 'نظام', variant: 'neutral' },
+  CREDIT_LIMIT_EXCEEDED: { label: 'تجاوز حد الائتمان', variant: 'danger' },
+  GRACE_PERIOD_ENDING: { label: 'انتهاء المهلة', variant: 'warning' },
+  CUSTOMER_INACTIVE: { label: 'عميل غير نشط', variant: 'neutral' },
+  CUSTOMER_DEBT_HIGH: { label: 'دَين مرتفع', variant: 'danger' },
 };
 
 export function NotificationsPage(): JSX.Element {
@@ -55,9 +55,9 @@ export function NotificationsPage(): JSX.Element {
       header: '',
       render: (r) =>
         !r.readAt ? (
-          <BellOff className="h-4 w-4 text-gray-300" />
+          <Bell className="h-4 w-4 text-primary" />
         ) : (
-          <Bell className="h-4 w-4 text-primary animate-pulse" />
+          <BellOff className="h-4 w-4 text-gray-300" />
         ),
     },
     {
@@ -72,7 +72,7 @@ export function NotificationsPage(): JSX.Element {
       key: 'title',
       header: 'العنوان',
       render: (r) => (
-        <span className={!r.readAt ? 'text-gray-500' : 'font-semibold text-ink'}>{r.title}</span>
+        <span className={!r.readAt ? 'font-semibold text-ink' : 'text-gray-500'}>{r.title}</span>
       ),
     },
     {

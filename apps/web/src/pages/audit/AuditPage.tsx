@@ -27,11 +27,21 @@ const ACTION_LABELS: Record<
   string,
   { label: string; variant: 'success' | 'warning' | 'danger' | 'neutral' }
 > = {
-  CREATE: { label: 'إنشاء', variant: 'success' },
-  UPDATE: { label: 'تعديل', variant: 'warning' },
-  DELETE: { label: 'حذف', variant: 'danger' },
-  LOGIN: { label: 'دخول', variant: 'neutral' },
-  LOGOUT: { label: 'خروج', variant: 'neutral' },
+  create: { label: 'إنشاء', variant: 'success' },
+  update: { label: 'تعديل', variant: 'warning' },
+  cancel: { label: 'إلغاء', variant: 'warning' },
+  delete: { label: 'حذف', variant: 'danger' },
+  restore: { label: 'استعادة', variant: 'success' },
+  login: { label: 'دخول', variant: 'neutral' },
+  login_failed: { label: 'فشل دخول', variant: 'danger' },
+  logout: { label: 'خروج', variant: 'neutral' },
+  permission_denied: { label: 'رفض صلاحية', variant: 'danger' },
+  role_change: { label: 'تغيير دور', variant: 'warning' },
+  password_reset: { label: 'إعادة كلمة المرور', variant: 'warning' },
+  user_deactivate: { label: 'تعطيل مستخدم', variant: 'danger' },
+  user_reactivate: { label: 'تفعيل مستخدم', variant: 'success' },
+  settings_change: { label: 'تغيير إعدادات', variant: 'warning' },
+  large_transaction: { label: 'معاملة كبيرة', variant: 'warning' },
 };
 
 export function AuditPage(): JSX.Element {
