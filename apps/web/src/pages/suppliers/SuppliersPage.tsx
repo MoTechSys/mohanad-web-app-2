@@ -9,6 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { CreateSupplierModal } from './CreateSupplierModal';
+import { SupplierPaymentModal } from './SupplierPaymentModal';
 
 interface Supplier {
   id: string;
@@ -24,6 +25,7 @@ interface ListResult {
 
 export function SuppliersPage(): JSX.Element {
   const [showCreate, setShowCreate] = useState(false);
+  const [payTarget, setPayTarget] = useState<{ id: string; name: string } | null>(null);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const { data, isLoading } = useQuery({
@@ -116,6 +118,12 @@ export function SuppliersPage(): JSX.Element {
         )}
       </Card>
       <CreateSupplierModal open={showCreate} onClose={() => setShowCreate(false)} />
+      <SupplierPaymentModal
+        open={payTarget !== null}
+        onClose={() => setPayTarget(null)}
+        supplierId={payTarget?.id ?? ''}
+        supplierName={payTarget?.name ?? ''}
+      />
     </AppShell>
   );
 }
