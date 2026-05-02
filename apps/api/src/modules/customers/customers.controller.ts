@@ -167,7 +167,7 @@ export class CustomersController {
 
   // ─── Record payment ─────────────────────────────────────────
   @Post(':id/transactions/payment')
-  @RequirePermission('customers.record_payment')
+  @RequirePermission('customer_transactions.create_payment')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'تسجيل دفعة من العميل' })
   recordPayment(

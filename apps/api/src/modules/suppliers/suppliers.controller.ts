@@ -113,7 +113,7 @@ export class SuppliersController {
 
   // ─── Record payment ─────────────────────────────────────────
   @Post(':id/transactions/payment')
-  @RequirePermission('suppliers.record_payment')
+  @RequirePermission('supplier_transactions.create_payment')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'تسجيل دفعة للمورد' })
   recordPayment(
