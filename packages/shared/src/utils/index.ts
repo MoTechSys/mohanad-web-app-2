@@ -18,6 +18,39 @@ export function formatMoney(amount: number | string, currency = 'YER'): string {
 }
 
 /**
+ * تنسيق رقم (كمية/عدد) بأرقام إنجليزية مع فواصل آلاف — بدون عملة (القرار C3).
+ * مثال: formatNumber(12000) → "12,000"
+ */
+export function formatNumber(
+  value: number | string,
+  opts?: { minimumFractionDigits?: number; maximumFractionDigits?: number },
+): string {
+  const n = typeof value === 'string' ? Number.parseFloat(value) : value;
+  if (!Number.isFinite(n)) return '0';
+  return n.toLocaleString('en-US', {
+    minimumFractionDigits: opts?.minimumFractionDigits ?? 0,
+    maximumFractionDigits: opts?.maximumFractionDigits ?? 2,
+  });
+}
+
+/**
+ * تنسيق تاريخ بأرقام إنجليزية (القرار C3) بصيغة YYYY-MM-DD أو مع الوقت.
+ * يتجنّب locale العربي الذي يُخرج أرقاماً هندية.
+ */
+export function formatDate(
+  value: string | number | Date | null | undefined,
+  opts?: { withTime?: boolean },
+): string {
+  if (value === null || value === undefined) return '—';
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  const pad = (x: number) => String(x).padStart(2, '0');
+  const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  if (!opts?.withTime) return date;
+  return `${date} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/**
  * تحويل decimal string من Prisma إلى number آمن.
  */
 export function parseDecimal(value: string | number | null | undefined): number {

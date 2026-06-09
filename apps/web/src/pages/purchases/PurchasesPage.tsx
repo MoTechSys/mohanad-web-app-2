@@ -52,7 +52,7 @@ export function PurchasesPage(): JSX.Element {
       key: 'total',
       header: 'الإجمالي',
       numeric: true,
-      render: (r) => `${Number(r.totalAmount).toLocaleString('ar-SA')} ر.س`,
+      render: (r) => `${Number(r.totalAmount).toLocaleString('en-US')} ر.س`,
     },
     {
       key: 'status',
@@ -66,7 +66,7 @@ export function PurchasesPage(): JSX.Element {
     {
       key: 'date',
       header: 'التاريخ',
-      render: (r) => new Date(r.purchaseDate).toLocaleDateString('ar-SA'),
+      render: (r) => new Date(r.purchaseDate).toLocaleDateString('en-CA'),
     },
   ];
 

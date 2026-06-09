@@ -98,7 +98,7 @@ export function AuditPage(): JSX.Element {
       key: 'date',
       header: 'التوقيت',
       render: (r) => (
-        <span className="text-xs">{new Date(r.createdAt).toLocaleString('ar-SA')}</span>
+        <span className="text-xs">{new Date(r.createdAt).toLocaleString('en-US')}</span>
       ),
     },
   ];

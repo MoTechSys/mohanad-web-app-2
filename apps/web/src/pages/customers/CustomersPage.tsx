@@ -60,7 +60,7 @@ export function CustomersPage(): JSX.Element {
       numeric: true,
       render: (r) => (
         <Badge variant={(r.currentBalance ?? 0) > 0 ? 'debt' : 'success'}>
-          {Math.abs(r.currentBalance ?? 0).toLocaleString('ar-SA')} ر.س
+          {Math.abs(r.currentBalance ?? 0).toLocaleString('en-US')} ر.س
         </Badge>
       ),
     },
@@ -68,7 +68,7 @@ export function CustomersPage(): JSX.Element {
       key: 'creditLimit',
       header: 'حد الائتمان',
       numeric: true,
-      render: (r) => (r.creditLimit ?? 0).toLocaleString('ar-SA'),
+      render: (r) => (r.creditLimit ?? 0).toLocaleString('en-US'),
     },
     {
       key: 'pay',

@@ -73,7 +73,7 @@ export function SupplierDetailPage(): JSX.Element {
       key: 'amount',
       header: 'المبلغ',
       numeric: true,
-      render: (r) => `${Number(r.amount).toLocaleString('ar-SA')} ر.س`,
+      render: (r) => `${Number(r.amount).toLocaleString('en-US')} ر.س`,
     },
     {
       key: 'balanceAfter',
@@ -83,7 +83,7 @@ export function SupplierDetailPage(): JSX.Element {
         <span
           className={Number(r.balanceAfter) > 0 ? 'text-red-600 font-medium' : 'text-green-600'}
         >
-          {Number(r.balanceAfter).toLocaleString('ar-SA')} ر.س
+          {Number(r.balanceAfter).toLocaleString('en-US')} ر.س
         </span>
       ),
     },
@@ -92,7 +92,7 @@ export function SupplierDetailPage(): JSX.Element {
     {
       key: 'date',
       header: 'التاريخ',
-      render: (r) => new Date(r.createdAt).toLocaleDateString('ar-SA'),
+      render: (r) => new Date(r.createdAt).toLocaleDateString('en-CA'),
     },
   ];
 
@@ -131,7 +131,7 @@ export function SupplierDetailPage(): JSX.Element {
           <p
             className={`text-2xl font-bold mt-1 ${Number(supplier.currentBalance) > 0 ? 'text-red-600' : 'text-green-600'}`}
           >
-            {Number(supplier.currentBalance).toLocaleString('ar-SA')}{' '}
+            {Number(supplier.currentBalance).toLocaleString('en-US')}{' '}
             <span className="text-sm font-normal text-gray-400">ر.س</span>
           </p>
         </Card>

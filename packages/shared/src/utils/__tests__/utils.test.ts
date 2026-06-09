@@ -1,12 +1,41 @@
 import { describe, expect, it } from 'vitest';
 import {
+  formatDate,
   formatMoney,
+  formatNumber,
   hasAllPermissions,
   hasAnyPermission,
   hasPermission,
   maskPhone,
   parseDecimal,
 } from '../index';
+
+describe('formatNumber (C3: Western digits)', () => {
+  it('formats with thousands separators and no forced decimals', () => {
+    expect(formatNumber(12000)).toBe('12,000');
+  });
+  it('accepts decimal strings and trims to 2 places', () => {
+    expect(formatNumber('1234.567')).toBe('1,234.57');
+  });
+  it('returns 0 for non-finite input', () => {
+    expect(formatNumber('abc')).toBe('0');
+  });
+});
+
+describe('formatDate (C3: Western digits, ISO-like)', () => {
+  it('formats a date as YYYY-MM-DD', () => {
+    expect(formatDate('2026-06-09T13:00:00Z')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+  it('includes time when requested', () => {
+    expect(formatDate('2026-06-09T13:05:00Z', { withTime: true })).toMatch(
+      /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/,
+    );
+  });
+  it('returns an em-dash for nullish/invalid', () => {
+    expect(formatDate(null)).toBe('—');
+    expect(formatDate('not-a-date')).toBe('—');
+  });
+});
 
 describe('formatMoney', () => {
   it('formats a positive number with two decimals and currency suffix', () => {
