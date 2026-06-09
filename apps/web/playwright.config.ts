@@ -11,6 +11,8 @@ import { defineConfig } from '@playwright/test';
  * Env:  E2E_BASE_URL (default http://localhost:5173)
  *       CHROMIUM_PATH (default /usr/local/bin/chromium-browser)
  */
+// E2E_BASE_URL may include a sub-path (e.g. https://host/grocery) for a
+// sub-path deployment; Playwright resolves goto('/login') against it.
 const BASE_URL = process.env.E2E_BASE_URL ?? 'http://localhost:5173';
 const CHROMIUM = process.env.CHROMIUM_PATH ?? '/usr/local/bin/chromium-browser';
 

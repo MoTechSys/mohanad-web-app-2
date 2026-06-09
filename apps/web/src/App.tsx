@@ -60,7 +60,7 @@ export function App(): JSX.Element {
     <IonApp>
       <ToastProvider>
         <AppBootstrap>
-          <IonReactRouter>
+          <IonReactRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
             <IonRouterOutlet>
               <Suspense
                 fallback={
