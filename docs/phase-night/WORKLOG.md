@@ -131,6 +131,19 @@ roles + set permissions، وتحقق أعمال الأعمال: cancel reversal�
 **النتيجة: كل الوحدات تعمل صحيحاً**، والتحقق (Zod) يرفض المدخلات غير الصالحة بشكل صحيح.
 تأكّدت أيضاً أن audit-log الجديد يُسجّل (stock_movement، product، permission_change ظهرت في /audit).
 
+## 🚀 Pass 5 — إكمال Phase 10 + الميزة الناقصة (بطلب المالك "أكمل باقي المشروع")
+1. **حد المعاملة الكبيرة (B5/A4):** نُفّذ — helper `flagIfLargeTransaction` يقرأ الحد (default 50000)
+   ويُسجّل audit `large_transaction` + إشعار `LARGE_TRANSACTION` للمالك/المدير. رُبط بـ: sales, purchases,
+   expenses, customer debt/payment, supplier payment. migration + 6 اختبارات. إثبات E2E (60000→إشعار، 100→لا).
+2. **PWA (Phase 10):** الـ SW كان مُعدّاً لكن **غير مُسجّل** — أضفت `ReloadPrompt` (virtual:pwa-register/react)
+   للتحديث + offline-ready، و `workbox-window`. الآن يعمل فعلاً في الإنتاج.
+3. **E2E Playwright (Phase 10):** 10 اختبارات (auth + تنقل 7 صفحات) — تستخدم chromium النظام.
+   تتحقق من console errors + غياب الأرقام الهندية (C3). scoped vitest لـ src/.
+4. **إعداد النشر Railway:** `apps/api/railway.json` (migrate deploy + healthcheck)، `apps/web/railway.json`،
+   و `docs/DEPLOYMENT.md` شامل (3 خدمات، المتغيّرات، seed، production checklist).
+
+**المتبقّي الوحيد:** النشر الفعلي على Railway (يحتاج حساب المالك) + WhatsApp API (مؤجّل v2 أصلاً).
+
 ## ✅ الملخص النهائي (Final Summary)
 
 **الحالة النهائية:** 219 اختبار ناجح · lint 0 · typecheck نظيف · build كامل ناجح · 16/16 صفحة تعمل.
