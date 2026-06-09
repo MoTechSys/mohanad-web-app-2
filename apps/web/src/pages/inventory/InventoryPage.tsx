@@ -44,7 +44,7 @@ export function InventoryPage(): JSX.Element {
       numeric: true,
       render: (r) => (
         <Badge variant={r.currentQuantity <= 0 ? 'danger' : 'warning'}>
-          {Number(r.currentQuantity).toLocaleString('ar-SA')}
+          {Number(r.currentQuantity).toLocaleString('en-US')}
         </Badge>
       ),
     },
@@ -52,13 +52,13 @@ export function InventoryPage(): JSX.Element {
       key: 'min',
       header: 'الحد الأدنى',
       numeric: true,
-      render: (r) => Number(r.minQuantity).toLocaleString('ar-SA'),
+      render: (r) => Number(r.minQuantity).toLocaleString('en-US'),
     },
     {
       key: 'price',
       header: 'سعر البيع',
       numeric: true,
-      render: (r) => `${Number(r.salePrice).toLocaleString('ar-SA')} ر.س`,
+      render: (r) => `${Number(r.salePrice).toLocaleString('en-US')} ر.س`,
     },
   ];
 

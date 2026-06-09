@@ -76,7 +76,7 @@ export function CustomerDetailPage(): JSX.Element {
       key: 'amount',
       header: 'المبلغ',
       numeric: true,
-      render: (r) => `${Number(r.amount).toLocaleString('ar-SA')} ر.س`,
+      render: (r) => `${Number(r.amount).toLocaleString('en-US')} ر.س`,
     },
     {
       key: 'balanceAfter',
@@ -86,7 +86,7 @@ export function CustomerDetailPage(): JSX.Element {
         <span
           className={Number(r.balanceAfter) > 0 ? 'text-red-600 font-medium' : 'text-green-600'}
         >
-          {Number(r.balanceAfter).toLocaleString('ar-SA')} ر.س
+          {Number(r.balanceAfter).toLocaleString('en-US')} ر.س
         </span>
       ),
     },
@@ -95,7 +95,7 @@ export function CustomerDetailPage(): JSX.Element {
     {
       key: 'date',
       header: 'التاريخ',
-      render: (r) => new Date(r.createdAt).toLocaleDateString('ar-SA'),
+      render: (r) => new Date(r.createdAt).toLocaleDateString('en-CA'),
     },
   ];
 
@@ -132,14 +132,14 @@ export function CustomerDetailPage(): JSX.Element {
           <p
             className={`text-2xl font-bold mt-1 ${Number(customer.currentBalance) > 0 ? 'text-red-600' : 'text-green-600'}`}
           >
-            {Math.abs(Number(customer.currentBalance)).toLocaleString('ar-SA')}{' '}
+            {Math.abs(Number(customer.currentBalance)).toLocaleString('en-US')}{' '}
             <span className="text-sm font-normal text-gray-400">ر.س</span>
           </p>
         </Card>
         <Card>
           <p className="text-xs text-gray-500">حد الائتمان</p>
           <p className="text-2xl font-bold text-ink mt-1">
-            {Number(customer.creditLimit).toLocaleString('ar-SA')}{' '}
+            {Number(customer.creditLimit).toLocaleString('en-US')}{' '}
             <span className="text-sm font-normal text-gray-400">ر.س</span>
           </p>
         </Card>

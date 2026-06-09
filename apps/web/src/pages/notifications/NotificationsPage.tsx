@@ -84,7 +84,7 @@ export function NotificationsPage(): JSX.Element {
       key: 'date',
       header: 'الوقت',
       render: (r) => (
-        <span className="text-xs text-gray-400">{new Date(r.sentAt).toLocaleString('ar-SA')}</span>
+        <span className="text-xs text-gray-400">{new Date(r.sentAt).toLocaleString('en-US')}</span>
       ),
     },
     {

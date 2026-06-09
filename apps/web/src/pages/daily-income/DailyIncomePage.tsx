@@ -64,7 +64,7 @@ export function DailyIncomePage(): JSX.Element {
       key: 'amount',
       header: 'المبلغ',
       numeric: true,
-      render: (r) => `${Number(r.amount).toLocaleString('ar-SA')} ر.س`,
+      render: (r) => `${Number(r.amount).toLocaleString('en-US')} ر.س`,
     },
     {
       key: 'approved',
@@ -82,7 +82,7 @@ export function DailyIncomePage(): JSX.Element {
     {
       key: 'date',
       header: 'التاريخ',
-      render: (r) => new Date(r.incomeDate).toLocaleDateString('ar-SA'),
+      render: (r) => new Date(r.incomeDate).toLocaleDateString('en-CA'),
     },
   ];
 
@@ -106,7 +106,7 @@ export function DailyIncomePage(): JSX.Element {
         <Card>
           <p className="text-xs text-gray-500">إيرادات اليوم</p>
           <p className="text-2xl font-bold text-ink mt-1">
-            {(todayStats?.total ?? 0).toLocaleString('ar-SA')}{' '}
+            {(todayStats?.total ?? 0).toLocaleString('en-US')}{' '}
             <span className="text-sm font-normal text-gray-400">ر.س</span>
           </p>
         </Card>

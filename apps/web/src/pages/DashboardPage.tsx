@@ -97,7 +97,7 @@ export function DashboardPage(): JSX.Element {
   const stats = [
     {
       label: t('dashboard.todayIncome'),
-      value: formatMoney(dashData?.today.sales.total ?? 0),
+      value: formatMoney(dashData?.today.sales.total ?? 0, 'ر.س'),
       delta: '+12.4%',
       trend: 'up' as const,
       icon: TrendingUp,
@@ -105,7 +105,7 @@ export function DashboardPage(): JSX.Element {
     },
     {
       label: t('dashboard.todayExpenses'),
-      value: formatMoney(dashData?.today.expenses.total ?? 0),
+      value: formatMoney(dashData?.today.expenses.total ?? 0, 'ر.س'),
       delta: '+3.2%',
       trend: 'up' as const,
       icon: Wallet,
@@ -114,7 +114,7 @@ export function DashboardPage(): JSX.Element {
     },
     {
       label: t('dashboard.netProfit'),
-      value: formatMoney(dashData?.today.net ?? 0),
+      value: formatMoney(dashData?.today.net ?? 0, 'ر.س'),
       delta: '+18.1%',
       trend: 'up' as const,
       icon: CircleDollarSign,
@@ -137,7 +137,7 @@ export function DashboardPage(): JSX.Element {
       <PageHeader
         eyebrow={t('app.name')}
         title={t('dashboard.title')}
-        description="نظرة سريعة على أداء البقالة اليوم — كل القيم بالعملة المحلية (YER)."
+        description="نظرة سريعة على أداء البقالة اليوم — كل القيم بالعملة المحلية (ر.س)."
         actions={
           <Badge variant="primary" icon={<CheckCircle2 className="h-3.5 w-3.5" />}>
             Foundation v0.1.0
@@ -181,7 +181,7 @@ export function DashboardPage(): JSX.Element {
           ) : healthError || !health ? (
             <div className="flex items-start gap-3 text-sm text-danger">
               <AlertTriangle className="h-5 w-5 mt-0.5" />
-              <p>تعذّر الاتصال بالـ API. تأكّد أن الخادم يعمل على المنفذ 3001.</p>
+              <p>تعذّر الاتصال بالخادم. تأكّد من تشغيل الخادم ومن اتصالك بالإنترنت.</p>
             </div>
           ) : (
             <ul className="space-y-2 text-sm">

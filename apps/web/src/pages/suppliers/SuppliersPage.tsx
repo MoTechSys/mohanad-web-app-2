@@ -53,7 +53,7 @@ export function SuppliersPage(): JSX.Element {
       numeric: true,
       render: (r) => (
         <Badge variant={(r.currentBalance ?? 0) > 0 ? 'warning' : 'success'}>
-          {Math.abs(r.currentBalance ?? 0).toLocaleString('ar-SA')} ر.س
+          {Math.abs(r.currentBalance ?? 0).toLocaleString('en-US')} ر.س
         </Badge>
       ),
     },

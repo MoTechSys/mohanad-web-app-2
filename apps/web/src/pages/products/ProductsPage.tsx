@@ -51,13 +51,13 @@ export function ProductsPage(): JSX.Element {
       key: 'buy',
       header: 'سعر الشراء',
       numeric: true,
-      render: (r) => `${Number(r.purchasePrice).toLocaleString('ar-SA')} ر.س`,
+      render: (r) => `${Number(r.purchasePrice).toLocaleString('en-US')} ر.س`,
     },
     {
       key: 'sell',
       header: 'سعر البيع',
       numeric: true,
-      render: (r) => `${Number(r.salePrice).toLocaleString('ar-SA')} ر.س`,
+      render: (r) => `${Number(r.salePrice).toLocaleString('en-US')} ر.س`,
     },
     {
       key: 'qty',
@@ -68,7 +68,7 @@ export function ProductsPage(): JSX.Element {
           <Badge
             variant={Number(r.currentQuantity) <= Number(r.minQuantity) ? 'warning' : 'success'}
           >
-            {Number(r.currentQuantity).toLocaleString('ar-SA')}
+            {Number(r.currentQuantity).toLocaleString('en-US')}
           </Badge>
         ) : (
           <span className="text-gray-400 text-xs">لا يُتابع</span>

@@ -38,7 +38,12 @@ export function SalesPage(): JSX.Element {
     {
       key: 'inv',
       header: 'رقم الفاتورة',
-      render: (r) => <span className="font-mono text-sm">{r.invoiceNumber}</span>,
+      render: (r) =>
+        r.invoiceNumber ? (
+          <span className="font-mono text-sm">{r.invoiceNumber}</span>
+        ) : (
+          <span className="text-gray-400">—</span>
+        ),
     },
     {
       key: 'customer',
@@ -58,7 +63,7 @@ export function SalesPage(): JSX.Element {
       key: 'total',
       header: 'الإجمالي',
       numeric: true,
-      render: (r) => `${Number(r.netAmount).toLocaleString('ar-SA')} ر.س`,
+      render: (r) => `${Number(r.netAmount).toLocaleString('en-US')} ر.س`,
     },
     {
       key: 'status',
@@ -72,7 +77,7 @@ export function SalesPage(): JSX.Element {
     {
       key: 'date',
       header: 'التاريخ',
-      render: (r) => new Date(r.createdAt).toLocaleDateString('ar-SA'),
+      render: (r) => new Date(r.createdAt).toLocaleDateString('en-CA'),
     },
   ];
 

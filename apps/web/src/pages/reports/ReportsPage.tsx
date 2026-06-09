@@ -44,7 +44,7 @@ export function ReportsPage(): JSX.Element {
       header: 'المديونية',
       numeric: true,
       render: (r) => (
-        <Badge variant="debt">{Math.abs(r.currentBalance ?? 0).toLocaleString('ar-SA')} ر.س</Badge>
+        <Badge variant="debt">{Math.abs(r.currentBalance ?? 0).toLocaleString('en-US')} ر.س</Badge>
       ),
     },
   ];
@@ -91,7 +91,7 @@ export function ReportsPage(): JSX.Element {
               <div className="flex-1">
                 <p className="text-xs text-gray-500">{s.label}</p>
                 <p className={`text-xl font-bold ${s.color}`}>
-                  {Math.abs(s.value).toLocaleString('ar-SA')}{' '}
+                  {Math.abs(s.value).toLocaleString('en-US')}{' '}
                   <span className="text-xs font-normal text-gray-400">ر.س</span>
                 </p>
                 {s.count !== undefined && <p className="text-xs text-gray-400">{s.count} سجل</p>}
@@ -114,13 +114,13 @@ export function ReportsPage(): JSX.Element {
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">ديون العملاء</span>
               <Badge variant="debt">
-                {(dash?.outstanding.customersDebt.total ?? 0).toLocaleString('ar-SA')} ر.س
+                {(dash?.outstanding.customersDebt.total ?? 0).toLocaleString('en-US')} ر.س
               </Badge>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">ديون الموردين</span>
               <Badge variant="warning">
-                {(dash?.outstanding.suppliersDebt.total ?? 0).toLocaleString('ar-SA')} ر.س
+                {(dash?.outstanding.suppliersDebt.total ?? 0).toLocaleString('en-US')} ر.س
               </Badge>
             </div>
           </div>
