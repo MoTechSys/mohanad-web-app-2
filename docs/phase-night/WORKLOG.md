@@ -108,11 +108,28 @@ sales، daily-income، inventory، users، roles، settings. أضفت التسج
 - تحقّقت بصرياً (vision) من الأرقام الغربية + توحيد العملة.
 - تحقّقت من سكربتات clean/predev/prebuild (تعمل).
 
+### ⚠️ Doc↔Code drift مهم (يحتاج قرار المالك — لم أغيّر قراراً مقفولاً ولا كوداً مالياً يعمل)
+
+**الشراء النقدي (أهمّها):** القرار المقفول **C#2** يقول "شراء نقدي = purchase فقط بدون expense".
+الكود فعلياً ينشئ `Expense(type=CASH_PURCHASE)` لكل شراء نقدي.
+- **تحقّقت:** لا يوجد double-counting — التقارير لا تطرح المشتريات مباشرة؛ CASH_PURCHASE expense
+  هو الآلية الوحيدة التي تخصم النقد. فالتطبيق **متسق داخلياً**، لكنه يختلف عن الآلية الموصوفة في C#2.
+- **القرار المطلوب:** إمّا (أ) تحديث C#2 ليعكس الواقع (CASH_PURCHASE expense)، أو (ب) تعديل الكود
+  ليطابق C#2 (حذف expense + إضافة حساب cash-flow منفصل). أوصي بـ (أ) — الأبسط والأقل خطراً.
+
+**enum البيع:** docs §6 = `detailed|quick_amount` (lowercase) · الكود = `TOTAL_ONLY|DETAILED_ITEMS`. تحديث docs يكفي.
+
 ### مؤجّل بقرار المالك (لم أغامر به ليلاً)
 - **vendor chunk 1.5MB (351KB gzip):** تقسيمه يكسر التطبيق (TDZ موثّق في vite.config — Ionic↔React).
   مقبول لـ PWA كامل. تركته كما هو.
 - **largeTransactionThreshold (50000) و audit action `large_transaction`:** معرّفان في التصميم
   لكن غير منفّذين بأي كود — يحتاج قرار منتجي (ماذا يحدث عند التجاوز؟).
+
+## 🧪 Pass 4 — تحقق عميق للوحدات الأقل اختباراً
+E2E شامل على: products CRUD، inventory (IN 100 → OUT 30 → 70 ✓)، users CRUD + منع تعطيل الذات،
+roles + set permissions، وتحقق أعمال الأعمال: cancel reversal، credit-limit + approve، freeze block، statement، reports.
+**النتيجة: كل الوحدات تعمل صحيحاً**، والتحقق (Zod) يرفض المدخلات غير الصالحة بشكل صحيح.
+تأكّدت أيضاً أن audit-log الجديد يُسجّل (stock_movement، product، permission_change ظهرت في /audit).
 
 ## ✅ الملخص النهائي (Final Summary)
 
