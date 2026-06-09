@@ -196,6 +196,24 @@ export class SalesService {
         }
       }
 
+      // Golden rule #3: audit every sensitive (financial) operation.
+      await tx.auditLog.create({
+        data: {
+          storeId,
+          actorId,
+          action: 'create',
+          entityType: 'sale',
+          entityId: sale.id,
+          newValues: {
+            saleMode: sale.saleMode,
+            paymentType: sale.paymentType,
+            totalAmount: computedTotal,
+            netAmount,
+            customerId: customerId ?? null,
+          },
+        },
+      });
+
       return sale;
     });
   }
@@ -256,6 +274,19 @@ export class SalesService {
           }
         }
       }
+
+      // Golden rule #3: audit the cancellation.
+      await tx.auditLog.create({
+        data: {
+          storeId,
+          actorId,
+          action: 'cancel',
+          entityType: 'sale',
+          entityId: id,
+          oldValues: { netAmount: sale.netAmount, paymentType: sale.paymentType },
+          newValues: { reason: input.reason ?? null },
+        },
+      });
 
       return tx.sale.findFirst({ where: { id }, include: { items: true } });
     });

@@ -222,6 +222,16 @@ export class UsersService {
         where: { userId: id, revokedAt: null },
         data: { revokedAt: new Date() },
       });
+      // Golden rule #3: audit password resets.
+      await tx.auditLog.create({
+        data: {
+          storeId: scope.storeId,
+          actorId: scope.actorId,
+          action: 'password_reset',
+          entityType: 'user',
+          entityId: id,
+        },
+      });
     });
     return { ok: true };
   }
@@ -240,6 +250,17 @@ export class UsersService {
       await tx.userRole.createMany({
         data: input.roleIds.map((roleId) => ({ userId: id, roleId })),
       });
+      // Golden rule #3: audit role assignment changes.
+      await tx.auditLog.create({
+        data: {
+          storeId: scope.storeId,
+          actorId: scope.actorId,
+          action: 'role_change',
+          entityType: 'user',
+          entityId: id,
+          newValues: { roleIds: input.roleIds },
+        },
+      });
     });
     return this.findOne(scope, id);
   }
@@ -247,9 +268,20 @@ export class UsersService {
   // ─── Activate ────────────────────────────────────────────────
   async activate(scope: UserScope, id: string) {
     await this.assertExists(scope, id);
-    await this.prisma.user.update({
-      where: { id },
-      data: { isActive: true, failedLoginAttempts: 0, lockedUntil: null },
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id },
+        data: { isActive: true, failedLoginAttempts: 0, lockedUntil: null },
+      });
+      await tx.auditLog.create({
+        data: {
+          storeId: scope.storeId,
+          actorId: scope.actorId,
+          action: 'user_reactivate',
+          entityType: 'user',
+          entityId: id,
+        },
+      });
     });
     return this.findOne(scope, id);
   }
@@ -269,6 +301,17 @@ export class UsersService {
       const r = await tx.refreshToken.updateMany({
         where: { userId: id, revokedAt: null },
         data: { revokedAt: new Date() },
+      });
+      // Golden rule #3: audit user deactivation.
+      await tx.auditLog.create({
+        data: {
+          storeId: scope.storeId,
+          actorId: scope.actorId,
+          action: 'user_deactivate',
+          entityType: 'user',
+          entityId: id,
+          metadata: { refreshTokensRevoked: r.count },
+        },
       });
       return r.count;
     });
