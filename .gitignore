@@ -56,3 +56,6 @@ apps/web/stats.html
 .husky/_/
 core
 **/core
+test-results/
+playwright-report/
+.playwright/
