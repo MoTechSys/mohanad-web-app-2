@@ -33,6 +33,7 @@ import type {
   ListTransactionsQuery,
 } from '@grocery/shared';
 
+import { lockCustomerBalance } from '../../common/db/lock-balance';
 import { PrismaService } from '../prisma/prisma.service';
 
 interface TxScope {
@@ -92,28 +93,30 @@ export class CustomerTransactionsService {
       });
     }
 
-    const before = Number(customer.currentBalance);
-    const after = before + amount;
     const limit = customer.creditLimit !== null ? Number(customer.creditLimit) : null;
-    const exceedsLimit = limit !== null && after > limit;
-
-    if (exceedsLimit) {
-      if (!input.approveOverLimit) {
-        throw new ConflictException({
-          message: 'تجاوز سقف الدين — يلزم موافقة',
-          code: 'CREDIT_LIMIT_EXCEEDED',
-          meta: { currentBalance: before, after, creditLimit: limit },
-        });
-      }
-      if (!scope.permissions.includes('customer_transactions.approve_over_limit')) {
-        throw new ForbiddenException({
-          message: 'لا تملك صلاحية الموافقة على تجاوز سقف الدين',
-          code: 'PERMISSION_DENIED',
-        });
-      }
-    }
 
     const tx = await this.prisma.$transaction(async (db) => {
+      // Golden rule #6: lock the row and re-read the authoritative balance
+      // inside the transaction to prevent lost-update races.
+      const before = await lockCustomerBalance(db, customerId);
+      const after = before + amount;
+      const exceedsLimit = limit !== null && after > limit;
+
+      if (exceedsLimit) {
+        if (!input.approveOverLimit) {
+          throw new ConflictException({
+            message: 'تجاوز سقف الدين — يلزم موافقة',
+            code: 'CREDIT_LIMIT_EXCEEDED',
+            meta: { currentBalance: before, after, creditLimit: limit },
+          });
+        }
+        if (!scope.permissions.includes('customer_transactions.approve_over_limit')) {
+          throw new ForbiddenException({
+            message: 'لا تملك صلاحية الموافقة على تجاوز سقف الدين',
+            code: 'PERMISSION_DENIED',
+          });
+        }
+      }
       const created = await db.customerTransaction.create({
         data: {
           customerId,
@@ -173,10 +176,10 @@ export class CustomerTransactionsService {
         code: 'INVALID_AMOUNT',
       });
     }
-    const before = Number(customer.currentBalance);
-    const after = before - amount;
-
     const created = await this.prisma.$transaction(async (db) => {
+      // Golden rule #6: lock + re-read inside the transaction.
+      const before = await lockCustomerBalance(db, customerId);
+      const after = before - amount;
       const row = await db.customerTransaction.create({
         data: {
           customerId,
@@ -215,7 +218,7 @@ export class CustomerTransactionsService {
 
   // ─── Create ADJUSTMENT (signed) ───────────────────────────
   async createAdjustment(scope: TxScope, customerId: string, input: CreateAdjustmentInput) {
-    const customer = await this.assertCustomer(scope, customerId);
+    await this.assertCustomer(scope, customerId);
     const amount = Number(input.amount);
     if (!Number.isFinite(amount) || amount === 0) {
       throw new BadRequestException({
@@ -223,10 +226,10 @@ export class CustomerTransactionsService {
         code: 'INVALID_AMOUNT',
       });
     }
-    const before = Number(customer.currentBalance);
-    const after = before + amount; // can be positive or negative
-
     const created = await this.prisma.$transaction(async (db) => {
+      // Golden rule #6: lock + re-read inside the transaction.
+      const before = await lockCustomerBalance(db, customerId);
+      const after = before + amount; // can be positive or negative
       const row = await db.customerTransaction.create({
         data: {
           customerId,
@@ -290,8 +293,9 @@ export class CustomerTransactionsService {
       original.type === 'PAYMENT' ? Number(original.amount) : -Number(original.amount);
 
     const result = await this.prisma.$transaction(async (db) => {
-      const customer = await db.customer.findUniqueOrThrow({ where: { id: customerId } });
-      const newBalance = Number(customer.currentBalance) + reverseDelta;
+      // Golden rule #6: lock + re-read inside the transaction.
+      const lockedBalance = await lockCustomerBalance(db, customerId);
+      const newBalance = lockedBalance + reverseDelta;
       const updated = await db.customerTransaction.update({
         where: { id: txId },
         data: {

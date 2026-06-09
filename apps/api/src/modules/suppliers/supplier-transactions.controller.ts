@@ -23,6 +23,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { RequireIdempotency } from '../../common/idempotency/require-idempotency.decorator';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { RequirePermission } from '../auth/decorators/permissions.decorator';
@@ -48,6 +49,7 @@ export class SupplierTransactionsController {
   }
 
   @Post('payment')
+  @RequireIdempotency()
   @RequirePermission('supplier_transactions.create_payment')
   @HttpCode(HttpStatus.CREATED)
   @UsePipes(new ZodValidationPipe(createSupplierPaymentSchema))
@@ -65,6 +67,7 @@ export class SupplierTransactionsController {
   }
 
   @Post('adjustment')
+  @RequireIdempotency()
   @RequirePermission('supplier_transactions.create_adjustment')
   @HttpCode(HttpStatus.CREATED)
   @UsePipes(new ZodValidationPipe(createSupplierAdjustmentSchema))

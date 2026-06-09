@@ -164,17 +164,8 @@ export class CustomersController {
   ) {
     return this.customers.setCreditLimit({ storeId: actor.storeId, actorId: actor.id }, id, body);
   }
-
-  // ─── Record payment ─────────────────────────────────────────
-  @Post(':id/transactions/payment')
-  @RequirePermission('customer_transactions.create_payment')
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'تسجيل دفعة من العميل' })
-  recordPayment(
-    @CurrentUser() actor: AuthUser,
-    @Param('id') id: string,
-    @Body() body: { amount: number; notes?: string },
-  ) {
-    return this.customers.recordPayment({ storeId: actor.storeId, actorId: actor.id }, id, body);
-  }
 }
+// NOTE: customer payment lives in CustomerTransactionsController
+// (POST /customers/:id/transactions/payment) — the previous duplicate
+// recordPayment route here collided with it and bypassed Zod validation +
+// row-locking, so it was removed.

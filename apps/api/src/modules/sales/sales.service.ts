@@ -13,6 +13,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { lockCustomerBalance } from '../../common/db/lock-balance';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface SaleScope {
@@ -158,7 +159,8 @@ export class SalesService {
       });
 
       if (paymentType === 'CREDIT' && customer) {
-        const balanceBefore = customer.currentBalance.toNumber();
+        // Golden rule #6: lock + re-read inside the transaction.
+        const balanceBefore = await lockCustomerBalance(tx, customer.id);
         const balanceAfter = balanceBefore + netAmount;
         await tx.customer.update({
           where: { id: customer.id },
@@ -217,7 +219,8 @@ export class SalesService {
         const cust = await tx.customer.findFirst({ where: { id: sale.customerId } });
         if (cust) {
           const net = Number(sale.netAmount);
-          const balanceBefore = Number(cust.currentBalance);
+          // Golden rule #6: lock + re-read inside the transaction.
+          const balanceBefore = await lockCustomerBalance(tx, sale.customerId);
           const balanceAfter = balanceBefore - net;
           await tx.customer.update({
             where: { id: sale.customerId },

@@ -6,6 +6,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { RequireIdempotencyGuard } from './common/idempotency/require-idempotency.guard';
 import { ResponseFormatInterceptor } from './common/interceptors/response-format.interceptor';
 import { IdempotencyMiddleware } from './common/middleware/idempotency.middleware';
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
@@ -125,6 +126,7 @@ import { UsersModule } from './modules/users/users.module';
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: RequireIdempotencyGuard },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
     { provide: APP_INTERCEPTOR, useClass: ResponseFormatInterceptor },
   ],
