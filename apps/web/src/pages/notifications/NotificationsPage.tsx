@@ -28,6 +28,7 @@ const TYPE_LABELS: Record<
   GRACE_PERIOD_ENDING: { label: 'انتهاء المهلة', variant: 'warning' },
   CUSTOMER_INACTIVE: { label: 'عميل غير نشط', variant: 'neutral' },
   CUSTOMER_DEBT_HIGH: { label: 'دَين مرتفع', variant: 'danger' },
+  LARGE_TRANSACTION: { label: 'عملية كبيرة', variant: 'warning' },
 };
 
 export function NotificationsPage(): JSX.Element {

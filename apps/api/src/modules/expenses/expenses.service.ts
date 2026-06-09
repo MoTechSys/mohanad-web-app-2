@@ -14,6 +14,7 @@ import type {
  */
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { lockSupplierBalance } from '../../common/db/lock-balance';
+import { flagIfLargeTransaction } from '../../common/finance/large-transaction';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface ExpenseScope {
@@ -172,6 +173,16 @@ export class ExpensesService {
           entityId: expense.id,
           newValues: { type: input.type, amount },
         },
+      });
+
+      // Design B5: flag large transactions.
+      await flagIfLargeTransaction(tx, {
+        storeId: scope.storeId,
+        actorId: scope.actorId,
+        amount: Number(amount),
+        entityType: 'expense',
+        entityId: expense.id,
+        label: 'مصروف',
       });
       return expense;
     });

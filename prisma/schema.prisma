@@ -422,6 +422,7 @@ enum NotificationType {
   GRACE_PERIOD_ENDING
   CUSTOMER_INACTIVE
   CUSTOMER_DEBT_HIGH
+  LARGE_TRANSACTION
   // Additional types are added in later phases.
 }
 

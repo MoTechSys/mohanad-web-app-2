@@ -12,6 +12,7 @@ export const notificationTypeEnum = z.enum([
   'GRACE_PERIOD_ENDING',
   'CUSTOMER_INACTIVE',
   'CUSTOMER_DEBT_HIGH',
+  'LARGE_TRANSACTION',
 ]);
 export type NotificationTypeZ = z.infer<typeof notificationTypeEnum>;
 
