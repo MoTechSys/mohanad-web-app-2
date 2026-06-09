@@ -4,7 +4,10 @@
   "private": true,
   "description": "Grocery System — Backend (NestJS + Prisma)",
   "scripts": {
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "prebuild": "rm -f tsconfig.tsbuildinfo",
     "build": "nest build",
+    "predev": "rm -f tsconfig.tsbuildinfo",
     "dev": "nest start --watch",
     "start": "node dist/main.js",
     "start:prod": "node dist/main.js",
