@@ -10,6 +10,7 @@ import type { CancelPurchaseInput, CreatePurchaseInput, ListPurchasesQuery } fro
  */
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { lockSupplierBalance } from '../../common/db/lock-balance';
+import { flagIfLargeTransaction } from '../../common/finance/large-transaction';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface PurchaseScope {
@@ -181,6 +182,16 @@ export class PurchasesService {
             purchaseMode: input.purchaseMode,
           },
         },
+      });
+
+      // Design B5: flag large transactions.
+      await flagIfLargeTransaction(tx, {
+        storeId: scope.storeId,
+        actorId: scope.actorId,
+        amount: Number(totalAmount),
+        entityType: 'purchase',
+        entityId: purchase.id,
+        label: 'فاتورة شراء',
       });
 
       return purchase;

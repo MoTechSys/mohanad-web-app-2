@@ -34,6 +34,7 @@ import type {
 } from '@grocery/shared';
 
 import { lockCustomerBalance } from '../../common/db/lock-balance';
+import { flagIfLargeTransaction } from '../../common/finance/large-transaction';
 import { PrismaService } from '../prisma/prisma.service';
 
 interface TxScope {
@@ -161,6 +162,14 @@ export class CustomerTransactionsService {
           },
         });
       }
+      await flagIfLargeTransaction(db, {
+        storeId: scope.storeId,
+        actorId: scope.actorId,
+        amount,
+        entityType: 'customer_transaction',
+        entityId: created.id,
+        label: 'دين عميل',
+      });
       return created;
     });
     return tx;
@@ -210,6 +219,14 @@ export class CustomerTransactionsService {
           entityId: row.id,
           newValues: { type: 'PAYMENT', amount, balanceAfter: after },
         },
+      });
+      await flagIfLargeTransaction(db, {
+        storeId: scope.storeId,
+        actorId: scope.actorId,
+        amount,
+        entityType: 'customer_transaction',
+        entityId: row.id,
+        label: 'دفعة عميل',
       });
       return row;
     });

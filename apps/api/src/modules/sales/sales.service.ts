@@ -14,6 +14,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { lockCustomerBalance } from '../../common/db/lock-balance';
+import { flagIfLargeTransaction } from '../../common/finance/large-transaction';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface SaleScope {
@@ -212,6 +213,16 @@ export class SalesService {
             customerId: customerId ?? null,
           },
         },
+      });
+
+      // Design B5: flag large transactions (audit + notify Owner/Manager).
+      await flagIfLargeTransaction(tx, {
+        storeId,
+        actorId,
+        amount: netAmount,
+        entityType: 'sale',
+        entityId: sale.id,
+        label: 'فاتورة بيع',
       });
 
       return sale;

@@ -14,6 +14,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { lockSupplierBalance } from '../../common/db/lock-balance';
+import { flagIfLargeTransaction } from '../../common/finance/large-transaction';
 import { PrismaService } from '../prisma/prisma.service';
 
 interface TxScope {
@@ -84,6 +85,14 @@ export class SupplierTransactionsService {
           entityId: row.id,
           newValues: { type: 'PAYMENT', amount, balanceAfter: after },
         },
+      });
+      await flagIfLargeTransaction(db, {
+        storeId: scope.storeId,
+        actorId: scope.actorId,
+        amount,
+        entityType: 'supplier_transaction',
+        entityId: row.id,
+        label: 'دفعة لمورد',
       });
       return row;
     });
