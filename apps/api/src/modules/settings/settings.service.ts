@@ -55,7 +55,7 @@ export class SettingsService {
   }
 
   // ─── Customer reminder settings ────────────────────────────
-  async getCustomerReminder(scope: SettingsScope, customerId: string) {
+  async getCustomerReminder(_scope: SettingsScope, customerId: string) {
     return this.prisma.customerReminderSettings.findUnique({
       where: { customerId },
       include: { customer: { select: { id: true, name: true, phone: true } } },

@@ -55,6 +55,7 @@ async function shoot(page, name, full = false) {
   await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: full });
 }
 
+// biome-ignore lint/correctness/noUnusedVariables: kept as a manual helper for ad-hoc screenshot runs
 async function clearAuth(page) {
   // Reset session/local storage so each role starts fresh.
   await page.evaluate(() => {
@@ -139,12 +140,8 @@ async function main() {
     await sleep(900);
     // Find Manager edit link
     const managerHref = await page.evaluate(() => {
-      const links = Array.from(
-        document.querySelectorAll('a[href^="/admin/roles/"]'),
-      );
-      const targets = links.filter(
-        (a) => !a.getAttribute('href')?.endsWith('/new'),
-      );
+      const links = Array.from(document.querySelectorAll('a[href^="/admin/roles/"]'));
+      const targets = links.filter((a) => !a.getAttribute('href')?.endsWith('/new'));
       // Owner is first, Manager is second
       return targets[1]?.getAttribute('href') ?? null;
     });

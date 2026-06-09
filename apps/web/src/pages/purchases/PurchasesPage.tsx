@@ -33,7 +33,11 @@ export function PurchasesPage(): JSX.Element {
   });
 
   const columns: Column<Purchase>[] = [
-    { key: 'supplier', header: 'المورد', render: (r) => r.supplier?.name ?? r.supplierNameManual ?? '—' },
+    {
+      key: 'supplier',
+      header: 'المورد',
+      render: (r) => r.supplier?.name ?? r.supplierNameManual ?? '—',
+    },
     { key: 'inv', header: 'رقم الفاتورة', render: (r) => r.invoiceNumber ?? '—' },
     {
       key: 'payment',

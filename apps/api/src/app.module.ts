@@ -10,23 +10,23 @@ import { ResponseFormatInterceptor } from './common/interceptors/response-format
 import { IdempotencyMiddleware } from './common/middleware/idempotency.middleware';
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { configValidationSchema } from './config/env.validation';
+import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CustomersModule } from './modules/customers/customers.module';
-import { ExpensesModule } from './modules/expenses/expenses.module';
-import { SalesModule } from './modules/sales/sales.module';
 import { DailyIncomeModule } from './modules/daily-income/daily-income.module';
-import { ReportsModule } from './modules/reports/reports.module';
-import { InventoryModule } from './modules/inventory/inventory.module';
-import { SettingsModule } from './modules/settings/settings.module';
-import { AuditModule } from './modules/audit/audit.module';
+import { ExpensesModule } from './modules/expenses/expenses.module';
 import { HealthModule } from './modules/health/health.module';
-import { ProductsModule } from './modules/products/products.module';
-import { PurchasesModule } from './modules/purchases/purchases.module';
-import { SuppliersModule } from './modules/suppliers/suppliers.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
 import { PrismaModule } from './modules/prisma/prisma.module';
+import { ProductsModule } from './modules/products/products.module';
+import { PurchasesModule } from './modules/purchases/purchases.module';
+import { ReportsModule } from './modules/reports/reports.module';
 import { RolesModule } from './modules/roles/roles.module';
+import { SalesModule } from './modules/sales/sales.module';
+import { SettingsModule } from './modules/settings/settings.module';
+import { SuppliersModule } from './modules/suppliers/suppliers.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
