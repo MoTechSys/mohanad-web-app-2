@@ -32,8 +32,6 @@ export class ZodValidationPipe<T> implements PipeTransform<unknown, T | unknown>
     if (this.target !== null && metadata.type !== this.target) {
       return value;
     }
-    // eslint-disable-next-line no-console
-    console.log('[zod-pipe]', metadata.type, JSON.stringify(value));
     return this.schema.parse(value);
   }
 }
