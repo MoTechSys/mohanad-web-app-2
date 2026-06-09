@@ -13,6 +13,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { lockSupplierBalance } from '../../common/db/lock-balance';
 import { PrismaService } from '../prisma/prisma.service';
 
 interface TxScope {
@@ -50,16 +51,17 @@ export class SupplierTransactionsService {
   }
 
   async createPayment(scope: TxScope, supplierId: string, input: CreateSupplierPaymentInput) {
-    const supplier = await this.assertSupplier(scope, supplierId);
+    await this.assertSupplier(scope, supplierId);
     const amount = Number(input.amount);
     if (amount <= 0)
       throw new BadRequestException({
         message: 'المبلغ يجب أن يكون أكبر من الصفر',
         code: 'INVALID_AMOUNT',
       });
-    const before = Number(supplier.currentBalance);
-    const after = before - amount;
     return this.prisma.$transaction(async (db) => {
+      // Golden rule #6: lock + re-read inside the transaction.
+      const before = await lockSupplierBalance(db, supplierId);
+      const after = before - amount;
       const row = await db.supplierTransaction.create({
         data: {
           storeId: scope.storeId,
@@ -88,16 +90,17 @@ export class SupplierTransactionsService {
   }
 
   async createAdjustment(scope: TxScope, supplierId: string, input: CreateSupplierAdjustmentInput) {
-    const supplier = await this.assertSupplier(scope, supplierId);
+    await this.assertSupplier(scope, supplierId);
     const amount = Number(input.amount);
     if (!Number.isFinite(amount) || amount === 0)
       throw new BadRequestException({
         message: 'مبلغ التسوية لا يمكن أن يكون صفراً',
         code: 'INVALID_AMOUNT',
       });
-    const before = Number(supplier.currentBalance);
-    const after = before + amount;
     return this.prisma.$transaction(async (db) => {
+      // Golden rule #6: lock + re-read inside the transaction.
+      const before = await lockSupplierBalance(db, supplierId);
+      const after = before + amount;
       const row = await db.supplierTransaction.create({
         data: {
           storeId: scope.storeId,
@@ -147,8 +150,9 @@ export class SupplierTransactionsService {
     const reverseDelta =
       original.type === 'PAYMENT' ? Number(original.amount) : -Number(original.amount);
     return this.prisma.$transaction(async (db) => {
-      const supplier = await db.supplier.findUniqueOrThrow({ where: { id: supplierId } });
-      const newBalance = Number(supplier.currentBalance) + reverseDelta;
+      // Golden rule #6: lock + re-read inside the transaction.
+      const lockedBalance = await lockSupplierBalance(db, supplierId);
+      const newBalance = lockedBalance + reverseDelta;
       const updated = await db.supplierTransaction.update({
         where: { id: txId },
         data: { cancelledAt: new Date(), cancelledById: scope.actorId, cancelReason: input.reason },

@@ -21,6 +21,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { RequireIdempotency } from '../../common/idempotency/require-idempotency.decorator';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { RequirePermission } from '../auth/decorators/permissions.decorator';
@@ -49,6 +50,7 @@ export class PurchasesController {
   }
 
   @Post()
+  @RequireIdempotency()
   @RequirePermission('purchases.create')
   @HttpCode(HttpStatus.CREATED)
   @UsePipes(new ZodValidationPipe(createPurchaseSchema))

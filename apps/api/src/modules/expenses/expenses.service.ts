@@ -13,6 +13,7 @@ import type {
  *   CASH_PURCHASE → created automatically by PurchasesService, can also be manual.
  */
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { lockSupplierBalance } from '../../common/db/lock-balance';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface ExpenseScope {
@@ -142,7 +143,8 @@ export class ExpensesService {
 
       // SUPPLIER_PAYMENT → update supplier balance + create SupplierTransaction(PAYMENT)
       if (input.type === 'SUPPLIER_PAYMENT' && supplier) {
-        const before = Number(supplier.currentBalance);
+        // Golden rule #6: lock + re-read inside the transaction.
+        const before = await lockSupplierBalance(tx, supplier.id);
         const after = before - amount;
         await tx.supplier.update({ where: { id: supplier.id }, data: { currentBalance: after } });
         await tx.supplierTransaction.create({
@@ -194,7 +196,9 @@ export class ExpensesService {
       if (expense.type === 'SUPPLIER_PAYMENT' && expense.supplierId) {
         const supplier = await tx.supplier.findUnique({ where: { id: expense.supplierId } });
         if (supplier) {
-          const newBalance = Number(supplier.currentBalance) + Number(expense.amount);
+          // Golden rule #6: lock + re-read inside the transaction.
+          const lockedBalance = await lockSupplierBalance(tx, expense.supplierId);
+          const newBalance = lockedBalance + Number(expense.amount);
           await tx.supplier.update({
             where: { id: expense.supplierId },
             data: { currentBalance: newBalance },

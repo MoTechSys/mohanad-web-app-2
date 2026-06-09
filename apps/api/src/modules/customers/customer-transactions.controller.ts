@@ -30,6 +30,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
+import { RequireIdempotency } from '../../common/idempotency/require-idempotency.decorator';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { RequirePermission } from '../auth/decorators/permissions.decorator';
@@ -65,6 +66,7 @@ export class CustomerTransactionsController {
 
   // ─── Create DEBT ───────────────────────────────────────────
   @Post('debt')
+  @RequireIdempotency()
   @RequirePermission('customer_transactions.create_debt')
   @HttpCode(HttpStatus.CREATED)
   @UsePipes(new ZodValidationPipe(createDebtSchema))
@@ -79,6 +81,7 @@ export class CustomerTransactionsController {
 
   // ─── Create PAYMENT ────────────────────────────────────────
   @Post('payment')
+  @RequireIdempotency()
   @RequirePermission('customer_transactions.create_payment')
   @HttpCode(HttpStatus.CREATED)
   @UsePipes(new ZodValidationPipe(createPaymentSchema))
@@ -93,6 +96,7 @@ export class CustomerTransactionsController {
 
   // ─── Create ADJUSTMENT ────────────────────────────────────
   @Post('adjustment')
+  @RequireIdempotency()
   @RequirePermission('customer_transactions.create_adjustment')
   @HttpCode(HttpStatus.CREATED)
   @UsePipes(new ZodValidationPipe(createAdjustmentSchema))

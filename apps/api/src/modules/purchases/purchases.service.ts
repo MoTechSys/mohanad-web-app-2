@@ -9,6 +9,7 @@ import type { CancelPurchaseInput, CreatePurchaseInput, ListPurchasesQuery } fro
  *   • Cancel reverses all effects inside a single DB transaction.
  */
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { lockSupplierBalance } from '../../common/db/lock-balance';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface PurchaseScope {
@@ -131,7 +132,8 @@ export class PurchasesService {
 
       // 3. CREDIT → update supplier balance + create SupplierTransaction
       if (input.paymentType === 'CREDIT' && supplier) {
-        const before = Number(supplier.currentBalance);
+        // Golden rule #6: lock + re-read inside the transaction.
+        const before = await lockSupplierBalance(tx, supplier.id);
         const after = before + totalAmount;
         await tx.supplier.update({ where: { id: supplier.id }, data: { currentBalance: after } });
         await tx.supplierTransaction.create({
@@ -206,7 +208,9 @@ export class PurchasesService {
       if (purchase.paymentType === 'CREDIT' && purchase.supplierId) {
         const supplier = await tx.supplier.findUnique({ where: { id: purchase.supplierId } });
         if (supplier) {
-          const newBalance = Number(supplier.currentBalance) - Number(purchase.totalAmount);
+          // Golden rule #6: lock + re-read inside the transaction.
+          const lockedBalance = await lockSupplierBalance(tx, purchase.supplierId);
+          const newBalance = lockedBalance - Number(purchase.totalAmount);
           await tx.supplier.update({
             where: { id: purchase.supplierId },
             data: { currentBalance: newBalance },

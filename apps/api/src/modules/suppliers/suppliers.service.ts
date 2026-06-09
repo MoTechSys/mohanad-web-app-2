@@ -225,38 +225,4 @@ export class SuppliersService {
   async getById(id: string) {
     return this.prisma.supplier.findUnique({ where: { id } });
   }
-  // ─── Record supplier payment (we pay supplier) ─────────────
-  async recordPayment(scope: SupplierScope, id: string, input: { amount: number; notes?: string }) {
-    const supplier = await this.assertExists(scope, id);
-    const amount = Number(input.amount);
-    if (amount <= 0) throw new BadRequestException('مبلغ الدفع يجب أن يكون موجباً');
-    const before = Number(supplier.currentBalance);
-    const after = before - amount;
-    return this.prisma.$transaction(async (tx) => {
-      await tx.supplier.update({ where: { id }, data: { currentBalance: after } });
-      const stx = await tx.supplierTransaction.create({
-        data: {
-          storeId: scope.storeId,
-          supplierId: id,
-          type: 'PAYMENT',
-          amount,
-          balanceBefore: before,
-          balanceAfter: after,
-          notes: input.notes ?? null,
-          createdById: scope.actorId,
-        },
-      });
-      await tx.auditLog.create({
-        data: {
-          storeId: scope.storeId,
-          actorId: scope.actorId,
-          action: 'large_transaction',
-          entityType: 'supplier',
-          entityId: id,
-          metadata: { amount, balanceBefore: before, balanceAfter: after },
-        },
-      });
-      return stx;
-    });
-  }
 }

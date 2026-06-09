@@ -110,17 +110,8 @@ export class SuppliersController {
   restore(@CurrentUser() actor: AuthUser, @Param('id') id: string) {
     return this.suppliers.restore({ storeId: actor.storeId, actorId: actor.id }, id);
   }
-
-  // ─── Record payment ─────────────────────────────────────────
-  @Post(':id/transactions/payment')
-  @RequirePermission('supplier_transactions.create_payment')
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'تسجيل دفعة للمورد' })
-  recordPayment(
-    @CurrentUser() actor: AuthUser,
-    @Param('id') id: string,
-    @Body() body: { amount: number; notes?: string },
-  ) {
-    return this.suppliers.recordPayment({ storeId: actor.storeId, actorId: actor.id }, id, body);
-  }
 }
+// NOTE: supplier payment lives in SupplierTransactionsController
+// (POST /suppliers/:supplierId/transactions/payment) — the previous duplicate
+// recordPayment route here collided with it and bypassed Zod validation +
+// row-locking, so it was removed.
