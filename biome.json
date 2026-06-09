@@ -16,6 +16,8 @@
       "**/*.tsbuildinfo",
       "apps/web/dist/**",
       "apps/web/dev-dist/**",
+      "apps/web/vite.config.js",
+      "apps/web/vite.config.d.ts",
       "apps/api/dist/**",
       "packages/shared/dist/**",
       "prisma/migrations/**",

@@ -67,7 +67,6 @@ export class ExpensesController {
     return this.expenses.list({ storeId: actor.storeId, actorId: actor.id }, query);
   }
 
-
   @Get('stats/today')
   @RequirePermission('expenses.view')
   @ApiOperation({ summary: 'إحصائيات مصاريف اليوم' })

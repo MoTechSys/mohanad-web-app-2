@@ -41,7 +41,7 @@ export function SuppliersPage(): JSX.Element {
       key: 'name',
       header: 'الاسم',
       render: (r) => (
-        <Link to={'/suppliers/' + r.id} className="font-medium hover:text-primary hover:underline">
+        <Link to={`/suppliers/${r.id}`} className="font-medium hover:text-primary hover:underline">
           {r.name}
         </Link>
       ),
@@ -57,7 +57,6 @@ export function SuppliersPage(): JSX.Element {
         </Badge>
       ),
     },
-
   ];
 
   return (

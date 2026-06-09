@@ -21,7 +21,6 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { useToast } from '@/components/ui/Toast';
 import { t } from '@/i18n/ar';
 import { apiGet } from '@/lib/api';
 import { http } from '@/lib/http';
@@ -73,7 +72,6 @@ const sample = {
  *   • Stagger-in animation via Framer Motion
  */
 export function DashboardPage(): JSX.Element {
-  const toast = useToast();
   const quickActionsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

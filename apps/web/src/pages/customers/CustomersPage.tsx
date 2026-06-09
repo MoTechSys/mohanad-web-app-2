@@ -46,7 +46,7 @@ export function CustomersPage(): JSX.Element {
       header: 'الاسم',
       render: (r) => (
         <Link
-          to={'/customers/' + r.id}
+          to={`/customers/${r.id}`}
           className="font-medium text-ink hover:text-primary hover:underline"
         >
           {r.name}
