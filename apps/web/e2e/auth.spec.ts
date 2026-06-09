@@ -13,8 +13,10 @@ async function login(page: import('@playwright/test').Page) {
 
 test.describe('Auth + RBAC', () => {
   test('rejects invalid credentials', async ({ page }) => {
+    // Use a throwaway username so repeated runs never lock the real owner
+    // account (lockout = 5 failed attempts / 15 min — golden rule D5).
     await page.goto('/login');
-    await page.fill('input[autocomplete="username"]', USER);
+    await page.fill('input[autocomplete="username"]', `nouser_${Date.now()}`);
     await page.fill('input[autocomplete="current-password"]', 'wrong-password');
     await page.click('button[type="submit"]');
     // Stays on login (no redirect to an authed route).
