@@ -2,6 +2,7 @@ import { IonApp, IonRouterOutlet } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { Suspense, useEffect } from 'react';
 
+import { ReloadPrompt } from './components/pwa/ReloadPrompt';
 import { ToastProvider, useToast } from './components/ui/Toast';
 import { setHttpToastSink } from './lib/http';
 import { AppRoutes } from './routes';
@@ -72,6 +73,7 @@ export function App(): JSX.Element {
               </Suspense>
             </IonRouterOutlet>
           </IonReactRouter>
+          <ReloadPrompt />
         </AppBootstrap>
       </ToastProvider>
     </IonApp>
