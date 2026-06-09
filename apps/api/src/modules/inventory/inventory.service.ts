@@ -172,6 +172,18 @@ export class InventoryService {
         include: { product: { select: { id: true, name: true, unit: true } } },
       });
 
+      // Golden rule #3: audit stock movements.
+      await tx.auditLog.create({
+        data: {
+          storeId,
+          actorId,
+          action: 'create',
+          entityType: 'stock_movement',
+          entityId: movement.id,
+          newValues: { productId, type, quantityChange, quantityBefore, quantityAfter },
+        },
+      });
+
       return { movement, isLowStock: quantityAfter <= Number(product.minQuantity) };
     });
   }
@@ -191,7 +203,7 @@ export class InventoryService {
         data: { currentQuantity: { increment: reverseChange } },
       });
 
-      return tx.stockMovement.update({
+      const updated = await tx.stockMovement.update({
         where: { id },
         data: {
           cancelledAt: new Date(),
@@ -199,6 +211,18 @@ export class InventoryService {
           cancelReason: input.reason,
         },
       });
+      await tx.auditLog.create({
+        data: {
+          storeId,
+          actorId,
+          action: 'cancel',
+          entityType: 'stock_movement',
+          entityId: id,
+          oldValues: { quantityChange: m.quantityChange },
+          newValues: { reason: input.reason ?? null },
+        },
+      });
+      return updated;
     });
   }
 

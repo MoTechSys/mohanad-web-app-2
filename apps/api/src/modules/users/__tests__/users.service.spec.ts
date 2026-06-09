@@ -182,6 +182,7 @@ describe('UsersService', () => {
         const tx = {
           user: { update: txUserUpdate },
           refreshToken: { updateMany: txTokenUpdate },
+          auditLog: { create: jest.fn() },
         };
         return cb(tx);
       });
@@ -207,6 +208,7 @@ describe('UsersService', () => {
         const tx = {
           user: { update: userUpdate },
           refreshToken: { updateMany: tokenUpdate },
+          auditLog: { create: jest.fn() },
         };
         return cb(tx);
       });
@@ -229,7 +231,10 @@ describe('UsersService', () => {
       const del = jest.fn();
       const cre = jest.fn();
       prisma.$transaction.mockImplementation(async (cb: any) => {
-        const tx = { userRole: { deleteMany: del, createMany: cre } };
+        const tx = {
+          userRole: { deleteMany: del, createMany: cre },
+          auditLog: { create: jest.fn() },
+        };
         return cb(tx);
       });
       // findOne after assign

@@ -88,7 +88,7 @@ export class RolesController {
     @Param('id') id: string,
     @Body() body: SetPermissionsInput,
   ) {
-    return this.roles.setPermissions({ storeId: actor.storeId }, id, body);
+    return this.roles.setPermissions({ storeId: actor.storeId, actorId: actor.id }, id, body);
   }
 
   @Post('clone')

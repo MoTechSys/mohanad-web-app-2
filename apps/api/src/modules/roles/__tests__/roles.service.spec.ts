@@ -241,7 +241,10 @@ describe('RolesService', () => {
       const del = jest.fn();
       const cre = jest.fn();
       prisma.$transaction.mockImplementation(async (cb: any) => {
-        return cb({ rolePermission: { deleteMany: del, createMany: cre } });
+        return cb({
+          rolePermission: { deleteMany: del, createMany: cre },
+          auditLog: { create: jest.fn() },
+        });
       });
       const r = await service.setPermissions(SCOPE, 'r1', {
         permissionCodes: ['p1', 'p2'],

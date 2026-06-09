@@ -39,17 +39,43 @@ export class SettingsService {
   // ─── Upsert setting ────────────────────────────────────────
   async upsert(scope: SettingsScope, input: UpsertSettingInput) {
     const { key, value } = input;
-    return this.prisma.setting.upsert({
-      where: { storeId_key: { storeId: scope.storeId, key } },
-      create: { storeId: scope.storeId, key, value: value as never },
-      update: { value: value as never },
+    return this.prisma.$transaction(async (tx) => {
+      const row = await tx.setting.upsert({
+        where: { storeId_key: { storeId: scope.storeId, key } },
+        create: { storeId: scope.storeId, key, value: value as never },
+        update: { value: value as never },
+      });
+      // Golden rule #3: audit settings changes.
+      await tx.auditLog.create({
+        data: {
+          storeId: scope.storeId,
+          actorId: scope.actorId,
+          action: 'settings_change',
+          entityType: 'setting',
+          entityId: key,
+          newValues: { key, value: value as never },
+        },
+      });
+      return row;
     });
   }
 
   // ─── Delete setting ────────────────────────────────────────
   async delete(scope: SettingsScope, key: string) {
-    await this.prisma.setting.deleteMany({
-      where: { storeId: scope.storeId, key },
+    await this.prisma.$transaction(async (tx) => {
+      await tx.setting.deleteMany({
+        where: { storeId: scope.storeId, key },
+      });
+      await tx.auditLog.create({
+        data: {
+          storeId: scope.storeId,
+          actorId: scope.actorId,
+          action: 'settings_change',
+          entityType: 'setting',
+          entityId: key,
+          oldValues: { key, deleted: true },
+        },
+      });
     });
     return { ok: true };
   }

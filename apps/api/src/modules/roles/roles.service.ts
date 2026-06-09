@@ -35,6 +35,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 interface RoleScope {
   storeId: string;
+  actorId?: string;
 }
 
 @Injectable()
@@ -176,6 +177,17 @@ export class RolesService {
           data: permissionRows.map((p) => ({ roleId: id, permissionId: p.id })),
         });
       }
+      // Golden rule #3: audit permission changes on a role.
+      await tx.auditLog.create({
+        data: {
+          storeId: scope.storeId,
+          actorId: scope.actorId ?? null,
+          action: 'permission_change',
+          entityType: 'role',
+          entityId: id,
+          newValues: { permissionCodes: input.permissionCodes },
+        },
+      });
     });
     return this.findOne(scope, id);
   }
