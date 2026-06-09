@@ -144,6 +144,18 @@ roles + set permissions، وتحقق أعمال الأعمال: cancel reversal�
 
 **المتبقّي الوحيد:** النشر الفعلي على Railway (يحتاج حساب المالك) + WhatsApp API (مؤجّل v2 أصلاً).
 
+## 🚀 Pass 6 — نشر حي + توسيع التغطية (بطلب المالك)
+**النشر الحي:** التطبيق منشور وشغّال على https://qfetmfdn.gensparkclaw.com/grocery/
+- web static → /var/www/grocery (Caddy)، api → systemd user service `grocery-api` (:3010، auto-restart).
+- Caddy: `/grocery/` (SPA fallback) + `/grocery-api/` → :3010. بيانات الدخول: owner / Owner@12345.
+- 🐛🔴 **CORS bug** ظهر عند النشر: WEB_ORIGIN كان أصلاً واحداً → دعم أصول متعددة (فاصلة).
+- 🐛 SPA basename من import.meta.env.BASE_URL لدعم المسار الفرعي.
+- تحقّقت بمتصفّح حقيقي على الرابط العام: login→dashboard→reports→sales→notifications (صفر أخطاء، أرقام إنجليزية).
+
+**توسيع التغطية (api specs: 70 → 110):** أضفت unit specs لكل الخدمات المالية:
+customer-transactions، supplier-transactions، sales، purchases، expenses، daily-income، inventory.
+تثبّت إصلاح القفل (تستخدم الرصيد المقفول)، قاعدة C#2، تغطية audit. + customer-create E2E (11 E2E).
+
 ## ✅ الملخص النهائي (Final Summary)
 
 **الحالة النهائية:** 219 اختبار ناجح · lint 0 · typecheck نظيف · build كامل ناجح · 16/16 صفحة تعمل.
