@@ -26,7 +26,7 @@
 | 7       | Reports                                        | ✅ مكتمل               |
 | 8       | Notifications + WhatsApp                       | 🟡 جزئي (إشعارات ✅ · WhatsApp زر يدوي فقط) |
 | 9       | Inventory (optional)                           | ✅ مكتمل               |
-| 10      | Polish + PWA + Deployment                      | 🟡 جزئي (PWA precache ✅ · E2E/Playwright ونشر Railway متبقّيان) |
+| 10      | Polish + PWA + Deployment                      | 🟡 جزئي (PWA SW+prompt ✅ · E2E Playwright ✅ · دليل + إعداد نشر Railway ✅ · النشر الفعلي متبقٍّ) |
 
 > **الجودة (2026-06-09):** 225 اختبار ناجح · lint/typecheck/build نظيف · القواعد الذهبية #3/#6/#9 مُطبّقة ومُختبَرة.
 > راجع `docs/phase-night/WORKLOG.md` للتفاصيل الكاملة (الأخطاء المُصلَحة + القرارات المعلّقة).
