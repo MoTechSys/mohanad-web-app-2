@@ -39,7 +39,7 @@ export class DailyIncomeController {
 
   @Get()
   @RequirePermission('daily_income.view')
-  @UsePipes(new ZodValidationPipe(listDailyIncomeQuerySchema))
+  @UsePipes(new ZodValidationPipe(listDailyIncomeQuerySchema, 'query'))
   @ApiOperation({ summary: 'قائمة الإيرادات اليومية' })
   list(@CurrentUser() user: AuthUser, @Query() query: ListDailyIncomeQuery) {
     return this.svc.list(this.scope(user), query);

@@ -36,7 +36,7 @@ export class SalesController {
 
   @Get()
   @RequirePermission('sales.view')
-  @UsePipes(new ZodValidationPipe(listSalesQuerySchema))
+  @UsePipes(new ZodValidationPipe(listSalesQuerySchema, 'query'))
   @ApiOperation({ summary: 'قائمة فواتير البيع' })
   list(@CurrentUser() user: AuthUser, @Query() query: ListSalesQuery) {
     return this.svc.list({ storeId: user.storeId, actorId: user.id }, query);
