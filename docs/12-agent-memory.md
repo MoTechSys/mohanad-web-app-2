@@ -94,7 +94,7 @@
 | # | الموضوع | القرار النهائي |
 |---|---|---|
 | C#1 | Service Worker | مرحلة 10 فقط، static assets only. **في المراحل 1-9 لا SW.** |
-| C#2 | Cash Purchase | **purchase فقط بدون expense.** Cash Flow ينقص النقد عند `payment_type = cash`. |
+| C#2 | Cash Purchase | **(مُحدّث 2026-06-09 بطلب المالك ليطابق التنفيذ):** شراء نقدي = `purchase` + `Expense(type=CASH_PURCHASE)` مربوط بالـ purchase. الـ expense هو آلية خصم النقد في Cash Flow/التقارير (لا تُطرح المشتريات مرّة أخرى → لا double-counting). _القرار السابق كان: "purchase فقط بدون expense" — تُرك للسجل._ |
 | C#3 | daily_summary in sales | منفصل في `daily_incomes`. **يُحذف من sales.sale_mode enum.** |
 | C#4 | Permission Refresh | ينتظر refresh الـ token (حتى 15 دقيقة). استثناء: `is_active=false` → revoke refresh_token فوراً → الفرونت يكتشف 401 → logout. |
 | C#5 | Mixed Payment | مؤجل لـ v2. v1: `payment_type` enum = `cash` \| `credit` فقط. |
@@ -103,7 +103,7 @@
 
 ```text
 - شراء آجل  →  purchase + supplier_transaction (دين+)
-- شراء نقدي →  purchase فقط (ينقص النقد في Cash Flow، لا expense منفصل)
+- شراء نقدي →  purchase + expense(type=CASH_PURCHASE) مربوط (هو آلية خصم النقد) — مُحدّث 2026-06-09
 - دفع لمورد →  expense(type=supplier_payment) + supplier_transaction (دين-)
 - خرج عادي →  expense(type=normal) فقط
 ```
@@ -173,10 +173,8 @@ mode النظام (settings.sales_mode):
 > 1. **enum البيع:** الكود يستخدم `TOTAL_ONLY | DETAILED_ITEMS` (Prisma) بدل `detailed | quick_amount`.
 >    (تعيينها وظيفياً: `TOTAL_ONLY` ≈ بيع سريع بمبلغ، `DETAILED_ITEMS` ≈ بيع تفصيلي بأصناف.)
 > 2. **enum الدفع:** الكود يستخدم `CASH | CREDIT` (uppercase) بدل `cash | credit`.
-> 3. **الشراء النقدي (C#2):** الكود ينشئ `Expense(type=CASH_PURCHASE)` لكل شراء نقدي —
->    بينما C#2 يقول "purchase فقط بدون expense". تحقّقنا: لا يوجد double-counting (التقارير
->    تعتمد على هذا الـ expense فقط لخصم النقد، ولا تطرح المشتريات مرتين). التطبيق متسق داخلياً
->    لكنه يخالف آلية C#2 الموصوفة. التوصية: تحديث C#2 ليعكس الواقع (الأبسط).
+> 3. **الشراء النقدي (C#2): ✅ تمّت المواءمة (2026-06-09 بطلب المالك)** — حُدّث C#2 أعلاه
+>    ليعكس التنفيذ (purchase + Expense(CASH_PURCHASE)). تحقّقنا: لا double-counting.
 
 ---
 

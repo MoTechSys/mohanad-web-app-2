@@ -12,19 +12,24 @@
 
 ## الحالة الحالية
 
+> آخر تحديث: 2026-06-09 — بعد جولة مراجعة وتدقيق شاملة (راجع `docs/phase-night/WORKLOG.md`).
+
 | المرحلة | الوصف                                          | الحالة                |
 | ------- | ---------------------------------------------- | --------------------- |
-| 0       | التحليل والتوثيق                               | ✅ مكتمل (`docs/00..12`) |
+| 0       | التحليل والتوثيق                               | ✅ مكتمل (`docs/00..13`) |
 | **1**   | **Foundation (Monorepo + Schema + Shells)**    | ✅ **مكتمل**           |
-| 2       | Auth + RBAC                                    | ⏳                    |
-| 3       | Customers + Debts                              | ⏳                    |
-| 4       | Suppliers + Purchases                          | ⏳                    |
-| 5       | Expenses + Daily Income                        | ⏳                    |
-| 6       | Sales Modes                                    | ⏳                    |
-| 7       | Reports                                        | ⏳                    |
-| 8       | Notifications + WhatsApp                       | ⏳                    |
-| 9       | Inventory (optional)                           | ⏳                    |
-| 10      | Polish + PWA + Deployment                      | ⏳                    |
+| 2       | Auth + RBAC                                    | ✅ مكتمل               |
+| 3       | Customers + Debts                              | ✅ مكتمل               |
+| 4       | Suppliers + Purchases                          | ✅ مكتمل               |
+| 5       | Expenses + Daily Income                        | ✅ مكتمل               |
+| 6       | Sales Modes                                    | ✅ مكتمل               |
+| 7       | Reports                                        | ✅ مكتمل               |
+| 8       | Notifications + WhatsApp                       | 🟡 جزئي (إشعارات ✅ · WhatsApp زر يدوي فقط) |
+| 9       | Inventory (optional)                           | ✅ مكتمل               |
+| 10      | Polish + PWA + Deployment                      | 🟡 جزئي (PWA precache ✅ · E2E/Playwright ونشر Railway متبقّيان) |
+
+> **الجودة (2026-06-09):** 225 اختبار ناجح · lint/typecheck/build نظيف · القواعد الذهبية #3/#6/#9 مُطبّقة ومُختبَرة.
+> راجع `docs/phase-night/WORKLOG.md` للتفاصيل الكاملة (الأخطاء المُصلَحة + القرارات المعلّقة).
 
 ## بنية المشروع (Monorepo — pnpm workspaces)
 
@@ -68,7 +73,7 @@ pnpm db:seed
 pnpm dev
 ```
 
-> Foundation phase ships without migrations — `prisma migrate dev` runs in Phase 2.
+> الـ migrations موجودة حتى Phase 7 (راجع `prisma/migrations/`)؛ `pnpm db:migrate` يطبّقها كلها.
 > See `DEVELOPMENT.md` for detailed onboarding.
 
 ## السكربتات الجذرية
@@ -106,7 +111,9 @@ pnpm dev
 - [`10-security-and-audit.md`](./docs/10-security-and-audit.md)
 - [`11-development-roadmap.md`](./docs/11-development-roadmap.md)
 - [`12-agent-memory.md`](./docs/12-agent-memory.md) ← **القرارات الثابتة**
+- [`13-pre-foundation-checklist.md`](./docs/13-pre-foundation-checklist.md)
 - [`recovery-report.md`](./docs/recovery-report.md) ← Foundation Recovery PR
+- [`phase-night/WORKLOG.md`](./docs/phase-night/WORKLOG.md) ← **جولة المراجعة والتدقيق (2026-06-09)**
 
 ## الترخيص
 
