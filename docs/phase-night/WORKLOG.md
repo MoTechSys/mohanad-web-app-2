@@ -99,6 +99,21 @@ sales، daily-income، inventory، users، roles، settings. أضفت التسج
 - (مددت `actorId` عبر `RoleScope`). استخدمت قيم enum المخصصة التي كانت معرّفة لكن غير مستخدمة.
 - حدّثت unit tests (mock tx + auditLog). إثبات E2E: /audit يظهر settings_change + create|sale.
 
+## 🎨 Pass 3 — UI polish + C3 compliance
+- 🔴 **خرق القرار C3** (أرقام إنجليزية قاطعاً): 34 استخدام لـ `toLocaleString('ar-SA')`
+  يُخرج أرقام هندية (٠-٩). بدّلتها لـ en-US/en-CA عبر 13 صفحة.
+- توحيد العملة: Dashboard كان YER والباقي ر.س — وحّدت على ر.س.
+- أضفت `formatNumber` + `formatDate` لـ shared (أرقام غربية) + 6 اختبارات.
+- إصلاح empty-state: رقم فاتورة فارغ في جدول المبيعات → —. إصلاح نص YER + رسالة خطأ عامة.
+- تحقّقت بصرياً (vision) من الأرقام الغربية + توحيد العملة.
+- تحقّقت من سكربتات clean/predev/prebuild (تعمل).
+
+### مؤجّل بقرار المالك (لم أغامر به ليلاً)
+- **vendor chunk 1.5MB (351KB gzip):** تقسيمه يكسر التطبيق (TDZ موثّق في vite.config — Ionic↔React).
+  مقبول لـ PWA كامل. تركته كما هو.
+- **largeTransactionThreshold (50000) و audit action `large_transaction`:** معرّفان في التصميم
+  لكن غير منفّذين بأي كود — يحتاج قرار منتجي (ماذا يحدث عند التجاوز؟).
+
 ## ✅ الملخص النهائي (Final Summary)
 
 **الحالة النهائية:** 219 اختبار ناجح · lint 0 · typecheck نظيف · build كامل ناجح · 16/16 صفحة تعمل.
