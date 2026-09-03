@@ -9,10 +9,12 @@ class Fmt {
   static final _date = DateFormat('yyyy/MM/dd');
   static final _dateTime = DateFormat('yyyy/MM/dd  HH:mm');
   static final _dayName = DateFormat('EEEE', 'ar');
+  static final _monthName = DateFormat('MMMM yyyy', 'ar');
 
   static String date(DateTime d) => _date.format(d);
   static String dateTime(DateTime d) => _dateTime.format(d);
   static String dayName(DateTime d) => _dayName.format(d);
+  static String monthName(DateTime d) => _monthName.format(d);
 
   static String money(Money m, {String? currency}) =>
       currency == null || currency.isEmpty

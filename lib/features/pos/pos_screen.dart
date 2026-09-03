@@ -12,6 +12,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/barcode_scanner_view.dart';
 import '../../core/widgets/common.dart';
+import '../../core/widgets/export_actions.dart';
 import '../../data/ledger_db.dart';
 import '../../domain/enums/enums.dart';
 import '../../domain/models/documents.dart';
@@ -239,7 +240,27 @@ class _PosScreenState extends State<PosScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: context.c.primaryStrong,
-        duration: const Duration(seconds: 4),
+        duration: const Duration(seconds: 6),
+        action: SnackBarAction(
+          label: 'إيصال',
+          textColor: Colors.white,
+          onPressed: () => showExportSheet(context, title: 'إيصال البيع', options: [
+            ExportOption(
+              title: 'إيصال 80mm',
+              subtitle: 'للطابعة الحرارية أو المشاركة عبر واتساب',
+              icon: Icons.receipt_rounded,
+              fileBase: 'إيصال-${sale.invoiceNo ?? sale.id.substring(0, 6)}',
+              build: () => app.pdf.saleReceipt(sale),
+            ),
+            ExportOption(
+              title: 'فاتورة A4',
+              subtitle: 'فاتورة رسمية بشعار المحل',
+              icon: Icons.description_rounded,
+              fileBase: 'فاتورة-${sale.invoiceNo ?? sale.id.substring(0, 6)}',
+              build: () => app.pdf.saleInvoice(sale),
+            ),
+          ]),
+        ),
         content: Row(
           children: [
             const Icon(Icons.check_circle, color: Colors.white),

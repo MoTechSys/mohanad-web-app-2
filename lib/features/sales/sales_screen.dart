@@ -6,6 +6,7 @@ import '../../core/money/money.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/common.dart';
+import '../../core/widgets/export_actions.dart';
 import '../../data/ledger_db.dart';
 import '../../data/services/report_service.dart';
 import '../../domain/enums/enums.dart';
@@ -309,6 +310,49 @@ class SaleTile extends StatelessWidget {
           ],
           if ((s.details ?? '').isNotEmpty) _kv(context, 'ملاحظات', s.details!),
           const SizedBox(height: 12),
+          Row(children: [
+            Expanded(
+              child: FilledButton.tonalIcon(
+                icon: const Icon(Icons.picture_as_pdf_rounded),
+                label: const Text('فاتورة PDF'),
+                onPressed: () => showExportSheet(context, title: 'تصدير الفاتورة', options: [
+                  ExportOption(
+                    title: 'فاتورة A4',
+                    subtitle: 'فاتورة رسمية بشعار المحل وبياناته',
+                    icon: Icons.description_rounded,
+                    fileBase: 'فاتورة-${s.invoiceNo ?? s.id.substring(0, 6)}',
+                    build: () => app.pdf.saleInvoice(s),
+                  ),
+                  ExportOption(
+                    title: 'إيصال 80mm',
+                    subtitle: 'مناسب لطابعات الإيصالات الحرارية',
+                    icon: Icons.receipt_rounded,
+                    fileBase: 'إيصال-${s.invoiceNo ?? s.id.substring(0, 6)}',
+                    build: () => app.pdf.saleReceipt(s),
+                  ),
+                ]),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: FilledButton.tonalIcon(
+                icon: const Icon(Icons.print_rounded),
+                label: const Text('طباعة'),
+                onPressed: () => runExport(
+                  context,
+                  ExportOption(
+                    title: 'فاتورة',
+                    subtitle: '',
+                    icon: Icons.print,
+                    fileBase: 'فاتورة',
+                    build: () => app.pdf.saleInvoice(s),
+                  ),
+                  ExportAction.print,
+                ),
+              ),
+            ),
+          ]),
+          const SizedBox(height: 10),
           if (s.isCancelled)
             CancelledBanner(reason: s.cancelReason)
           else

@@ -15,6 +15,10 @@ class AppSettings {
     this.cashPurchaseAsCogs = true,
     this.pinCode,
     this.themeMode = AppThemeMode.system,
+    this.address,
+    this.receiptHeader,
+    this.receiptFooter = 'شكراً لتسوقكم معنا',
+    this.logoBase64,
   });
 
   final String storeName;
@@ -37,6 +41,17 @@ class AppSettings {
   /// Light / dark / follow system.
   final AppThemeMode themeMode;
 
+  /// Branding used on invoices / reports (PDF).
+  final String? address;
+  /// Free text printed under the store name (e.g. slogan / tax no.).
+  final String? receiptHeader;
+  /// Free text printed at the bottom of every document.
+  final String? receiptFooter;
+  /// PNG/JPEG logo, base64 (kept small; ≤ 512px recommended).
+  final String? logoBase64;
+
+  bool get hasLogo => logoBase64 != null && logoBase64!.isNotEmpty;
+
   AppSettings copyWith({
     String? storeName,
     String? ownerName,
@@ -52,6 +67,11 @@ class AppSettings {
     String? pinCode,
     bool clearPin = false,
     AppThemeMode? themeMode,
+    String? address,
+    String? receiptHeader,
+    String? receiptFooter,
+    String? logoBase64,
+    bool clearLogo = false,
   }) => AppSettings(
     storeName: storeName ?? this.storeName,
     ownerName: ownerName ?? this.ownerName,
@@ -66,6 +86,10 @@ class AppSettings {
     cashPurchaseAsCogs: cashPurchaseAsCogs ?? this.cashPurchaseAsCogs,
     pinCode: clearPin ? null : (pinCode ?? this.pinCode),
     themeMode: themeMode ?? this.themeMode,
+    address: address ?? this.address,
+    receiptHeader: receiptHeader ?? this.receiptHeader,
+    receiptFooter: receiptFooter ?? this.receiptFooter,
+    logoBase64: clearLogo ? null : (logoBase64 ?? this.logoBase64),
   );
 
   Map<String, dynamic> toMap() => {
@@ -80,6 +104,10 @@ class AppSettings {
     'cashPurchaseAsCogs': cashPurchaseAsCogs,
     'pinCode': pinCode,
     'themeMode': themeMode.index,
+    'address': address,
+    'receiptHeader': receiptHeader,
+    'receiptFooter': receiptFooter,
+    'logoBase64': logoBase64,
   };
 
   factory AppSettings.fromMap(Map<String, dynamic> m) => AppSettings(
@@ -102,6 +130,10 @@ class AppSettings {
       m['themeMode'],
       AppThemeMode.system,
     ),
+    address: Serde.str(m['address']),
+    receiptHeader: Serde.str(m['receiptHeader']),
+    receiptFooter: (m['receiptFooter'] as String?) ?? 'شكراً لتسوقكم معنا',
+    logoBase64: Serde.str(m['logoBase64']),
   );
 }
 

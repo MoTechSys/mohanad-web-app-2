@@ -42,7 +42,9 @@ class _AppShellState extends State<AppShell> {
     final c = context.c;
     return Scaffold(
       body: IndexedStack(index: _index, children: _pages),
-      floatingActionButton: _index == 4
+      // Inner tabs own their own FABs (عميل جديد / بيع جديد / تاجر جديد /
+      // مصروف) — the cashier FAB lives on the dashboard only to avoid overlap.
+      floatingActionButton: _index != 0
           ? null
           : FloatingActionButton.extended(
               heroTag: 'shell-cashier',

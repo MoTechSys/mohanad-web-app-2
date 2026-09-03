@@ -16,6 +16,13 @@ dependencies:
   provider: 6.1.5+1
   intl: 0.20.2
   mobile_scanner: 7.1.4
+  pdf: 3.11.3
+  printing: 5.14.2
+  barcode_widget: 2.0.4
+  excel: 4.0.6
+  share_plus: 10.1.4
+  path_provider: 2.1.5
+  image_picker: 1.1.2
 
 dev_dependencies:
   flutter_test:
@@ -24,3 +31,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/fonts/NotoNaskhArabic-Regular.ttf

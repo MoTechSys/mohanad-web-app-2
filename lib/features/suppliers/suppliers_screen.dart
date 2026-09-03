@@ -6,6 +6,7 @@ import '../../core/money/money.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/common.dart';
+import '../../core/widgets/export_actions.dart';
 import '../../data/ledger_db.dart';
 import '../../domain/models/party.dart';
 import '../customers/customer_detail_screen.dart' show PartyTxTile;
@@ -315,6 +316,19 @@ class SupplierDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(s.name),
         actions: [
+          ExportButton(
+            title: 'كشف حساب ${s.name}',
+            tooltip: 'كشف حساب PDF',
+            options: [
+              ExportOption(
+                title: 'كشف حساب المورد PDF',
+                subtitle: 'المشتريات الآجلة والدفعات والرصيد المستحق',
+                icon: Icons.picture_as_pdf_rounded,
+                fileBase: 'كشف-مورد-${s.name}',
+                build: () => app.pdf.supplierStatement(s),
+              ),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.edit_outlined),
             onPressed: () =>

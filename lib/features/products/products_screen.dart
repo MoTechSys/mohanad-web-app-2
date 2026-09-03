@@ -6,6 +6,8 @@ import '../../core/money/money.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/barcode_scanner_view.dart';
 import '../../core/widgets/common.dart';
+import '../../core/widgets/export_actions.dart';
+import '../../data/export/pdf_exporter.dart';
 import '../../data/ledger_db.dart';
 import '../../domain/enums/enums.dart';
 import '../../domain/models/inventory.dart';
@@ -36,6 +38,31 @@ class _ProductsScreenState extends State<ProductsScreen> {
       appBar: AppBar(
         title: const Text('المنتجات والمخزون'),
         actions: [
+          IconButton(
+            tooltip: 'طباعة ملصقات الباركود',
+            icon: const Icon(Icons.qr_code_2_rounded),
+            onPressed: list.isEmpty ? null : () => _labelsSheet(context, list),
+          ),
+          ExportButton(
+            title: 'تصدير المخزون',
+            options: [
+              ExportOption(
+                title: 'تقرير المخزون PDF',
+                subtitle: 'الأصناف والكميات والقيمة وتنبيهات النقص',
+                icon: Icons.picture_as_pdf_rounded,
+                fileBase: 'المخزون',
+                build: app.pdf.inventoryReport,
+              ),
+              ExportOption(
+                title: 'المخزون Excel',
+                subtitle: 'ورقة الأصناف + كل حركات المخزون',
+                icon: Icons.table_chart_rounded,
+                fileBase: 'المخزون',
+                isExcel: true,
+                build: app.excel.inventoryWorkbook,
+              ),
+            ],
+          ),
           Padding(
             padding: const EdgeInsetsDirectional.only(end: 12),
             child: Center(child: Tag('قيمة المخزون: ${app.inventory.stockValue().format()}')),
@@ -129,6 +156,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
             ListTile(leading: const Icon(Icons.tune), title: const Text('جرد (تحديد الكمية الفعلية)'),
                 onTap: () => Navigator.pop(context, 'adjust')),
           ],
+          ListTile(leading: Icon(Icons.qr_code_2_rounded, color: context.c.info),
+              title: const Text('ملصق باركود للطباعة'), onTap: () => Navigator.pop(context, 'label')),
           ListTile(leading: Icon(Icons.delete_outline, color: context.c.danger),
               title: const Text('حذف'), onTap: () => Navigator.pop(context, 'delete')),
         ]),
@@ -137,6 +166,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
     if (v == null || !context.mounted) return;
     if (v == 'edit') {
       await showFormSheet(context, ProductFormSheet(existing: p));
+    } else if (v == 'label') {
+      await _labelsSheet(context, [p]);
     } else if (v == 'delete') {
       if (await confirm(context, title: 'حذف المنتج؟', confirmLabel: 'حذف', destructive: true)) {
         if (!context.mounted) return;
@@ -151,6 +182,54 @@ class _ProductsScreenState extends State<ProductsScreen> {
       await showFormSheet(context, _MoveSheet(product: p, type: type));
     }
   }
+}
+
+/// Choose label size & copies, then share/print the label sheet.
+Future<void> _labelsSheet(BuildContext context, List<Product> products) async {
+  final app = context.read<AppServices>();
+  var size = LabelSize.medium;
+  var copies = products.length == 1 ? 12 : 1;
+  final ok = await showModalBottomSheet<bool>(
+    context: context,
+    showDragHandle: true,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setS) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            SheetTitle(products.length == 1 ? 'ملصق: ${products.first.name}' : 'ملصقات ${products.length} صنف'),
+            Text('يُطبع لكل صنف: اسم المحل، اسم الصنف، الباركود (EAN-13 / Code-128) والسعر. الأصناف بدون باركود تحصل على كود داخلي قابل للمسح.',
+                style: TextStyle(fontSize: 12, color: ctx.c.textMuted)),
+            const SizedBox(height: 12),
+            SegmentedButton<LabelSize>(
+              segments: [for (final l in LabelSize.values) ButtonSegment(value: l, label: Text(l.label, style: const TextStyle(fontSize: 11)))],
+              selected: {size},
+              onSelectionChanged: (v) => setS(() => size = v.first),
+            ),
+            const SizedBox(height: 12),
+            Row(children: [
+              const Expanded(child: Text('عدد النسخ لكل صنف')),
+              IconButton.filledTonal(onPressed: copies > 1 ? () => setS(() => copies--) : null, icon: const Icon(Icons.remove)),
+              SizedBox(width: 36, child: Text('$copies', textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16))),
+              IconButton.filledTonal(onPressed: copies < 99 ? () => setS(() => copies++) : null, icon: const Icon(Icons.add)),
+            ]),
+            const SizedBox(height: 16),
+            FilledButton.icon(onPressed: () => Navigator.pop(ctx, true), icon: const Icon(Icons.qr_code_2_rounded), label: const Text('إنشاء الملصقات')),
+          ]),
+        ),
+      ),
+    ),
+  );
+  if (ok != true || !context.mounted) return;
+  await showExportSheet(context, title: 'ملصقات الباركود', options: [
+    ExportOption(
+      title: 'ورقة ملصقات A4 (PDF)',
+      subtitle: '${products.length} صنف × $copies نسخة • ${size.label}',
+      icon: Icons.qr_code_2_rounded,
+      fileBase: 'ملصقات-باركود',
+      build: () => app.pdf.barcodeLabels(products, copies: copies, size: size),
+    ),
+  ]);
 }
 
 class _MoveSheet extends StatefulWidget {
