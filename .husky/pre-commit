@@ -1,3 +1,0 @@
-#!/usr/bin/env sh
-# Husky v9 — no helper, runs the script directly.
-pnpm lint-staged

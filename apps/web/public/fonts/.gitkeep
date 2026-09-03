@@ -1,3 +1,0 @@
-# الخطوط الفعلية ستضاف بأمر:
-# curl -L https://github.com/IBM/plex/raw/master/IBM-Plex-Sans-Arabic/fonts/complete/woff2/IBMPlexSansArabic-Regular.woff2 -o IBMPlexSansArabic-Variable.woff2
-# في المرحلة 1 يكفي أن system-ui يكون fallback (font-display: swap).

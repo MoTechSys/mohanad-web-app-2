@@ -1,0 +1,25 @@
+name: grocery_ledger
+description: "دفتر البقالة — نظام حسابات بقالة محلي بالكامل: عملاء وديون، موردون ومشتريات، مبيعات، مصاريف، مخزون وتقارير."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  hive: 2.2.3
+  hive_flutter: 1.1.0
+  provider: 6.1.5+1
+  intl: 0.20.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
