@@ -1,120 +1,16 @@
-# Grocery System (نظام إدارة البقالة)
+# grocery_ledger
 
-[![Node](https://img.shields.io/badge/node-%3E%3D20.10-43853d?logo=node.js&logoColor=white)](https://nodejs.org/)
-[![pnpm](https://img.shields.io/badge/pnpm-%3E%3D9.0-f69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Biome](https://img.shields.io/badge/lint-Biome%201.9-60a5fa?logo=biome&logoColor=white)](https://biomejs.dev/)
-[![License](https://img.shields.io/badge/license-Proprietary-red.svg)](#الترخيص)
+A new Flutter project.
 
-> نظام إدارة بقالة أونلاين متكامل (PWA) — عربي بالكامل (RTL)
-> Stack: **React + TS + Vite + Ionic + Tailwind** | **NestJS + TypeScript** | **Prisma + Railway PostgreSQL**
-> Lint/format: **Biome** (replaces ESLint + Prettier).
+## Getting Started
 
-## الحالة الحالية
+This project is a starting point for a Flutter application.
 
-> آخر تحديث: 2026-06-09 — بعد جولة مراجعة وتدقيق شاملة (راجع `docs/phase-night/WORKLOG.md`).
+A few resources to get you started if this is your first Flutter project:
 
-| المرحلة | الوصف                                          | الحالة                |
-| ------- | ---------------------------------------------- | --------------------- |
-| 0       | التحليل والتوثيق                               | ✅ مكتمل (`docs/00..13`) |
-| **1**   | **Foundation (Monorepo + Schema + Shells)**    | ✅ **مكتمل**           |
-| 2       | Auth + RBAC                                    | ✅ مكتمل               |
-| 3       | Customers + Debts                              | ✅ مكتمل               |
-| 4       | Suppliers + Purchases                          | ✅ مكتمل               |
-| 5       | Expenses + Daily Income                        | ✅ مكتمل               |
-| 6       | Sales Modes                                    | ✅ مكتمل               |
-| 7       | Reports                                        | ✅ مكتمل               |
-| 8       | Notifications + WhatsApp                       | 🟡 جزئي (إشعارات ✅ · WhatsApp زر يدوي فقط) |
-| 9       | Inventory (optional)                           | ✅ مكتمل               |
-| 10      | Polish + PWA + Deployment                      | 🟡 جزئي (PWA SW+prompt ✅ · E2E Playwright ✅ · دليل + إعداد نشر Railway ✅ · النشر الفعلي متبقٍّ) |
+- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
 
-> **الجودة (2026-06-09):** 225 اختبار ناجح · lint/typecheck/build نظيف · القواعد الذهبية #3/#6/#9 مُطبّقة ومُختبَرة.
-> راجع `docs/phase-night/WORKLOG.md` للتفاصيل الكاملة (الأخطاء المُصلَحة + القرارات المعلّقة).
-
-## بنية المشروع (Monorepo — pnpm workspaces)
-
-```
-grocery-system/
-├── apps/
-│   ├── api/          # NestJS backend (REST + Prisma + JWT + RBAC)
-│   └── web/          # React PWA (Vite + Ionic + Tailwind + RTL)
-├── packages/
-│   └── shared/       # types, zod schemas, PERMISSIONS, constants
-├── prisma/           # schema + seed (root-level — Q5 of recovery)
-├── docs/             # 13 ملف توثيق معتمد + recovery report
-├── biome.json
-├── tsconfig.base.json
-└── package.json
-```
-
-## المتطلبات
-
-- Node.js **>= 20.10.0**
-- pnpm **>= 9.0.0**
-- PostgreSQL **>= 14** (محلياً للتطوير، Railway للإنتاج)
-
-## البدء السريع
-
-```bash
-# 1. تثبيت الاعتماديات
-pnpm install
-
-# 2. إعداد متغيرات البيئة
-cp .env.example .env
-cp .env.example apps/api/.env
-cp .env.example apps/web/.env
-
-# 3. (Phase 2 onward) إنشاء قاعدة البيانات وتشغيل seed
-pnpm db:generate
-pnpm db:migrate
-pnpm db:seed
-
-# 4. تشغيل dev servers (api على 3001، web على 5173)
-pnpm dev
-```
-
-> الـ migrations موجودة حتى Phase 7 (راجع `prisma/migrations/`)؛ `pnpm db:migrate` يطبّقها كلها.
-> See `DEVELOPMENT.md` for detailed onboarding.
-
-## السكربتات الجذرية
-
-| السكربت           | الوصف                                       |
-| ----------------- | ------------------------------------------- |
-| `pnpm dev`        | تشغيل web + api بالتوازي                   |
-| `pnpm dev:api`    | تشغيل الباكند فقط                           |
-| `pnpm dev:web`    | تشغيل الفرونت فقط                           |
-| `pnpm build`      | بناء الإنتاج لجميع الحزم                    |
-| `pnpm lint`       | فحص Biome                                   |
-| `pnpm lint:fix`   | إصلاحات Biome الآمنة                       |
-| `pnpm format`     | تنسيق Biome                                 |
-| `pnpm typecheck`  | فحص الأنواع                                 |
-| `pnpm test`       | تشغيل الاختبارات (Vitest + Jest)           |
-| `pnpm db:migrate` | تشغيل migrations                            |
-| `pnpm db:seed`    | seed بيانات الصلاحيات والأدوار والمالك      |
-| `pnpm db:studio`  | فتح Prisma Studio                           |
-| `pnpm lh`         | Lighthouse audit (JSON + screenshots)       |
-
-## التوثيق
-
-راجع مجلد [`docs/`](./docs):
-
-- [`00-project-overview.md`](./docs/00-project-overview.md)
-- [`01-requirements-analysis.md`](./docs/01-requirements-analysis.md)
-- [`02-architecture.md`](./docs/02-architecture.md)
-- [`03-database-design.md`](./docs/03-database-design.md)
-- [`04-rbac-permissions.md`](./docs/04-rbac-permissions.md)
-- [`05-ui-ux-guidelines.md`](./docs/05-ui-ux-guidelines.md)
-- [`06-modules.md`](./docs/06-modules.md)
-- [`07-api-plan.md`](./docs/07-api-plan.md)
-- [`08-reports.md`](./docs/08-reports.md)
-- [`09-notifications.md`](./docs/09-notifications.md)
-- [`10-security-and-audit.md`](./docs/10-security-and-audit.md)
-- [`11-development-roadmap.md`](./docs/11-development-roadmap.md)
-- [`12-agent-memory.md`](./docs/12-agent-memory.md) ← **القرارات الثابتة**
-- [`13-pre-foundation-checklist.md`](./docs/13-pre-foundation-checklist.md)
-- [`recovery-report.md`](./docs/recovery-report.md) ← Foundation Recovery PR
-- [`phase-night/WORKLOG.md`](./docs/phase-night/WORKLOG.md) ← **جولة المراجعة والتدقيق (2026-06-09)**
-
-## الترخيص
-
-Private — proprietary.
+For help getting started with Flutter development, view the
+[online documentation](https://docs.flutter.dev/), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.

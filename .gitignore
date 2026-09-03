@@ -1,61 +1,23 @@
-# Dependencies
-node_modules/
-.pnpm-store/
-
-# Build outputs
-dist/
+# Flutter / Dart
+.dart_tool/
+.packages
 build/
-out/
-.next/
-.turbo/
-*.tsbuildinfo
-
-# Logs
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-# Environment
-.env
-.env.local
-.env.*.local
-!.env.example
-
-# IDE / OS
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
 .idea/
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json.example
-.DS_Store
-Thumbs.db
+.vscode/
+pubspec.lock.bak
 
-# Coverage / cache
-coverage/
-!docs/phase2/coverage/
-.nyc_output/
-.cache/
-.eslintcache
-
-# Prisma
-# (Phase 2+) Migrations are tracked in git. Only ignore local-only artefacts.
-prisma/migrations/dev.db*
-apps/api/prisma/migrations/dev.db*
-*.db
-*.db-journal
-
-# Vite / PWA
-apps/web/dev-dist/
-apps/web/dist-ssr/
-apps/web/stats.html
+# Android
+android/.gradle/
+android/local.properties
+android/key.properties
+android/release-key.jks
+android/app/.cxx/
+**/*.keystore
+**/*.jks
 
 # Misc
-.husky/_/
-core
-**/core
-test-results/
-playwright-report/
-.playwright/
+*.log
+.DS_Store
