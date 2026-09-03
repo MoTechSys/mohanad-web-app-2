@@ -91,7 +91,17 @@ enum RefType {
   expenseCancel,
 }
 
-enum AuditAction { create, update, cancel, delete, restore, settings }
+enum AuditAction {
+  create('إنشاء'),
+  update('تعديل'),
+  cancel('إلغاء'),
+  delete('حذف'),
+  restore('استعادة'),
+  settings('إعدادات');
+
+  const AuditAction(this.label);
+  final String label;
+}
 
 enum ProfitMode {
   /// Revenue − COGS (from sale item cost snapshots) − operating expenses.
