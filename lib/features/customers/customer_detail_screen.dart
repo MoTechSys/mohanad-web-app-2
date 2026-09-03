@@ -50,9 +50,9 @@ class CustomerDetailScreen extends StatelessWidget {
               if (!bal.isZero)
                 const PopupMenuItem(value: 'clear', child: Text('تصفير الرصيد')),
               const PopupMenuDivider(),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'delete',
-                child: Text('حذف العميل', style: TextStyle(color: AppColors.danger)),
+                child: Text('حذف العميل', style: TextStyle(color: context.c.danger)),
               ),
             ],
           ),
@@ -69,7 +69,7 @@ class CustomerDetailScreen extends StatelessWidget {
                   Expanded(
                     child: FilledButton.icon(
                       style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.danger,
+                        backgroundColor: context.c.danger,
                       ),
                       onPressed: c.status == CustomerStatus.frozen
                           ? null
@@ -226,18 +226,18 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = bal.isPositive
-        ? AppColors.danger
+        ? context.c.danger
         : bal.isNegative
-        ? AppColors.info
-        : AppColors.primaryDark;
+        ? context.c.info
+        : context.c.primaryDark;
     final limit = c.creditLimit;
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.c.card,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.c.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -248,9 +248,9 @@ class _Header extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'الرصيد الحالي',
-                      style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                      style: TextStyle(color: context.c.textMuted, fontSize: 12),
                     ),
                     MoneyText(bal, size: 28, color: color, currency: currency),
                     Text(
@@ -266,9 +266,9 @@ class _Header extends StatelessWidget {
                   Tag(
                     c.status.label,
                     color: switch (c.status) {
-                      CustomerStatus.active => AppColors.primaryDark,
-                      CustomerStatus.frozen => AppColors.danger,
-                      CustomerStatus.gracePeriod => AppColors.warning,
+                      CustomerStatus.active => context.c.primaryDark,
+                      CustomerStatus.frozen => context.c.danger,
+                      CustomerStatus.gracePeriod => context.c.warning,
                     },
                   ),
                   if (c.graceUntil != null &&
@@ -277,9 +277,9 @@ class _Header extends StatelessWidget {
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
                         'حتى ${Fmt.date(c.graceUntil!)}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
-                          color: AppColors.textMuted,
+                          color: context.c.textMuted,
                         ),
                       ),
                     ),
@@ -296,8 +296,8 @@ class _Header extends StatelessWidget {
                 value: bal.isPositive
                     ? (bal.minor / limit.minor).clamp(0.0, 1.0)
                     : 0,
-                color: bal > limit ? AppColors.danger : AppColors.primary,
-                backgroundColor: AppColors.border,
+                color: bal > limit ? context.c.danger : context.c.primary,
+                backgroundColor: context.c.border,
               ),
             ),
             const SizedBox(height: 4),
@@ -305,7 +305,7 @@ class _Header extends StatelessWidget {
               'حد الائتمان: ${limit.format()}${bal > limit ? ' — تجاوز الحد!' : ''}',
               style: TextStyle(
                 fontSize: 12,
-                color: bal > limit ? AppColors.danger : AppColors.textMuted,
+                color: bal > limit ? context.c.danger : context.c.textMuted,
               ),
             ),
           ],
@@ -315,27 +315,27 @@ class _Header extends StatelessWidget {
               spacing: 16,
               children: [
                 if ((c.phone ?? '').isNotEmpty)
-                  _info(Icons.phone_outlined, c.phone!),
+                  _info(context, Icons.phone_outlined, c.phone!),
                 if ((c.address ?? '').isNotEmpty)
-                  _info(Icons.place_outlined, c.address!),
+                  _info(context, Icons.place_outlined, c.address!),
               ],
             ),
           ],
           if ((c.notes ?? '').isNotEmpty) ...[
             const SizedBox(height: 6),
-            _info(Icons.notes, c.notes!),
+            _info(context, Icons.notes, c.notes!),
           ],
         ],
       ),
     );
   }
 
-  Widget _info(IconData i, String t) => Row(
+  Widget _info(BuildContext context, IconData i, String t) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      Icon(i, size: 14, color: AppColors.textMuted),
+      Icon(i, size: 14, color: context.c.textMuted),
       const SizedBox(width: 4),
-      Text(t, style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+      Text(t, style: TextStyle(fontSize: 12, color: context.c.textMuted)),
     ],
   );
 }
@@ -360,10 +360,10 @@ class PartyTxTile extends StatelessWidget {
     final isPay = t.type == PartyTxType.payment;
     final delta = t.signedDelta;
     final color = cancelled
-        ? AppColors.textMuted
+        ? context.c.textMuted
         : delta.isPositive
-        ? AppColors.danger
-        : AppColors.primaryDark;
+        ? context.c.danger
+        : context.c.primaryDark;
     final icon = isDebt
         ? Icons.add_circle_outline
         : isPay
@@ -397,9 +397,9 @@ class PartyTxTile extends StatelessWidget {
                       ),
                       Text(
                         '${Fmt.date(t.txDate)} • ${Fmt.dateTime(t.createdAt).split('  ').last}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
-                          color: AppColors.textMuted,
+                          color: context.c.textMuted,
                         ),
                       ),
                     ],
@@ -412,9 +412,9 @@ class PartyTxTile extends StatelessWidget {
                     Text(
                       'الرصيد بعد: ${t.balanceAfter.format()}',
                       textDirection: TextDirection.rtl,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
-                        color: AppColors.textMuted,
+                        color: context.c.textMuted,
                       ),
                     ),
                   ],
@@ -433,7 +433,7 @@ class PartyTxTile extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 6),
                 child: Text(
                   t.notes!,
-                  style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                  style: TextStyle(fontSize: 12, color: context.c.textMuted),
                 ),
               ),
             if (cancelled)

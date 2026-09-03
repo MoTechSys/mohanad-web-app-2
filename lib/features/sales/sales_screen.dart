@@ -86,8 +86,8 @@ class _SalesScreenState extends State<SalesScreen> {
           FloatingActionButton.small(
             heroTag: 'fab_daily',
             tooltip: 'دخل يومي إجمالي',
-            backgroundColor: AppColors.infoLight,
-            foregroundColor: AppColors.info,
+            backgroundColor: context.c.infoLight,
+            foregroundColor: context.c.info,
             onPressed: () => showFormSheet(context, const DailyIncomeSheet()),
             child: const Icon(Icons.today),
           ),
@@ -124,7 +124,7 @@ class _SalesScreenState extends State<SalesScreen> {
                     child: StatCard(
                       title: 'نقدي',
                       value: cash.format(),
-                      color: AppColors.primaryDark,
+                      color: context.c.primaryDark,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -132,7 +132,7 @@ class _SalesScreenState extends State<SalesScreen> {
                     child: StatCard(
                       title: 'آجل',
                       value: credit.format(),
-                      color: AppColors.warning,
+                      color: context.c.warning,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -140,7 +140,7 @@ class _SalesScreenState extends State<SalesScreen> {
                     child: StatCard(
                       title: 'دخل يومي',
                       value: daily.format(),
-                      color: AppColors.info,
+                      color: context.c.info,
                     ),
                   ),
                 ],
@@ -192,10 +192,10 @@ class SaleTile extends StatelessWidget {
     final cust = s.customerId == null ? null : db.customers[s.customerId!];
     final credit = s.paymentType == PaymentType.credit;
     final color = s.isCancelled
-        ? AppColors.textMuted
+        ? context.c.textMuted
         : credit
-        ? AppColors.warning
-        : AppColors.primaryDark;
+        ? context.c.warning
+        : context.c.primaryDark;
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -232,9 +232,9 @@ class SaleTile extends StatelessWidget {
                               '${s.lines.length} صنف',
                             if ((s.invoiceNo ?? '').isNotEmpty) '#${s.invoiceNo}',
                           ].join(' • '),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
-                            color: AppColors.textMuted,
+                            color: context.c.textMuted,
                           ),
                         ),
                       ],
@@ -271,11 +271,11 @@ class SaleTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SheetTitle('تفاصيل فاتورة البيع'),
-          _kv('النوع', s.paymentType.label),
-          _kv('التاريخ', Fmt.dateTime(s.saleDate)),
+          _kv(context, 'النوع', s.paymentType.label),
+          _kv(context, 'التاريخ', Fmt.dateTime(s.saleDate)),
           if (s.customerId != null)
-            _kv('العميل', db.customers[s.customerId!]?.name ?? '—'),
-          if ((s.invoiceNo ?? '').isNotEmpty) _kv('رقم الفاتورة', s.invoiceNo!),
+            _kv(context, 'العميل', db.customers[s.customerId!]?.name ?? '—'),
+          if ((s.invoiceNo ?? '').isNotEmpty) _kv(context, 'رقم الفاتورة', s.invoiceNo!),
           if (s.lines.isNotEmpty) ...[
             const Divider(height: 20),
             for (final l in s.lines)
@@ -287,7 +287,7 @@ class SaleTile extends StatelessWidget {
                     Text(
                       '${l.qty.format()} × ${l.unitPrice.format()}',
                       textDirection: TextDirection.ltr,
-                      style: const TextStyle(color: AppColors.textMuted),
+                      style: TextStyle(color: context.c.textMuted),
                     ),
                     const SizedBox(width: 12),
                     MoneyText(l.lineTotal, bold: false),
@@ -296,24 +296,24 @@ class SaleTile extends StatelessWidget {
               ),
           ],
           const Divider(height: 20),
-          _kv('الإجمالي', s.grossAmount.format()),
-          if (s.discount.isPositive) _kv('الخصم', '- ${s.discount.format()}'),
-          _kv('الصافي', s.netAmount.format(), bold: true),
+          _kv(context, 'الإجمالي', s.grossAmount.format()),
+          if (s.discount.isPositive) _kv(context, 'الخصم', '- ${s.discount.format()}'),
+          _kv(context, 'الصافي', s.netAmount.format(), bold: true),
           if (s.profit != null) ...[
-            _kv('تكلفة البضاعة', s.costAmount.format()),
-            _kv(
+            _kv(context, 'تكلفة البضاعة', s.costAmount.format()),
+            _kv(context, 
               'ربح الفاتورة',
               s.profit!.format(),
-              color: s.profit!.isNegative ? AppColors.danger : AppColors.primaryDark,
+              color: s.profit!.isNegative ? context.c.danger : context.c.primaryDark,
             ),
           ],
-          if ((s.details ?? '').isNotEmpty) _kv('ملاحظات', s.details!),
+          if ((s.details ?? '').isNotEmpty) _kv(context, 'ملاحظات', s.details!),
           const SizedBox(height: 12),
           if (s.isCancelled)
             CancelledBanner(reason: s.cancelReason)
           else
             OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(foregroundColor: AppColors.danger),
+              style: OutlinedButton.styleFrom(foregroundColor: context.c.danger),
               icon: const Icon(Icons.block),
               label: const Text('إلغاء الفاتورة'),
               onPressed: () async {
@@ -346,7 +346,7 @@ class _IncomeTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final d = income;
     final cancelled = d.cancelledAt != null;
-    final color = cancelled ? AppColors.textMuted : AppColors.info;
+    final color = cancelled ? context.c.textMuted : context.c.info;
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -396,9 +396,9 @@ class _IncomeTile extends StatelessWidget {
                               'تكلفة ${d.manualCogs!.format()}',
                             if ((d.notes ?? '').isNotEmpty) d.notes!,
                           ].join(' • '),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
-                            color: AppColors.textMuted,
+                            color: context.c.textMuted,
                           ),
                         ),
                       ],
@@ -420,12 +420,12 @@ class _IncomeTile extends StatelessWidget {
   }
 }
 
-Widget _kv(String k, String v, {bool bold = false, Color? color}) => Padding(
+Widget _kv(BuildContext context, String k, String v, {bool bold = false, Color? color}) => Padding(
   padding: const EdgeInsets.symmetric(vertical: 4),
   child: Row(
     children: [
       Expanded(
-        child: Text(k, style: const TextStyle(color: AppColors.textMuted)),
+        child: Text(k, style: TextStyle(color: context.c.textMuted)),
       ),
       Text(
         v,

@@ -4,12 +4,14 @@ import 'package:provider/provider.dart';
 
 import '../../app/app_services.dart';
 import '../../core/money/money.dart';
+import '../../core/platform/native_bridge.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/common.dart';
 import '../../data/ledger_db.dart';
 import '../../domain/enums/enums.dart';
 import '../expenses/expense_sheet.dart';
+import '../pos/pos_screen.dart';
 import '../products/products_screen.dart';
 import '../purchases/purchases_screen.dart';
 import '../reports/reports_screen.dart';
@@ -26,18 +28,23 @@ class MoreScreen extends StatelessWidget {
       body: SafeArea(
         child: ListView(padding: const EdgeInsets.all(16), children: [
           Card(child: Column(children: [
-            ListTile(leading: const Icon(Icons.receipt_long_outlined, color: AppColors.danger), title: const Text('المصروفات'),
+            ListTile(leading: Icon(Icons.qr_code_scanner_rounded, color: context.c.primaryStrong), title: const Text('الكاشير (مسح بالباركود)'),
+                subtitle: const Text('بيع سريع بالكاميرا أو الماسح', style: TextStyle(fontSize: 12)),
+                trailing: const Icon(Icons.chevron_left),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosScreen(), fullscreenDialog: true))),
+            const Divider(),
+            ListTile(leading: Icon(Icons.receipt_long_outlined, color: context.c.danger), title: Text('المصروفات'),
                 trailing: const Icon(Icons.chevron_left), onTap: () => go(const ExpensesScreen())),
             const Divider(),
-            ListTile(leading: const Icon(Icons.inventory_2_outlined, color: AppColors.warning), title: const Text('فواتير المشتريات'),
+            ListTile(leading: Icon(Icons.inventory_2_outlined, color: context.c.warning), title: Text('فواتير المشتريات'),
                 trailing: const Icon(Icons.chevron_left), onTap: () => go(const PurchasesScreen())),
             if (db.settings.inventoryEnabled) ...[
               const Divider(),
-              ListTile(leading: const Icon(Icons.inventory_outlined, color: AppColors.primaryDark), title: const Text('المنتجات والمخزون'),
+              ListTile(leading: Icon(Icons.inventory_outlined, color: context.c.primaryDark), title: Text('المنتجات والمخزون'),
                   trailing: const Icon(Icons.chevron_left), onTap: () => go(const ProductsScreen())),
             ],
             const Divider(),
-            ListTile(leading: const Icon(Icons.bar_chart, color: AppColors.info), title: const Text('التقارير'),
+            ListTile(leading: Icon(Icons.bar_chart, color: context.c.info), title: Text('التقارير'),
                 trailing: const Icon(Icons.chevron_left), onTap: () => go(const ReportsScreen())),
           ])),
           const SizedBox(height: 12),
@@ -52,9 +59,20 @@ class MoreScreen extends StatelessWidget {
             ListTile(leading: const Icon(Icons.backup_outlined), title: const Text('النسخ الاحتياطي والاستعادة'),
                 trailing: const Icon(Icons.chevron_left), onTap: () => go(const BackupScreen())),
           ])),
+          const SizedBox(height: 12),
+          Card(child: Column(children: [
+            _ThemeModeTile(current: db.settings.themeMode),
+            const Divider(),
+            ListTile(leading: Icon(Icons.info_outline_rounded, color: context.c.info), title: const Text('حول التطبيق والمطور'),
+                subtitle: const Text('معين العباسي • alabbasi.uk', style: TextStyle(fontSize: 12)),
+                trailing: const Icon(Icons.chevron_left), onTap: () => go(const AboutScreen())),
+          ])),
           const SizedBox(height: 24),
-          const Center(child: Text('دفتر البقالة • نسخة 1.0.0 • يعمل محلياً بدون إنترنت',
-              style: TextStyle(fontSize: 12, color: AppColors.textMuted))),
+          Center(child: Text('دفتر البقالة • نسخة ${AboutScreen.version} • يعمل محلياً بدون إنترنت',
+              style: TextStyle(fontSize: 12, color: context.c.textMuted))),
+          const SizedBox(height: 4),
+          Center(child: Text('تطوير: معين العباسي',
+              style: TextStyle(fontSize: 12, color: context.c.textMuted, fontWeight: FontWeight.w600))),
         ]),
       ),
     );
@@ -72,10 +90,10 @@ class ExpensesScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('المصروفات'), actions: [
         Padding(padding: const EdgeInsetsDirectional.only(end: 12),
-            child: Center(child: Tag('تشغيلية: ${total.format()}', color: AppColors.danger))),
+            child: Center(child: Tag('تشغيلية: ${total.format()}', color: context.c.danger))),
       ]),
       floatingActionButton: FloatingActionButton.extended(heroTag: 'fab_exp',
-          backgroundColor: AppColors.danger, foregroundColor: Colors.white,
+          backgroundColor: context.c.danger, foregroundColor: Colors.white,
           onPressed: () => showFormSheet(context, const ExpenseSheet()),
           icon: const Icon(Icons.add), label: const Text('مصروف')),
       body: SafeArea(child: list.isEmpty
@@ -88,7 +106,7 @@ class ExpensesScreen extends StatelessWidget {
                 final e = list[i];
                 final cat = e.categoryId == null ? null : db.categories[e.categoryId!];
                 final linked = e.type == ExpenseType.supplierPayment || e.type == ExpenseType.cashPurchase;
-                final color = e.isCancelled ? AppColors.textMuted : linked ? AppColors.info : AppColors.danger;
+                final color = e.isCancelled ? context.c.textMuted : linked ? context.c.info : context.c.danger;
                 return Card(child: ListTile(
                   leading: Icon(linked ? Icons.link : Icons.payments_outlined, color: color),
                   title: Text(cat?.name ?? e.type.label, style: TextStyle(fontWeight: FontWeight.w700,
@@ -124,13 +142,13 @@ class AuditScreen extends StatelessWidget {
               itemBuilder: (_, i) {
                 final a = list[i];
                 final color = switch (a.action) {
-                  AuditAction.cancel || AuditAction.delete => AppColors.danger,
-                  AuditAction.create => AppColors.primaryDark,
-                  _ => AppColors.info,
+                  AuditAction.cancel || AuditAction.delete => context.c.danger,
+                  AuditAction.create => context.c.primaryDark,
+                  _ => context.c.info,
                 };
                 return ListTile(dense: true,
                     leading: Icon(a.isLargeTx ? Icons.warning_amber_rounded : Icons.circle, size: a.isLargeTx ? 22 : 10,
-                        color: a.isLargeTx ? AppColors.warning : color),
+                        color: a.isLargeTx ? context.c.warning : color),
                     title: Text(a.summary),
                     subtitle: Text('${a.action.label} • ${Fmt.dateTime(a.at)}${a.isLargeTx ? ' • معاملة كبيرة' : ''}',
                         style: const TextStyle(fontSize: 11)));
@@ -158,6 +176,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late bool _inv = s0.inventoryEnabled;
   late bool _cashCogs = s0.cashPurchaseAsCogs;
   late ProfitMode _mode = s0.profitMode;
+  late AppThemeMode _theme = s0.themeMode;
 
   @override
   void dispose() {
@@ -180,6 +199,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
             decoration: const InputDecoration(labelText: 'الهاتف')),
         const SizedBox(height: 12),
         TextFormField(controller: _cur, decoration: const InputDecoration(labelText: 'رمز العملة')),
+        const SectionTitle('المظهر'),
+        SegmentedButton<AppThemeMode>(
+          segments: const [
+            ButtonSegment(value: AppThemeMode.system, icon: Icon(Icons.brightness_auto_outlined), label: Text('حسب النظام')),
+            ButtonSegment(value: AppThemeMode.light, icon: Icon(Icons.light_mode_outlined), label: Text('فاتح')),
+            ButtonSegment(value: AppThemeMode.dark, icon: Icon(Icons.dark_mode_outlined), label: Text('داكن')),
+          ],
+          selected: {_theme},
+          onSelectionChanged: (v) => setState(() => _theme = v.first),
+        ),
         const SectionTitle('المحاسبة'),
         SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('تفعيل المخزون والمنتجات'),
             value: _inv, onChanged: (v) => setState(() => _inv = v)),
@@ -213,6 +242,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final s = s0.copyWith(
       storeName: _store.text.trim(), ownerName: _owner.text.trim(), phone: _phone.text.trim(),
       currency: _cur.text.trim(), inventoryEnabled: _inv, profitMode: _mode, cashPurchaseAsCogs: _cashCogs,
+      themeMode: _theme,
       largeTxThreshold: th.isEmpty ? null : Money.tryParse(th), clearLargeTx: th.isEmpty,
       dailyTarget: tg.isEmpty ? null : Money.tryParse(tg), clearDailyTarget: tg.isEmpty,
       pinCode: pin.isEmpty ? null : pin, clearPin: pin.isEmpty,
@@ -230,8 +260,8 @@ class BackupScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('النسخ الاحتياطي')),
       body: SafeArea(child: ListView(padding: const EdgeInsets.all(16), children: [
-        const Text('البيانات محفوظة محلياً على هاتفك فقط. انسخ النسخة الاحتياطية واحفظها في مكان آمن (مثل رسالة لنفسك أو ملاحظات).',
-            style: TextStyle(color: AppColors.textMuted)),
+        Text('البيانات محفوظة محلياً على هاتفك فقط. انسخ النسخة الاحتياطية واحفظها في مكان آمن (مثل رسالة لنفسك أو ملاحظات).',
+            style: TextStyle(color: context.c.textMuted)),
         const SizedBox(height: 16),
         FilledButton.icon(icon: const Icon(Icons.copy), label: const Text('نسخ النسخة الاحتياطية (JSON)'),
             onPressed: () async {
@@ -240,7 +270,7 @@ class BackupScreen extends StatelessWidget {
               if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                   content: Text('تم نسخ ${(json.length / 1024).toStringAsFixed(1)} كيلوبايت إلى الحافظة'),
-                  backgroundColor: AppColors.primaryDark));
+                  backgroundColor: context.c.primaryDark));
             }),
         const SizedBox(height: 12),
         OutlinedButton.icon(icon: const Icon(Icons.share_outlined), label: const Text('عرض النسخة كنص'),
@@ -248,7 +278,7 @@ class BackupScreen extends StatelessWidget {
                 textDirection: TextDirection.ltr, style: const TextStyle(fontSize: 10, fontFamily: 'monospace')))),
         const SizedBox(height: 32),
         OutlinedButton.icon(
-          style: OutlinedButton.styleFrom(foregroundColor: AppColors.danger),
+          style: OutlinedButton.styleFrom(foregroundColor: context.c.danger),
           icon: const Icon(Icons.restore), label: const Text('استعادة من نسخة (يستبدل كل البيانات)'),
           onPressed: () async {
             final ctrl = TextEditingController();
@@ -258,7 +288,7 @@ class BackupScreen extends StatelessWidget {
                   decoration: const InputDecoration(hintText: 'الصق محتوى النسخة هنا')),
               actions: [
                 TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
-                FilledButton(style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+                FilledButton(style: FilledButton.styleFrom(backgroundColor: context.c.danger),
                     onPressed: () => Navigator.pop(ctx, true), child: const Text('استعادة')),
               ],
             ));
@@ -273,4 +303,155 @@ class BackupScreen extends StatelessWidget {
       ])),
     );
   }
+}
+
+/// Quick theme switch (persists immediately via SettingsService).
+class _ThemeModeTile extends StatelessWidget {
+  const _ThemeModeTile({required this.current});
+  final AppThemeMode current;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      child: Row(children: [
+        Icon(c.isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded, color: c.warning),
+        const SizedBox(width: 16),
+        const Expanded(child: Text('المظهر', style: TextStyle(fontSize: 16))),
+        SegmentedButton<AppThemeMode>(
+          showSelectedIcon: false,
+          style: const ButtonStyle(visualDensity: VisualDensity.compact),
+          segments: const [
+            ButtonSegment(value: AppThemeMode.system, icon: Icon(Icons.brightness_auto_outlined, size: 18), tooltip: 'حسب النظام'),
+            ButtonSegment(value: AppThemeMode.light, icon: Icon(Icons.light_mode_outlined, size: 18), tooltip: 'فاتح'),
+            ButtonSegment(value: AppThemeMode.dark, icon: Icon(Icons.dark_mode_outlined, size: 18), tooltip: 'داكن'),
+          ],
+          selected: {current},
+          onSelectionChanged: (v) {
+            final app = context.read<AppServices>();
+            guarded(context, () => app.settings.update(app.db.settings.copyWith(themeMode: v.first)));
+          },
+        ),
+      ]),
+    );
+  }
+}
+
+/// About / developer credit screen.
+class AboutScreen extends StatelessWidget {
+  const AboutScreen({super.key});
+
+  static const version = '2.0.0';
+  static const developer = 'معين العباسي';
+  static const website = 'alabbasi.uk';
+  static const websiteUrl = 'https://alabbasi.uk';
+  static const phone = '+967770941666';
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    return Scaffold(
+      appBar: AppBar(title: const Text('حول التطبيق')),
+      body: SafeArea(
+        child: ListView(padding: const EdgeInsets.all(16), children: [
+          Container(
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [c.primaryDark, c.primary],
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+              ),
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: Column(children: [
+              Container(
+                width: 84,
+                height: 84,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
+                ),
+                child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 46),
+              ),
+              const SizedBox(height: 14),
+              const Text('دفتر البقالة',
+                  style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 4),
+              Text('النسخة $version • يعمل محلياً 100% بدون إنترنت',
+                  style: const TextStyle(color: Colors.white70, fontSize: 12)),
+            ]),
+          ),
+          const SizedBox(height: 16),
+          const SectionTitle('المطوّر'),
+          Card(
+            child: Column(children: [
+              ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: c.primarySoft,
+                  child: Icon(Icons.person_rounded, color: c.primaryStrong),
+                ),
+                title: const Text(developer, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                subtitle: const Text('تصميم وتطوير النظام'),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: Icon(Icons.language_rounded, color: c.info),
+                title: const Text(website, textDirection: TextDirection.ltr,
+                    style: TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: const Text('الموقع الإلكتروني'),
+                trailing: const Icon(Icons.open_in_new_rounded, size: 18),
+                onTap: () => NativeBridge.openUrl(websiteUrl),
+                onLongPress: () => _copy(context, websiteUrl),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: Icon(Icons.phone_rounded, color: c.primaryStrong),
+                title: const Text(phone, textDirection: TextDirection.ltr,
+                    style: TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: const Text('اتصال مباشر • اضغط مطولاً للنسخ'),
+                trailing: const Icon(Icons.call_rounded, size: 18),
+                onTap: () => NativeBridge.dial(phone),
+                onLongPress: () => _copy(context, phone),
+              ),
+            ]),
+          ),
+          const SectionTitle('عن النظام'),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                _bullet(c, Icons.qr_code_scanner_rounded, 'كاشير بالباركود عبر كاميرا الهاتف أو ماسح خارجي، مع صوت واهتزاز لكل قراءة.'),
+                _bullet(c, Icons.account_balance_wallet_rounded, 'دفاتر حركات لا تُعدَّل ولا تُحذف؛ الأرصدة والمخزون تُشتق منها دائماً.'),
+                _bullet(c, Icons.people_alt_rounded, 'حسابات العملاء (الديون) والتجار مع حدود ائتمان وتجميد.'),
+                _bullet(c, Icons.inventory_2_rounded, 'مخزون بتكلفة متوسط متحرك وتنبيهات نقص.'),
+                _bullet(c, Icons.lock_rounded, 'بياناتك على جهازك فقط، مع نسخ احتياطي واستعادة ورمز PIN.'),
+              ]),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Center(
+            child: Text('© ${DateTime.now().year} $developer — جميع الحقوق محفوظة',
+                style: TextStyle(fontSize: 12, color: c.textMuted)),
+          ),
+        ]),
+      ),
+    );
+  }
+
+  static void _copy(BuildContext context, String text) {
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم النسخ')));
+  }
+
+  Widget _bullet(AppPalette c, IconData icon, String text) => Padding(
+    padding: const EdgeInsets.only(bottom: 10),
+    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Icon(icon, size: 20, color: c.primaryStrong),
+      const SizedBox(width: 10),
+      Expanded(child: Text(text, style: TextStyle(fontSize: 13, height: 1.5, color: c.text))),
+    ]),
+  );
 }

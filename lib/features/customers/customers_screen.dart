@@ -68,7 +68,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
             child: Center(
               child: Tag(
                 'إجمالي الديون: ${total.format()}',
-                color: AppColors.danger,
+                color: context.c.danger,
               ),
             ),
           ),
@@ -159,13 +159,13 @@ class _CustomerTile extends StatelessWidget {
         ),
         leading: CircleAvatar(
           backgroundColor: bal.isPositive
-              ? AppColors.dangerLight
-              : AppColors.primaryLight,
+              ? context.c.dangerLight
+              : context.c.primaryLight,
           child: Text(
             c.name.characters.first,
             style: TextStyle(
               fontWeight: FontWeight.w700,
-              color: bal.isPositive ? AppColors.danger : AppColors.primaryDark,
+              color: bal.isPositive ? context.c.danger : context.c.primaryDark,
             ),
           ),
         ),
@@ -179,12 +179,12 @@ class _CustomerTile extends StatelessWidget {
               ),
             ),
             if (c.status == CustomerStatus.frozen)
-              const Tag('مجمّد', color: AppColors.danger),
+              Tag('مجمّد', color: context.c.danger),
             if (c.status == CustomerStatus.gracePeriod)
-              const Tag('مهلة', color: AppColors.warning),
+              Tag('مهلة', color: context.c.warning),
             if (over) ...[
               const SizedBox(width: 4),
-              const Tag('تجاوز الحد', color: AppColors.warning),
+              Tag('تجاوز الحد', color: context.c.warning),
             ],
           ],
         ),
@@ -192,7 +192,7 @@ class _CustomerTile extends StatelessWidget {
           c.phone ?? 'بدون هاتف',
           textDirection: TextDirection.ltr,
           textAlign: TextAlign.right,
-          style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+          style: TextStyle(color: context.c.textMuted, fontSize: 12),
         ),
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -201,14 +201,14 @@ class _CustomerTile extends StatelessWidget {
             MoneyText(
               bal,
               color: bal.isPositive
-                  ? AppColors.danger
+                  ? context.c.danger
                   : bal.isNegative
-                  ? AppColors.info
-                  : AppColors.primaryDark,
+                  ? context.c.info
+                  : context.c.primaryDark,
             ),
             Text(
               bal.isZero ? 'مسدد' : (bal.isPositive ? 'عليه' : 'له'),
-              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 11, color: context.c.textMuted),
             ),
           ],
         ),

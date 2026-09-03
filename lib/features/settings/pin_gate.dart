@@ -73,7 +73,7 @@ class _PinPadState extends State<PinPad> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.lock_outline, size: 56, color: AppColors.primaryDark),
+              Icon(Icons.lock_outline, size: 56, color: context.c.primaryDark),
               const SizedBox(height: 12),
               Text(
                 widget.title,
@@ -91,10 +91,10 @@ class _PinPadState extends State<PinPad> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: i < _entered.length
-                          ? AppColors.primaryDark
+                          ? context.c.primaryDark
                           : Colors.transparent,
                       border: Border.all(
-                        color: _error ? AppColors.danger : AppColors.primaryDark,
+                        color: _error ? context.c.danger : context.c.primaryDark,
                         width: 2,
                       ),
                     ),
@@ -105,9 +105,9 @@ class _PinPadState extends State<PinPad> {
               SizedBox(
                 height: 20,
                 child: _error
-                    ? const Text(
+                    ? Text(
                         'رمز غير صحيح',
-                        style: TextStyle(color: AppColors.danger),
+                        style: TextStyle(color: context.c.danger),
                       )
                     : null,
               ),
@@ -158,8 +158,8 @@ class _KeyButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
-      shape: const CircleBorder(side: BorderSide(color: AppColors.border)),
+      color: context.c.card,
+      shape: CircleBorder(side: BorderSide(color: context.c.border)),
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: onTap,

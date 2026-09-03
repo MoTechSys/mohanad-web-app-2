@@ -125,9 +125,9 @@ class _PartyTxSheetState extends State<PartyTxSheet> {
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('تم الحفظ'),
-          backgroundColor: AppColors.primaryDark,
+          backgroundColor: context.c.primaryDark,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -148,7 +148,7 @@ class _PartyTxSheetState extends State<PartyTxSheet> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(e.message),
-            backgroundColor: AppColors.danger,
+            backgroundColor: context.c.danger,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -174,7 +174,7 @@ class _PartyTxSheetState extends State<PartyTxSheet> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: context.c.surface,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -187,7 +187,7 @@ class _PartyTxSheetState extends State<PartyTxSheet> {
                 ),
                 Text(
                   'الرصيد: ${bal.format()}',
-                  style: const TextStyle(color: AppColors.textMuted),
+                  style: TextStyle(color: context.c.textMuted),
                 ),
               ],
             ),

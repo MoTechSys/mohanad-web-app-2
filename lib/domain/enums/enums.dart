@@ -113,3 +113,12 @@ enum ProfitMode {
   const ProfitMode(this.label);
   final String label;
 }
+
+enum AppThemeMode {
+  system('حسب النظام'),
+  light('فاتح'),
+  dark('داكن');
+
+  const AppThemeMode(this.label);
+  final String label;
+}

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../app/app_services.dart';
+import '../../app/shell.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/common.dart';
@@ -45,9 +46,9 @@ class DashboardScreen extends StatelessWidget {
             Text(s.storeName),
             Text(
               '${Fmt.dayName(DateTime.now())} ${Fmt.date(DateTime.now())}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: AppColors.textMuted,
+                color: context.c.textMuted,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -72,8 +73,8 @@ class DashboardScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.primaryDark, AppColors.primary],
+                gradient: LinearGradient(
+                  colors: [context.c.primaryDark, context.c.primary],
                   begin: Alignment.topRight,
                   end: Alignment.bottomLeft,
                 ),
@@ -127,35 +128,38 @@ class DashboardScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 14),
+            // Cashier call-to-action
+            _CashierBanner(onTap: () => openCashier(context)),
+            const SizedBox(height: 12),
             // Quick actions
             Row(
               children: [
                 _quick(
                   context,
-                  'بيع',
+                  'بيع سريع',
                   Icons.add_shopping_cart,
-                  AppColors.primaryDark,
+                  context.c.primaryDark,
                   () => showFormSheet(context, const SaleSheet()),
                 ),
                 _quick(
                   context,
                   'دخل يومي',
                   Icons.today,
-                  AppColors.info,
+                  context.c.info,
                   () => showFormSheet(context, const DailyIncomeSheet()),
                 ),
                 _quick(
                   context,
                   'مصروف',
                   Icons.payments_outlined,
-                  AppColors.danger,
+                  context.c.danger,
                   () => showFormSheet(context, const ExpenseSheet()),
                 ),
                 _quick(
                   context,
                   'شراء',
                   Icons.inventory_2_outlined,
-                  AppColors.warning,
+                  context.c.warning,
                   () => showFormSheet(context, const PurchaseSheet()),
                 ),
               ],
@@ -173,29 +177,29 @@ class DashboardScreen extends StatelessWidget {
                   title: 'مقبوضات (كاش داخل)',
                   value: today.cashIn.format(),
                   icon: Icons.arrow_downward,
-                  color: AppColors.primaryDark,
+                  color: context.c.primaryDark,
                 ),
                 StatCard(
                   title: 'مدفوعات (كاش خارج)',
                   value: today.cashOut.format(),
                   icon: Icons.arrow_upward,
-                  color: AppColors.danger,
+                  color: context.c.danger,
                 ),
                 StatCard(
                   title: 'صافي الكاش',
                   value: today.netCash.format(),
                   icon: Icons.account_balance_wallet_outlined,
                   color: today.netCash.isNegative
-                      ? AppColors.danger
-                      : AppColors.info,
+                      ? context.c.danger
+                      : context.c.info,
                 ),
                 StatCard(
                   title: 'الربح (${s.profitMode.label})',
                   value: profitToday.format(),
                   icon: Icons.trending_up,
                   color: profitToday.isNegative
-                      ? AppColors.danger
-                      : AppColors.primaryDark,
+                      ? context.c.danger
+                      : context.c.primaryDark,
                 ),
               ],
             ),
@@ -217,20 +221,20 @@ class DashboardScreen extends StatelessWidget {
                   title: 'مصروفات الشهر',
                   value: month.operatingExpenses.format(),
                   icon: Icons.receipt_long_outlined,
-                  color: AppColors.danger,
+                  color: context.c.danger,
                 ),
                 StatCard(
                   title: 'ديون العملاء',
                   value: totalDebt.format(),
                   icon: Icons.people_outline,
-                  color: AppColors.warning,
+                  color: context.c.warning,
                   subtitle: '${db.activeCustomers.length} عميل',
                 ),
                 StatCard(
                   title: 'مستحقات التجار',
                   value: totalSupplierDebt.format(),
                   icon: Icons.local_shipping_outlined,
-                  color: AppColors.info,
+                  color: context.c.info,
                   subtitle: '${db.activeSuppliers.length} مورد',
                 ),
               ],
@@ -241,7 +245,7 @@ class DashboardScreen extends StatelessWidget {
                 _alert(
                   context,
                   Icons.warning_amber_rounded,
-                  AppColors.warning,
+                  context.c.warning,
                   '${overLimit.length} عميل تجاوز حد الائتمان',
                   null,
                 ),
@@ -249,7 +253,7 @@ class DashboardScreen extends StatelessWidget {
                 _alert(
                   context,
                   Icons.inventory_outlined,
-                  AppColors.danger,
+                  context.c.danger,
                   '${lowStock.length} منتج وصل حد النقص',
                   () => Navigator.push(
                     context,
@@ -266,11 +270,11 @@ class DashboardScreen extends StatelessWidget {
                       ListTile(
                         dense: true,
                         leading: CircleAvatar(
-                          backgroundColor: AppColors.warningLight,
+                          backgroundColor: context.c.warningLight,
                           child: Text(
                             c.name.characters.first,
-                            style: const TextStyle(
-                              color: AppColors.warning,
+                            style: TextStyle(
+                              color: context.c.warning,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -278,7 +282,7 @@ class DashboardScreen extends StatelessWidget {
                         title: Text(c.name),
                         trailing: MoneyText(
                           db.customerBalance(c.id),
-                          color: AppColors.danger,
+                          color: context.c.danger,
                         ),
                         onTap: () => Navigator.push(
                           context,
@@ -335,9 +339,9 @@ class DashboardScreen extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.c.card,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: context.c.border),
           ),
           child: Column(
             children: [
@@ -364,6 +368,7 @@ class DashboardScreen extends StatelessWidget {
     String text,
     VoidCallback? onTap,
   ) => Card(
+    margin: const EdgeInsets.only(bottom: 8),
     child: ListTile(
       leading: Icon(icon, color: color),
       title: Text(text, style: const TextStyle(fontWeight: FontWeight.w600)),
@@ -371,4 +376,65 @@ class DashboardScreen extends StatelessWidget {
       onTap: onTap,
     ),
   );
+}
+
+/// Prominent entry to the cashier (barcode POS) — the store's main workflow.
+class _CashierBanner extends StatelessWidget {
+  const _CashierBanner({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: c.primarySoft,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: c.primary.withValues(alpha: 0.35)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: c.primaryStrong,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(Icons.qr_code_scanner_rounded, color: c.onPrimary, size: 30),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'الكاشير — مسح بالباركود',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: c.text,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'امسح الأصناف بالكاميرا أو الماسح، ثم أتمّ البيع نقداً أو آجلاً',
+                      style: TextStyle(fontSize: 12, color: c.textMuted),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_left_rounded, color: c.primaryStrong),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

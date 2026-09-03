@@ -64,7 +64,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Text('$_label: ${Fmt.date(_r.start)} → ${Fmt.date(_r.end)}',
-                  style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                  style: TextStyle(color: context.c.textMuted, fontSize: 12)),
             ),
             const SectionTitle('الأرباح والخسائر'),
             Card(child: Padding(padding: const EdgeInsets.all(14), child: Column(children: [
@@ -79,35 +79,35 @@ class _ReportsScreenState extends State<ReportsScreen> {
               _row('مصروفات تشغيلية', -sum.operatingExpenses),
               const Divider(),
               _row('صافي الربح الدقيق', accurate, bold: true,
-                  color: accurate.isNegative ? AppColors.danger : AppColors.primaryDark),
+                  color: accurate.isNegative ? context.c.danger : context.c.primaryDark),
               _row('صافي الربح التقديري (كل المشتريات)', estimated,
-                  color: estimated.isNegative ? AppColors.danger : AppColors.info),
+                  color: estimated.isNegative ? context.c.danger : context.c.info),
               const SizedBox(height: 6),
-              const Text('الدقيق = الإيرادات − تكلفة البضاعة المباعة − المصروفات. التقديري يخصم كل المشتريات (نقدي + آجل) كتكلفة.',
-                  style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+              Text('الدقيق = الإيرادات − تكلفة البضاعة المباعة − المصروفات. التقديري يخصم كل المشتريات (نقدي + آجل) كتكلفة.',
+                  style: TextStyle(fontSize: 11, color: context.c.textMuted)),
             ]))),
             const SectionTitle('التدفق النقدي'),
             Card(child: Padding(padding: const EdgeInsets.all(14), child: Column(children: [
               _row('مبيعات نقدية', sum.cashSales),
               _row('دخل يومي', sum.dailyIncome),
               _row('دفعات من العملاء', sum.customerPayments),
-              _row('إجمالي الداخل', sum.cashIn, bold: true, color: AppColors.primaryDark),
+              _row('إجمالي الداخل', sum.cashIn, bold: true, color: context.c.primaryDark),
               const Divider(),
               _row('مصروفات', -sum.operatingExpenses),
               _row('مشتريات نقدية', -sum.cashPurchases),
               _row('دفعات للموردين', -sum.supplierPayments),
-              _row('إجمالي الخارج', -sum.cashOut, bold: true, color: AppColors.danger),
+              _row('إجمالي الخارج', -sum.cashOut, bold: true, color: context.c.danger),
               const Divider(),
               _row('صافي الكاش', sum.netCash, bold: true,
-                  color: sum.netCash.isNegative ? AppColors.danger : AppColors.info),
+                  color: sum.netCash.isNegative ? context.c.danger : context.c.info),
             ]))),
             const SectionTitle('الديون'),
             Row(children: [
-              Expanded(child: StatCard(title: 'ديون جديدة بالفترة', value: sum.newDebts.format(), color: AppColors.warning)),
+              Expanded(child: StatCard(title: 'ديون جديدة بالفترة', value: sum.newDebts.format(), color: context.c.warning)),
               const SizedBox(width: 8),
-              Expanded(child: StatCard(title: 'إجمالي ديون العملاء', value: rep.customersDebt().total.format(), color: AppColors.danger)),
+              Expanded(child: StatCard(title: 'إجمالي ديون العملاء', value: rep.customersDebt().total.format(), color: context.c.danger)),
               const SizedBox(width: 8),
-              Expanded(child: StatCard(title: 'مستحقات التجار', value: rep.suppliersDebt().total.format(), color: AppColors.info)),
+              Expanded(child: StatCard(title: 'مستحقات التجار', value: rep.suppliersDebt().total.format(), color: context.c.info)),
             ]),
             if (days.isNotEmpty && days.length <= 92) ...[
               const SectionTitle('الإيراد اليومي'),
@@ -120,7 +120,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       child: Container(
                         margin: const EdgeInsets.symmetric(horizontal: 1),
                         height: maxDay == 0 ? 2 : (110 * d.value.minor / maxDay).clamp(2, 110).toDouble(),
-                        decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(3)),
+                        decoration: BoxDecoration(color: context.c.primary, borderRadius: BorderRadius.circular(3)),
                       ),
                     )),
                 ]),
@@ -131,7 +131,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               Card(child: Column(children: [
                 for (final c in cats)
                   ListTile(dense: true, title: Text(c.name), subtitle: Text('${c.count} عملية'),
-                      trailing: MoneyText(c.total, color: AppColors.danger)),
+                      trailing: MoneyText(c.total, color: context.c.danger)),
               ])),
             ],
             if (top.isNotEmpty) ...[
@@ -158,7 +158,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     padding: const EdgeInsets.symmetric(vertical: 3),
     child: Row(children: [
       Expanded(child: Text(k, style: TextStyle(fontWeight: bold ? FontWeight.w800 : FontWeight.w500,
-          color: bold ? AppColors.text : AppColors.textMuted))),
+          color: bold ? context.c.text : context.c.textMuted))),
       MoneyText(v, signed: v.isNegative, color: color, bold: bold, size: bold ? 16 : 14),
     ]),
   );

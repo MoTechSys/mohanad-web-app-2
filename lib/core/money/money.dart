@@ -98,6 +98,7 @@ extension type const Money(int minor) implements Object {
 extension type const Qty(int milli) implements Object {
   static const int scale = 1000;
   static const Qty zero = Qty(0);
+  static const Qty one = Qty(scale);
 
   factory Qty.units(int units) => Qty(units * scale);
 

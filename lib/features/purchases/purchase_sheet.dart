@@ -175,7 +175,7 @@ class _PurchaseSheetState extends State<PurchaseSheet> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppColors.warningLight,
+              color: context.c.warningLight,
               borderRadius: BorderRadius.circular(14),
             ),
             child: Row(
@@ -183,14 +183,14 @@ class _PurchaseSheetState extends State<PurchaseSheet> {
                 const Expanded(
                   child: Text('إجمالي الفاتورة', style: TextStyle(fontWeight: FontWeight.w700)),
                 ),
-                MoneyText(_sum, size: 22, color: AppColors.warning, currency: db.settings.currency),
+                MoneyText(_sum, size: 22, color: context.c.warning, currency: db.settings.currency),
               ],
             ),
           ),
           const SizedBox(height: 16),
           FilledButton.icon(
             onPressed: _busy ? null : _save,
-            style: FilledButton.styleFrom(backgroundColor: AppColors.warning),
+            style: FilledButton.styleFrom(backgroundColor: context.c.warning),
             icon: const Icon(Icons.check),
             label: const Text('تسجيل الشراء'),
           ),

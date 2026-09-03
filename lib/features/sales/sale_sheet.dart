@@ -89,7 +89,7 @@ class _SaleSheetState extends State<SaleSheet> {
                 ? 'تم تسجيل بيع نقدي بمبلغ ${_net.format()}'
                 : 'تم تسجيل بيع آجل على ${_customer?.name} بمبلغ ${_net.format()}',
           ),
-          backgroundColor: AppColors.primaryDark,
+          backgroundColor: context.c.primaryDark,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -110,7 +110,7 @@ class _SaleSheetState extends State<SaleSheet> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(e.message),
-            backgroundColor: AppColors.danger,
+            backgroundColor: context.c.danger,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -217,7 +217,7 @@ class _SaleSheetState extends State<SaleSheet> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppColors.primaryLight,
+              color: context.c.primaryLight,
               borderRadius: BorderRadius.circular(14),
             ),
             child: Row(
@@ -231,7 +231,7 @@ class _SaleSheetState extends State<SaleSheet> {
                 MoneyText(
                   _net,
                   size: 22,
-                  color: _net.isNegative ? AppColors.danger : AppColors.primaryDark,
+                  color: _net.isNegative ? context.c.danger : context.c.primaryDark,
                   currency: db.settings.currency,
                 ),
               ],

@@ -40,8 +40,8 @@ class PurchasesScreen extends StatelessWidget {
                       ? (db.suppliers[p.supplierId!]?.name ?? 'مورد محذوف')
                       : (p.supplierNameManual ?? 'شراء نقدي');
                   final color = p.isCancelled
-                      ? AppColors.textMuted
-                      : credit ? AppColors.info : AppColors.warning;
+                      ? context.c.textMuted
+                      : credit ? context.c.info : context.c.warning;
                   return Card(
                     child: ListTile(
                       leading: Icon(credit ? Icons.schedule : Icons.payments_outlined, color: color),
