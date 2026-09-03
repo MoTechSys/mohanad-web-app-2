@@ -6,6 +6,7 @@ import '../../core/money/money.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/common.dart';
+import '../../core/widgets/export_actions.dart';
 import '../../data/ledger_db.dart';
 import '../../data/services/report_service.dart';
 import '../../domain/enums/enums.dart';
@@ -23,7 +24,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
   @override
   Widget build(BuildContext context) {
     final db = context.watch<LedgerDb>();
-    final rep = context.read<AppServices>().reports;
+    final app = context.read<AppServices>();
+    final rep = app.reports;
     final s = db.settings;
     final sum = rep.summary(_r);
     final accurate = sum.profit(ProfitMode.accurate, cashPurchaseAsCogs: s.cashPurchaseAsCogs);
@@ -34,7 +36,46 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final maxDay = days.fold(0, (m, d) => d.value.minor > m ? d.value.minor : m);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('التقارير')),
+      appBar: AppBar(
+        title: const Text('التقارير'),
+        actions: [
+          ExportButton(
+            title: 'تصدير تقرير الفترة ($_label)',
+            options: [
+              ExportOption(
+                title: 'تقرير الفترة PDF',
+                subtitle: 'ملخص مالي، تدفق نقدي، أصناف، مصروفات، ديون، سجلات — باسم محلك وشعارك',
+                icon: Icons.picture_as_pdf_rounded,
+                fileBase: 'تقرير-$_label',
+                build: () => app.pdf.periodReport(_r, title: 'تقرير $_label'),
+              ),
+              ExportOption(
+                title: 'ملف Excel كامل',
+                subtitle: 'أوراق: ملخص، مبيعات، أصناف، مشتريات، مصروفات، دخل يومي، عملاء، موردون، مخزون',
+                icon: Icons.table_chart_rounded,
+                fileBase: 'بيانات-$_label',
+                isExcel: true,
+                build: () => app.excel.periodWorkbook(_r),
+              ),
+              ExportOption(
+                title: 'تقرير المخزون PDF',
+                subtitle: 'كل الأصناف بالكميات والقيمة وتنبيهات النقص',
+                icon: Icons.inventory_2_rounded,
+                fileBase: 'المخزون',
+                build: app.pdf.inventoryReport,
+              ),
+              ExportOption(
+                title: 'حسابات العملاء Excel',
+                subtitle: 'الأرصدة وكل حركات الدين والسداد',
+                icon: Icons.people_alt_rounded,
+                fileBase: 'حسابات-العملاء',
+                isExcel: true,
+                build: app.excel.customersWorkbook,
+              ),
+            ],
+          ),
+        ],
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
@@ -45,6 +86,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 _chip('اليوم', DateRange.today()),
                 _chip('هذا الأسبوع', DateRange.thisWeek()),
                 _chip('هذا الشهر', DateRange.thisMonth()),
+                _chip('الشهر الماضي', _prevMonth()),
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(end: 8),
+                  child: ActionChip(
+                    avatar: const Icon(Icons.calendar_month_rounded, size: 16),
+                    label: const Text('تقرير شهري…'),
+                    onPressed: _pickMonth,
+                  ),
+                ),
                 _chip('آخر 90 يوم', DateRange.lastDays(90)),
                 _chip('آخر سنة', DateRange.lastDays(365)),
                 Padding(
@@ -146,6 +196,58 @@ class _ReportsScreenState extends State<ReportsScreen> {
         ),
       ),
     );
+  }
+
+  static DateRange _prevMonth() {
+    final n = DateTime.now();
+    final first = DateTime(n.year, n.month - 1, 1);
+    final last = DateTime(n.year, n.month, 0);
+    return DateRange(first, last);
+  }
+
+  /// Month picker: a simple grid of the last 24 months.
+  Future<void> _pickMonth() async {
+    final n = DateTime.now();
+    final months = List.generate(24, (i) => DateTime(n.year, n.month - i, 1));
+    final picked = await showModalBottomSheet<DateTime>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Text('اختر شهر التقرير',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+          ),
+          Flexible(
+            child: GridView.count(
+              shrinkWrap: true,
+              crossAxisCount: 3,
+              childAspectRatio: 2.4,
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              children: [
+                for (final m in months)
+                  OutlinedButton(
+                    onPressed: () => Navigator.pop(ctx, m),
+                    child: Text(Fmt.monthName(m),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 12)),
+                  ),
+              ],
+            ),
+          ),
+        ]),
+      ),
+    );
+    if (picked == null || !mounted) return;
+    final last = DateTime(picked.year, picked.month + 1, 0);
+    final end = last.isAfter(n) ? n : last;
+    setState(() {
+      _r = DateRange(picked, end);
+      _label = 'شهر ${Fmt.monthName(picked)}';
+    });
   }
 
   Widget _chip(String label, DateRange r) => Padding(

@@ -6,7 +6,9 @@ import '../../core/money/money.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/common.dart';
+import '../../core/widgets/export_actions.dart';
 import '../../data/ledger_db.dart';
+import '../../data/services/report_service.dart';
 import '../../domain/enums/enums.dart';
 import '../../domain/models/party.dart';
 import 'customer_form_sheet.dart';
@@ -31,6 +33,26 @@ class CustomerDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(c.name),
         actions: [
+          ExportButton(
+            title: 'كشف حساب ${c.name}',
+            tooltip: 'كشف حساب PDF',
+            options: [
+              ExportOption(
+                title: 'كشف حساب كامل PDF',
+                subtitle: 'كل حركات الدين والسداد مع الرصيد الجاري — للمشاركة عبر واتساب أو الطباعة',
+                icon: Icons.picture_as_pdf_rounded,
+                fileBase: 'كشف-حساب-${c.name}',
+                build: () => context.read<AppServices>().pdf.customerStatement(c),
+              ),
+              ExportOption(
+                title: 'كشف حساب هذا الشهر PDF',
+                subtitle: 'حركات الشهر الحالي فقط',
+                icon: Icons.calendar_month_rounded,
+                fileBase: 'كشف-شهري-${c.name}',
+                build: () => context.read<AppServices>().pdf.customerStatement(c, range: DateRange.thisMonth()),
+              ),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.edit_outlined),
             tooltip: 'تعديل',

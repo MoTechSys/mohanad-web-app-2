@@ -13,6 +13,7 @@ import '../../domain/enums/enums.dart';
 import '../expenses/expense_sheet.dart';
 import '../pos/pos_screen.dart';
 import '../products/products_screen.dart';
+import '../settings/branding_screen.dart';
 import '../purchases/purchases_screen.dart';
 import '../reports/reports_screen.dart';
 
@@ -51,6 +52,10 @@ class MoreScreen extends StatelessWidget {
           Card(child: Column(children: [
             ListTile(leading: const Icon(Icons.settings_outlined), title: const Text('الإعدادات'),
                 trailing: const Icon(Icons.chevron_left), onTap: () => go(const SettingsScreen())),
+            const Divider(),
+            ListTile(leading: Icon(Icons.branding_watermark_outlined, color: context.c.primaryStrong), title: const Text('هوية المحل والطباعة'),
+                subtitle: const Text('الشعار، البيان العلوي والسفلي للفواتير والتقارير', style: TextStyle(fontSize: 12)),
+                trailing: const Icon(Icons.chevron_left), onTap: () => go(const BrandingScreen())),
             const Divider(),
             ListTile(leading: const Icon(Icons.history), title: const Text('سجل التدقيق'),
                 subtitle: Text('${db.audit.length} حركة مسجلة'),
