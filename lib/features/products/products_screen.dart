@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../app/app_services.dart';
 import '../../core/money/money.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/barcode_scanner_view.dart';
 import '../../core/widgets/common.dart';
 import '../../data/ledger_db.dart';
 import '../../domain/enums/enums.dart';
@@ -83,7 +84,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                           onTap: () => _actions(context, p),
                           title: Row(children: [
                             Expanded(child: Text(p.name, style: const TextStyle(fontWeight: FontWeight.w700))),
-                            if (low) const Tag('ناقص', color: AppColors.danger),
+                            if (low) Tag('ناقص', color: context.c.danger),
                           ]),
                           subtitle: Text(
                             'شراء ${p.purchasePrice.format()} • بيع ${p.salePrice.format()} • هامش ${p.unitMargin.format()}',
@@ -96,11 +97,11 @@ class _ProductsScreenState extends State<ProductsScreen> {
                                   children: [
                                     Text(stock.format(), textDirection: TextDirection.ltr,
                                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800,
-                                            color: low ? AppColors.danger : AppColors.primaryDark)),
-                                    Text(p.unit, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                                            color: low ? context.c.danger : context.c.primaryDark)),
+                                    Text(p.unit, style: TextStyle(fontSize: 11, color: context.c.textMuted)),
                                   ],
                                 )
-                              : const Tag('بدون تتبع', color: AppColors.textMuted),
+                              : Tag('بدون تتبع', color: context.c.textMuted),
                         ),
                       );
                     },
@@ -121,14 +122,14 @@ class _ProductsScreenState extends State<ProductsScreen> {
           ListTile(leading: const Icon(Icons.edit_outlined), title: const Text('تعديل المنتج'),
               onTap: () => Navigator.pop(context, 'edit')),
           if (p.trackInventory) ...[
-            ListTile(leading: const Icon(Icons.add_box_outlined, color: AppColors.primaryDark),
+            ListTile(leading: Icon(Icons.add_box_outlined, color: context.c.primaryDark),
                 title: const Text('إدخال كمية (وارد)'), onTap: () => Navigator.pop(context, 'in')),
-            ListTile(leading: const Icon(Icons.remove_circle_outline, color: AppColors.danger),
+            ListTile(leading: Icon(Icons.remove_circle_outline, color: context.c.danger),
                 title: const Text('إخراج / هالك'), onTap: () => Navigator.pop(context, 'loss')),
             ListTile(leading: const Icon(Icons.tune), title: const Text('جرد (تحديد الكمية الفعلية)'),
                 onTap: () => Navigator.pop(context, 'adjust')),
           ],
-          ListTile(leading: const Icon(Icons.delete_outline, color: AppColors.danger),
+          ListTile(leading: Icon(Icons.delete_outline, color: context.c.danger),
               title: const Text('حذف'), onTap: () => Navigator.pop(context, 'delete')),
         ]),
       ),
@@ -175,7 +176,7 @@ class _MoveSheetState extends State<_MoveSheet> {
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         SheetTitle('${widget.type.label} — ${widget.product.name}'),
         Text('المخزون الحالي: ${db.stockOf(widget.product.id).format()} ${widget.product.unit}',
-            style: const TextStyle(color: AppColors.textMuted)),
+            style: TextStyle(color: context.c.textMuted)),
         const SizedBox(height: 12),
         QtyField(controller: _qty, label: adjust ? 'الكمية الفعلية بعد الجرد *' : 'الكمية *', allowZero: adjust),
         const SizedBox(height: 12),
@@ -197,8 +198,10 @@ class _MoveSheetState extends State<_MoveSheet> {
 }
 
 class ProductFormSheet extends StatefulWidget {
-  const ProductFormSheet({super.key, this.existing});
+  const ProductFormSheet({super.key, this.existing, this.initialBarcode});
   final Product? existing;
+  /// Pre-fills the barcode field (used when the cashier scans an unknown code).
+  final String? initialBarcode;
   @override
   State<ProductFormSheet> createState() => _ProductFormSheetState();
 }
@@ -206,7 +209,8 @@ class ProductFormSheet extends StatefulWidget {
 class _ProductFormSheetState extends State<ProductFormSheet> {
   final _form = GlobalKey<FormState>();
   late final _name = TextEditingController(text: widget.existing?.name);
-  late final _barcode = TextEditingController(text: widget.existing?.barcode);
+  late final _barcode = TextEditingController(
+      text: widget.existing?.barcode ?? widget.initialBarcode ?? '');
   late final _unit = TextEditingController(text: widget.existing?.unit ?? 'حبة');
   late final _buy = TextEditingController(text: widget.existing?.purchasePrice.toEditable());
   late final _sell = TextEditingController(text: widget.existing?.salePrice.toEditable());
@@ -232,8 +236,35 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
             validator: (v) => (v == null || v.trim().isEmpty) ? 'الاسم مطلوب' : null),
         const SizedBox(height: 12),
         Row(children: [
-          Expanded(child: TextFormField(controller: _barcode, textDirection: TextDirection.ltr,
-              decoration: const InputDecoration(labelText: 'الباركود'))),
+          Expanded(
+            child: TextFormField(
+              controller: _barcode,
+              textDirection: TextDirection.ltr,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'الباركود',
+                suffixIcon: IconButton(
+                  tooltip: 'مسح بالكاميرا',
+                  icon: const Icon(Icons.qr_code_scanner_rounded),
+                  onPressed: () async {
+                    final code = await scanBarcodeOnce(context, title: 'مسح باركود المنتج');
+                    if (code != null && mounted) {
+                      setState(() => _barcode.text = LedgerDb.normalizeBarcode(code));
+                    }
+                  },
+                ),
+              ),
+              validator: (v) {
+                final code = LedgerDb.normalizeBarcode(v ?? '');
+                if (code.isEmpty) return null;
+                final dup = context.read<LedgerDb>().productByBarcode(code);
+                if (dup != null && dup.id != widget.existing?.id) {
+                  return 'مستخدم للمنتج: ${dup.name}';
+                }
+                return null;
+              },
+            ),
+          ),
           const SizedBox(width: 10),
           Expanded(child: TextFormField(controller: _unit, decoration: const InputDecoration(labelText: 'الوحدة'))),
         ]),
@@ -265,17 +296,19 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
             final app = context.read<AppServices>();
             Money m(TextEditingController c) => Money.tryParse(c.text) ?? Money.zero;
             Qty qq(TextEditingController c) => Qty.tryParse(c.text) ?? Qty.zero;
+            final barcode = LedgerDb.normalizeBarcode(_barcode.text);
+            Product? result;
             final ok = await guarded(context, () async {
               if (isEdit) {
-                await app.inventory.updateProduct(widget.existing!.id, name: _name.text, barcode: _barcode.text,
+                result = await app.inventory.updateProduct(widget.existing!.id, name: _name.text, barcode: barcode,
                     unit: _unit.text, purchasePrice: m(_buy), salePrice: m(_sell), minQty: qq(_min), trackInventory: _track);
               } else {
-                await app.inventory.createProduct(name: _name.text, barcode: _barcode.text.trim().isEmpty ? null : _barcode.text,
+                result = await app.inventory.createProduct(name: _name.text, barcode: barcode.isEmpty ? null : barcode,
                     unit: _unit.text.trim().isEmpty ? 'حبة' : _unit.text, purchasePrice: m(_buy), salePrice: m(_sell),
                     minQty: qq(_min), trackInventory: _track, openingQty: qq(_opening));
               }
             }, successMessage: isEdit ? 'تم التحديث' : 'تمت الإضافة');
-            if (ok && context.mounted) Navigator.pop(context);
+            if (ok && context.mounted) Navigator.pop(context, result);
           },
           child: Text(isEdit ? 'حفظ' : 'إضافة'),
         ),

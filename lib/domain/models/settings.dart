@@ -14,6 +14,7 @@ class AppSettings {
     this.profitMode = ProfitMode.accurate,
     this.cashPurchaseAsCogs = true,
     this.pinCode,
+    this.themeMode = AppThemeMode.system,
   });
 
   final String storeName;
@@ -33,6 +34,9 @@ class AppSettings {
   /// Optional 4-6 digit lock. Null = no lock.
   final String? pinCode;
 
+  /// Light / dark / follow system.
+  final AppThemeMode themeMode;
+
   AppSettings copyWith({
     String? storeName,
     String? ownerName,
@@ -47,6 +51,7 @@ class AppSettings {
     bool? cashPurchaseAsCogs,
     String? pinCode,
     bool clearPin = false,
+    AppThemeMode? themeMode,
   }) => AppSettings(
     storeName: storeName ?? this.storeName,
     ownerName: ownerName ?? this.ownerName,
@@ -60,6 +65,7 @@ class AppSettings {
     profitMode: profitMode ?? this.profitMode,
     cashPurchaseAsCogs: cashPurchaseAsCogs ?? this.cashPurchaseAsCogs,
     pinCode: clearPin ? null : (pinCode ?? this.pinCode),
+    themeMode: themeMode ?? this.themeMode,
   );
 
   Map<String, dynamic> toMap() => {
@@ -73,6 +79,7 @@ class AppSettings {
     'profitMode': profitMode.index,
     'cashPurchaseAsCogs': cashPurchaseAsCogs,
     'pinCode': pinCode,
+    'themeMode': themeMode.index,
   };
 
   factory AppSettings.fromMap(Map<String, dynamic> m) => AppSettings(
@@ -90,6 +97,11 @@ class AppSettings {
     ),
     cashPurchaseAsCogs: (m['cashPurchaseAsCogs'] as bool?) ?? true,
     pinCode: Serde.str(m['pinCode']),
+    themeMode: Serde.enumFrom(
+      AppThemeMode.values,
+      m['themeMode'],
+      AppThemeMode.system,
+    ),
   );
 }
 

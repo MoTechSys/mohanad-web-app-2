@@ -8,6 +8,7 @@ import 'app/shell.dart';
 import 'core/theme/app_theme.dart';
 import 'data/kv_backend.dart';
 import 'data/ledger_db.dart';
+import 'domain/enums/enums.dart';
 import 'features/settings/pin_gate.dart';
 
 Future<void> main() async {
@@ -29,22 +30,30 @@ class GroceryLedgerApp extends StatelessWidget {
         Provider<AppServices>.value(value: services),
         ChangeNotifierProvider<LedgerDb>.value(value: services.db),
       ],
-      child: MaterialApp(
-        title: 'دفتر البقالة',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light(),
-        locale: const Locale('ar'),
-        supportedLocales: const [Locale('ar')],
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        builder: (context, child) => Directionality(
-          textDirection: TextDirection.rtl,
-          child: child ?? const SizedBox.shrink(),
+      child: Consumer<LedgerDb>(
+        builder: (context, db, _) => MaterialApp(
+          title: 'دفتر البقالة',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light(),
+          darkTheme: AppTheme.dark(),
+          themeMode: switch (db.settings.themeMode) {
+            AppThemeMode.system => ThemeMode.system,
+            AppThemeMode.light => ThemeMode.light,
+            AppThemeMode.dark => ThemeMode.dark,
+          },
+          locale: const Locale('ar'),
+          supportedLocales: const [Locale('ar')],
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          builder: (context, child) => Directionality(
+            textDirection: TextDirection.rtl,
+            child: child ?? const SizedBox.shrink(),
+          ),
+          home: const PinGate(child: AppShell()),
         ),
-        home: const PinGate(child: AppShell()),
       ),
     );
   }

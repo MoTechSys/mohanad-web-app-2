@@ -6,6 +6,7 @@ import '../../domain/models/documents.dart';
 import '../../domain/models/inventory.dart';
 import '../money/money.dart';
 import '../theme/app_theme.dart';
+import 'barcode_scanner_view.dart';
 import 'common.dart';
 
 /// Editable list of [DocLine]s for detailed sales/purchases.
@@ -39,10 +40,26 @@ class LineItemsEditor extends StatelessWidget {
             },
           ),
         const SizedBox(height: 6),
-        OutlinedButton.icon(
-          onPressed: () => _edit(context, null),
-          icon: const Icon(Icons.add),
-          label: const Text('إضافة صنف'),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _edit(context, null),
+                icon: const Icon(Icons.add),
+                label: const Text('إضافة صنف'),
+              ),
+            ),
+            if (context.read<LedgerDb>().settings.inventoryEnabled) ...[
+              const SizedBox(width: 8),
+              Expanded(
+                child: FilledButton.tonalIcon(
+                  onPressed: () => _scan(context),
+                  icon: const Icon(Icons.qr_code_scanner_rounded),
+                  label: const Text('مسح باركود'),
+                ),
+              ),
+            ],
+          ],
         ),
         if (lines.isNotEmpty)
           Padding(
@@ -55,12 +72,48 @@ class LineItemsEditor extends StatelessWidget {
                     style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
-                MoneyText(total, size: 18, color: AppColors.primaryDark),
+                MoneyText(total, size: 18, color: context.c.primaryDark),
               ],
             ),
           ),
       ],
     );
+  }
+
+  /// Scan a barcode: known product → add line (or +1 if already present);
+  /// unknown → open the line form with the code so the user can name it.
+  Future<void> _scan(BuildContext context) async {
+    final db = context.read<LedgerDb>();
+    final code = await scanBarcodeOnce(context, title: 'مسح باركود الصنف');
+    if (code == null || !context.mounted) return;
+    final p = db.productByBarcode(code);
+    if (p == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('لا يوجد منتج بالباركود ${LedgerDb.normalizeBarcode(code)} — أضفه من شاشة المنتجات أولاً')),
+      );
+      return;
+    }
+    final n = [...lines];
+    final i = n.indexWhere((l) => l.productId == p.id);
+    if (i >= 0) {
+      final l = n[i];
+      n[i] = DocLine(
+        productId: l.productId,
+        name: l.name,
+        qty: l.qty + Qty.one,
+        unitPrice: l.unitPrice,
+        unitCost: l.unitCost,
+      );
+    } else {
+      n.add(DocLine(
+        productId: p.id,
+        name: p.name,
+        qty: Qty.one,
+        unitPrice: forPurchase ? p.purchasePrice : p.salePrice,
+        unitCost: p.purchasePrice,
+      ));
+    }
+    onChanged(n);
   }
 
   Future<void> _edit(BuildContext context, int? index) async {
@@ -113,7 +166,7 @@ class _LineTile extends StatelessWidget {
           children: [
             MoneyText(line.lineTotal),
             IconButton(
-              icon: const Icon(Icons.delete_outline, color: AppColors.danger),
+              icon: Icon(Icons.delete_outline, color: context.c.danger),
               visualDensity: VisualDensity.compact,
               onPressed: onDelete,
             ),
@@ -185,15 +238,42 @@ class _LineFormState extends State<_LineForm> {
         children: [
           SheetTitle(widget.existing == null ? 'إضافة صنف' : 'تعديل صنف'),
           if (inventoryOn) ...[
-            PickerField<Product>(
-              label: 'من المنتجات',
-              items: products,
-              labelOf: (p) => p.name,
-              subtitleOf: (p) =>
-                  'المخزون: ${db.stockOf(p.id).format()} ${p.unit} • '
-                  'بيع ${p.salePrice.format()} • شراء ${p.purchasePrice.format()}',
-              value: _product,
-              onChanged: _pickProduct,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: PickerField<Product>(
+                    label: 'من المنتجات',
+                    items: products,
+                    labelOf: (p) => p.name,
+                    subtitleOf: (p) =>
+                        'المخزون: ${db.stockOf(p.id).format()} ${p.unit} • '
+                        'بيع ${p.salePrice.format()} • شراء ${p.purchasePrice.format()}',
+                    value: _product,
+                    onChanged: _pickProduct,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: IconButton.filledTonal(
+                    tooltip: 'مسح باركود',
+                    icon: const Icon(Icons.qr_code_scanner_rounded),
+                    onPressed: () async {
+                      final code = await scanBarcodeOnce(context, title: 'مسح باركود الصنف');
+                      if (code == null || !context.mounted) return;
+                      final p = db.productByBarcode(code);
+                      if (p == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('لا يوجد منتج بهذا الباركود')),
+                        );
+                      } else {
+                        _pickProduct(p);
+                      }
+                    },
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
           ],
@@ -232,7 +312,7 @@ class _LineFormState extends State<_LineForm> {
               padding: const EdgeInsets.only(top: 8),
               child: Text(
                 'تنبيه: الكمية أكبر من المخزون المتاح (${db.stockOf(_product!.id).format()}) — سيصبح المخزون سالباً',
-                style: const TextStyle(color: AppColors.warning, fontSize: 12),
+                style: TextStyle(color: context.c.warning, fontSize: 12),
               ),
             ),
           const SizedBox(height: 14),

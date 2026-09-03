@@ -59,9 +59,9 @@ class _DailyIncomeSheetState extends State<DailyIncomeSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SheetTitle('دخل يومي إجمالي'),
-          const Text(
+          Text(
             'استخدمه لتسجيل إجمالي مبيعات اليوم النقدية دون تفصيل الفواتير.',
-            style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+            style: TextStyle(color: context.c.textMuted, fontSize: 13),
           ),
           const SizedBox(height: 14),
           MoneyField(controller: _amount, label: 'إجمالي الدخل *', autofocus: true),

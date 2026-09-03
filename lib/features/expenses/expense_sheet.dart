@@ -112,11 +112,11 @@ class _ExpenseSheetState extends State<ExpenseSheet> {
             ],
           ),
           if (_cat == null)
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(top: 8),
               child: Text(
                 'بدون فئة → سيُسجّل كـ "أخرى"',
-                style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                style: TextStyle(fontSize: 12, color: context.c.textMuted),
               ),
             ),
           const SizedBox(height: 12),
@@ -130,7 +130,7 @@ class _ExpenseSheetState extends State<ExpenseSheet> {
           const SizedBox(height: 20),
           FilledButton(
             onPressed: _busy ? null : _save,
-            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            style: FilledButton.styleFrom(backgroundColor: context.c.danger),
             child: const Text('تسجيل المصروف'),
           ),
         ],

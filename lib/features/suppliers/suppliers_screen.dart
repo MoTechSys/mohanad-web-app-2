@@ -102,7 +102,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                       title: 'إجمالي مستحقات التجار',
                       value: total.format(),
                       icon: Icons.local_shipping_outlined,
-                      color: AppColors.info,
+                      color: context.c.info,
                     ),
                   ),
                 ],
@@ -135,11 +135,11 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                               ),
                             ),
                             leading: CircleAvatar(
-                              backgroundColor: AppColors.infoLight,
+                              backgroundColor: context.c.infoLight,
                               child: Text(
                                 s.name.characters.first,
-                                style: const TextStyle(
-                                  color: AppColors.info,
+                                style: TextStyle(
+                                  color: context.c.info,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -161,16 +161,16 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                                 MoneyText(
                                   bal,
                                   color: bal.isPositive
-                                      ? AppColors.info
-                                      : AppColors.primaryDark,
+                                      ? context.c.info
+                                      : context.c.primaryDark,
                                 ),
                                 Text(
                                   bal.isZero
                                       ? 'مسدد'
                                       : (bal.isPositive ? 'له علينا' : 'لنا عنده'),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 11,
-                                    color: AppColors.textMuted,
+                                    color: context.c.textMuted,
                                   ),
                                 ),
                               ],
@@ -346,12 +346,12 @@ class SupplierDetailScreen extends StatelessWidget {
                   }
               }
             },
-            itemBuilder: (_) => const [
+            itemBuilder: (_) => [
               PopupMenuItem(value: 'adjust', child: Text('تسوية يدوية')),
               PopupMenuDivider(),
               PopupMenuItem(
                 value: 'delete',
-                child: Text('حذف المورد', style: TextStyle(color: AppColors.danger)),
+                child: Text('حذف المورد', style: TextStyle(color: context.c.danger)),
               ),
             ],
           ),
@@ -364,9 +364,9 @@ class SupplierDetailScreen extends StatelessWidget {
               margin: const EdgeInsets.all(16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.c.card,
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: context.c.border),
               ),
               child: Row(
                 children: [
@@ -374,10 +374,10 @@ class SupplierDetailScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'المستحق للمورد',
                           style: TextStyle(
-                            color: AppColors.textMuted,
+                            color: context.c.textMuted,
                             fontSize: 12,
                           ),
                         ),
@@ -385,8 +385,8 @@ class SupplierDetailScreen extends StatelessWidget {
                           bal,
                           size: 28,
                           color: bal.isPositive
-                              ? AppColors.info
-                              : AppColors.primaryDark,
+                              ? context.c.info
+                              : context.c.primaryDark,
                           currency: db.settings.currency,
                         ),
                         Text(
@@ -395,7 +395,7 @@ class SupplierDetailScreen extends StatelessWidget {
                               : bal.isPositive
                               ? 'له علينا'
                               : 'لنا عنده (رصيد دائن)',
-                          style: const TextStyle(color: AppColors.textMuted),
+                          style: TextStyle(color: context.c.textMuted),
                         ),
                       ],
                     ),
@@ -404,7 +404,7 @@ class SupplierDetailScreen extends StatelessWidget {
                     Text(
                       s.phone!,
                       textDirection: TextDirection.ltr,
-                      style: const TextStyle(color: AppColors.textMuted),
+                      style: TextStyle(color: context.c.textMuted),
                     ),
                 ],
               ),

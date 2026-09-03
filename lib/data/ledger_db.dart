@@ -94,6 +94,7 @@ class LedgerDb extends ChangeNotifier {
     _hydrate(Boxes.categories, categories, ExpenseCategory.fromMap);
     _hydrate(Boxes.dailyIncome, dailyIncomes, DailyIncome.fromMap);
     _hydrate(Boxes.products, products, Product.fromMap);
+    _barcodeIndex = null;
     _hydrate(Boxes.stockMoves, stockMoves, StockMove.fromMap);
     _hydrate(Boxes.audit, audit, AuditEntry.fromMap);
     final s = _backend.readAll(Boxes.settings)['main'];
@@ -131,6 +132,7 @@ class LedgerDb extends ChangeNotifier {
   Future<void> wipeAll({bool seedDefaults = true}) async {
     await _backend.clearAll();
     _pending.clear();
+    _barcodeIndex = null;
     for (final m in [
       customers,
       suppliers,
@@ -250,7 +252,38 @@ class LedgerDb extends ChangeNotifier {
 
   void putProduct(Product p) {
     products[p.id] = p;
+    _barcodeIndex = null;
     _stage(Boxes.products, p.id, p.toMap());
+  }
+
+  Map<String, Product>? _barcodeIndex;
+
+  /// O(1) lookup used by the cashier. Barcodes are normalised (trimmed) and
+  /// the index is rebuilt lazily after any product write.
+  Product? productByBarcode(String raw) {
+    final code = normalizeBarcode(raw);
+    if (code.isEmpty) return null;
+    final idx = _barcodeIndex ??= {
+      for (final p in activeProducts)
+        if (p.barcode != null && p.barcode!.isNotEmpty) p.barcode!: p,
+    };
+    return idx[code];
+  }
+
+  /// Strips whitespace and converts Arabic-Indic digits to ASCII so a scanner
+  /// or keyboard in any locale yields the same key.
+  static String normalizeBarcode(String raw) {
+    final b = StringBuffer();
+    for (final r in raw.trim().runes) {
+      if (r >= 0x0660 && r <= 0x0669) {
+        b.writeCharCode(0x30 + (r - 0x0660));
+      } else if (r >= 0x06F0 && r <= 0x06F9) {
+        b.writeCharCode(0x30 + (r - 0x06F0));
+      } else if (r != 0x20) {
+        b.writeCharCode(r);
+      }
+    }
+    return b.toString();
   }
 
   void putStockMove(StockMove m) {
@@ -325,6 +358,31 @@ class LedgerDb extends ChangeNotifier {
       suppliers.values.where((s) => !s.isDeleted);
   Iterable<Product> get activeProducts =>
       products.values.where((p) => !p.isDeleted);
+
+  /// Name/barcode search for the cashier (case-insensitive, prefix-first).
+  List<Product> searchProducts(String query, {int limit = 30}) {
+    final q = query.trim().toLowerCase();
+    final sellable = activeProducts.where(
+      (p) => p.status == ProductStatus.active,
+    );
+    if (q.isEmpty) {
+      return sellable.toList()..sort((a, b) => a.name.compareTo(b.name));
+    }
+    final code = normalizeBarcode(q);
+    final starts = <Product>[];
+    final contains = <Product>[];
+    for (final p in sellable) {
+      final n = p.name.toLowerCase();
+      if (n.startsWith(q) || (p.barcode ?? '').startsWith(code)) {
+        starts.add(p);
+      } else if (n.contains(q) || (p.barcode ?? '').contains(code)) {
+        contains.add(p);
+      }
+    }
+    starts.sort((a, b) => a.name.compareTo(b.name));
+    contains.sort((a, b) => a.name.compareTo(b.name));
+    return [...starts, ...contains].take(limit).toList();
+  }
 
   List<PartyTx> customerStatement(String id) =>
       customerTx.values.where((t) => t.partyId == id).toList()

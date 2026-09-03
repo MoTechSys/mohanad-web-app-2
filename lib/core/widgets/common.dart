@@ -13,13 +13,14 @@ Future<bool> guarded(
   String? successMessage,
 }) async {
   final messenger = ScaffoldMessenger.of(context);
+  final c = context.c;
   try {
     await action();
     if (successMessage != null) {
       messenger.showSnackBar(
         SnackBar(
           content: Text(successMessage),
-          backgroundColor: AppColors.primaryDark,
+          backgroundColor: c.primaryStrong,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -29,7 +30,7 @@ Future<bool> guarded(
     messenger.showSnackBar(
       SnackBar(
         content: Text(e.message),
-        backgroundColor: AppColors.danger,
+        backgroundColor: c.danger,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -38,7 +39,7 @@ Future<bool> guarded(
     messenger.showSnackBar(
       SnackBar(
         content: Text('حدث خطأ غير متوقع: $e'),
-        backgroundColor: AppColors.danger,
+        backgroundColor: c.danger,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -67,7 +68,7 @@ Future<String?> confirmWithReason(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (message != null) ...[
-              Text(message, style: const TextStyle(color: AppColors.textMuted)),
+              Text(message, style: TextStyle(color: context.c.textMuted)),
               const SizedBox(height: 12),
             ],
             if (requireReason)
@@ -89,7 +90,7 @@ Future<String?> confirmWithReason(
         ),
         FilledButton(
           style: destructive
-              ? FilledButton.styleFrom(backgroundColor: AppColors.danger)
+              ? FilledButton.styleFrom(backgroundColor: context.c.danger)
               : null,
           onPressed: () {
             if (formKey.currentState?.validate() ?? false) {
@@ -281,7 +282,7 @@ class EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -289,11 +290,11 @@ class EmptyState extends StatelessWidget {
             Container(
               width: 80,
               height: 80,
-              decoration: const BoxDecoration(
-                color: AppColors.primaryLight,
+              decoration: BoxDecoration(
+                color: context.c.primaryLight,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 40, color: AppColors.primaryDark),
+              child: Icon(icon, size: 40, color: context.c.primaryDark),
             ),
             const SizedBox(height: 16),
             Text(
@@ -305,7 +306,7 @@ class EmptyState extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 subtitle!,
-                style: const TextStyle(color: AppColors.textMuted),
+                style: TextStyle(color: context.c.textMuted),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -324,19 +325,20 @@ class StatCard extends StatelessWidget {
     required this.title,
     required this.value,
     this.icon,
-    this.color = AppColors.primaryDark,
+    this.color,
     this.subtitle,
     this.onTap,
   });
   final String title;
   final String value;
   final IconData? icon;
-  final Color color;
+  final Color? color;
   final String? subtitle;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final color = this.color ?? context.c.primaryStrong;
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -356,9 +358,9 @@ class StatCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.textMuted,
+                        color: context.c.textMuted,
                         fontWeight: FontWeight.w600,
                       ),
                       maxLines: 1,
@@ -385,7 +387,7 @@ class StatCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   subtitle!,
-                  style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                  style: TextStyle(fontSize: 11, color: context.c.textMuted),
                 ),
               ],
             ],
@@ -447,7 +449,7 @@ class MoneyText extends StatelessWidget {
       style: TextStyle(
         fontSize: size,
         fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
-        color: color ?? AppColors.text,
+        color: color ?? context.c.text,
         fontFeatures: const [FontFeature.tabularFigures()],
       ),
     );
@@ -456,16 +458,17 @@ class MoneyText extends StatelessWidget {
 
 /// Small pill.
 class Tag extends StatelessWidget {
-  const Tag(this.text, {super.key, this.color = AppColors.primaryDark, this.bg});
+  const Tag(this.text, {super.key, this.color, this.bg});
   final String text;
-  final Color color;
+  final Color? color;
   final Color? bg;
   @override
   Widget build(BuildContext context) {
+    final color = this.color ?? context.c.primaryStrong;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: bg ?? color.withValues(alpha: 0.12),
+        color: bg ?? color.withValues(alpha: context.c.isDark ? 0.22 : 0.12),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -484,18 +487,18 @@ class CancelledBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: AppColors.dangerLight,
+        color: context.c.dangerLight,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         children: [
-          const Icon(Icons.block, color: AppColors.danger, size: 18),
+          Icon(Icons.block, color: context.c.danger, size: 18),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               'ملغاة${reason == null || reason!.isEmpty ? '' : ' — $reason'}',
-              style: const TextStyle(
-                color: AppColors.danger,
+              style: TextStyle(
+                color: context.c.danger,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -593,7 +596,7 @@ class PickerField<T> extends StatelessWidget {
             child: Text(
               v == null ? '— اختر —' : labelOf(v),
               style: TextStyle(
-                color: v == null ? AppColors.textMuted : AppColors.text,
+                color: v == null ? context.c.textMuted : context.c.text,
               ),
             ),
           ),
@@ -649,7 +652,7 @@ class _PickerSheetState<T> extends State<_PickerSheet<T>> {
           ),
           if (widget.allowClear)
             ListTile(
-              leading: const Icon(Icons.clear, color: AppColors.danger),
+              leading: Icon(Icons.clear, color: context.c.danger),
               title: const Text('بدون اختيار'),
               onTap: () => Navigator.pop(context, const _Pick(null)),
             ),
