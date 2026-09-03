@@ -1,4 +1,4 @@
-package com.groceryledger.grocery_ledger
+package com.groceryledger.accounts
 
 import io.flutter.embedding.android.FlutterActivity
 
