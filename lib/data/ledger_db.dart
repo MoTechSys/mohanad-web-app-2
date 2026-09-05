@@ -4,6 +4,7 @@ import '../core/ids/id_gen.dart';
 import '../core/money/money.dart';
 import '../core/utils/arabic_text.dart';
 import '../domain/enums/enums.dart';
+import '../domain/models/cash_session.dart';
 import '../domain/models/documents.dart';
 import '../domain/models/inventory.dart';
 import '../domain/models/party.dart';
@@ -28,6 +29,7 @@ class Boxes {
   static const audit = 'audit';
   static const settings = 'settings';
   static const vouchers = 'vouchers'; // v2.1 — سندات قبض/صرف
+  static const cashSessions = 'cash_sessions'; // v2.1 — ورديات الصندوق
 
   static const all = [
     customers,
@@ -44,6 +46,7 @@ class Boxes {
     audit,
     settings,
     vouchers,
+    cashSessions,
   ];
 }
 
@@ -75,6 +78,7 @@ class LedgerDb extends ChangeNotifier {
   final Map<String, StockMove> stockMoves = {};
   final Map<String, AuditEntry> audit = {};
   final Map<String, Voucher> vouchers = {};
+  final Map<String, CashSession> cashSessions = {};
   AppSettings settings = const AppSettings();
 
   // Derived caches.
@@ -103,6 +107,7 @@ class LedgerDb extends ChangeNotifier {
     _hydrate(Boxes.stockMoves, stockMoves, StockMove.fromMap);
     _hydrate(Boxes.audit, audit, AuditEntry.fromMap);
     _hydrate(Boxes.vouchers, vouchers, Voucher.fromMap);
+    _hydrate(Boxes.cashSessions, cashSessions, CashSession.fromMap);
     final s = _backend.readAll(Boxes.settings)['main'];
     settings = s == null ? const AppSettings() : AppSettings.fromMap(s);
     if (categories.isEmpty) await _seedCategories();
@@ -193,6 +198,7 @@ class LedgerDb extends ChangeNotifier {
       Boxes.stockMoves,
       Boxes.expenses,
       Boxes.vouchers,
+      Boxes.cashSessions,
       Boxes.sales,
       Boxes.purchases,
       Boxes.dailyIncome,
@@ -267,6 +273,11 @@ class LedgerDb extends ChangeNotifier {
   void putVoucher(Voucher v) {
     vouchers[v.id] = v;
     _stage(Boxes.vouchers, v.id, v.toMap());
+  }
+
+  void putCashSession(CashSession s) {
+    cashSessions[s.id] = s;
+    _stage(Boxes.cashSessions, s.id, s.toMap());
   }
 
   Map<String, Product>? _barcodeIndex;

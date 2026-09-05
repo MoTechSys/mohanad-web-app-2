@@ -11,6 +11,7 @@ import '../../domain/models/inventory.dart';
 import '../../domain/models/party.dart';
 import '../ledger_db.dart';
 import '../../core/utils/tafqit.dart';
+import '../../domain/models/cash_session.dart';
 import '../../domain/models/voucher.dart';
 import '../services/report_service.dart';
 import 'pdf_theme.dart';
@@ -608,6 +609,73 @@ class PdfExporter {
         pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
           pw.Text('التوقيع: ____________', style: const pw.TextStyle(fontSize: 8.5)),
           pw.Text('دفتر البقالة', style: const pw.TextStyle(fontSize: 7.5, color: PdfBrand.muted)),
+        ]),
+      ]),
+    ));
+    return doc.save();
+  }
+
+  /// تقرير Z لوردية صندوق — إيصال حراري 80mm (يصلح أيضًا للطباعة العادية).
+  Future<Uint8List> zReport80(ZReport r) async {
+    final b = await _brand();
+    final doc = b.document();
+    final s = r.session;
+    const fmt = PdfPageFormat(80 * PdfPageFormat.mm, double.infinity, marginAll: 4 * PdfPageFormat.mm);
+
+    pw.Widget line(String label, String value, {bool bold = false, PdfColor? color}) => pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 1),
+      child: pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
+        pw.Text(label, style: pw.TextStyle(fontSize: 9, fontWeight: bold ? pw.FontWeight.bold : null)),
+        pw.Text(value, style: pw.TextStyle(fontSize: bold ? 11 : 9.5, fontWeight: pw.FontWeight.bold, color: color)),
+      ]),
+    );
+
+    final diff = s.difference;
+    doc.addPage(pw.Page(
+      pageFormat: fmt,
+      textDirection: pw.TextDirection.rtl,
+      build: (_) => pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.stretch, children: [
+        if (b.logo != null) pw.Center(child: pw.SizedBox(height: 36, child: pw.Image(b.logo!))),
+        pw.Center(child: pw.Text(b.settings.storeName, style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold))),
+        pw.Divider(),
+        pw.Center(child: pw.Text('تقرير الوردية ${s.sessionNo}', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold))),
+        pw.SizedBox(height: 2),
+        pw.Text('العامل: ${s.workerName}', style: const pw.TextStyle(fontSize: 9)),
+        pw.Text('من: ${Fmt.dateTime(s.openedAt)}', style: const pw.TextStyle(fontSize: 9)),
+        pw.Text('إلى: ${Fmt.dateTime(r.until)}${s.isOpen ? ' (ما تزال مفتوحة)' : ''}', style: const pw.TextStyle(fontSize: 9)),
+        pw.Divider(),
+        line('الرصيد الافتتاحي', b.money(s.openingCash), bold: true),
+        pw.SizedBox(height: 3),
+        pw.Text('النقد الداخل', style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold)),
+        line('مبيعات نقدية (${r.cashSalesCount})', b.money(r.cashSales)),
+        line('سدادات عملاء', b.money(r.customerPayments)),
+        if (r.otherReceipts.isPositive) line('مقبوضات أخرى', b.money(r.otherReceipts)),
+        if (r.dailyIncome.isPositive) line('دخل يومي إجمالي', b.money(r.dailyIncome)),
+        line('إجمالي الداخل', b.money(r.cashIn), bold: true),
+        pw.SizedBox(height: 3),
+        pw.Text('النقد الخارج', style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold)),
+        line('مصروفات ومدفوعات (${r.expensesCount})', b.money(r.expenses)),
+        pw.Divider(),
+        line('النقد المتوقع بالدرج', b.money(r.expectedCash), bold: true),
+        if (s.countedCash != null) ...[
+          line('النقد المعدود', b.money(s.countedCash!), bold: true),
+          line(
+            diff!.isZero ? 'الفرق (مطابق)' : diff.isPositive ? 'الفرق (زيادة)' : 'الفرق (عجز)',
+            b.money(diff),
+            bold: true,
+            color: diff.isZero ? null : diff.isPositive ? PdfColors.green800 : PdfColors.red,
+          ),
+        ],
+        pw.SizedBox(height: 3),
+        pw.Text('معلومة: مبيعات آجلة (${r.creditSalesCount}) بقيمة ${b.money(r.creditSales)} — لا تدخل الدرج.',
+            style: const pw.TextStyle(fontSize: 7.5, color: PdfBrand.muted)),
+        if ((s.closeNotes ?? '').isNotEmpty)
+          pw.Text('ملاحظات: ${s.closeNotes}', style: const pw.TextStyle(fontSize: 8)),
+        pw.Divider(),
+        pw.SizedBox(height: 16),
+        pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
+          pw.Text('توقيع العامل: ________', style: const pw.TextStyle(fontSize: 8.5)),
+          pw.Text('توقيع المالك: ________', style: const pw.TextStyle(fontSize: 8.5)),
         ]),
       ]),
     ));

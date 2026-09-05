@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import '../../core/errors/domain_exception.dart';
 import '../../domain/enums/enums.dart';
+import '../../domain/models/cash_session.dart';
 import '../../domain/models/documents.dart';
 import '../../domain/models/inventory.dart';
 import '../../domain/models/party.dart';
@@ -59,8 +60,9 @@ class SettingsService {
       'products': db.products.values.map((e) => e.toMap()).toList(),
       'stockMoves': db.stockMoves.values.map((e) => e.toMap()).toList(),
       'audit': db.audit.values.map((e) => e.toMap()).toList(),
-      // v2.1 — old backups without this key import fine (defaults to []).
+      // v2.1 — old backups without these keys import fine (default to []).
       'vouchers': db.vouchers.values.map((e) => e.toMap()).toList(),
+      'cashSessions': db.cashSessions.values.map((e) => e.toMap()).toList(),
     };
     return jsonEncode(data);
   }
@@ -96,6 +98,7 @@ class SettingsService {
     final moves = rows('stockMoves').map(StockMove.fromMap).toList();
     final audit = rows('audit').map(AuditEntry.fromMap).toList();
     final vouchers = rows('vouchers').map(Voucher.fromMap).toList();
+    final sessions = rows('cashSessions').map(CashSession.fromMap).toList();
     final settings = data['settings'] == null
         ? const AppSettings()
         : AppSettings.fromMap(Map<String, dynamic>.from(data['settings'] as Map));
@@ -115,6 +118,7 @@ class SettingsService {
       moves.forEach(db.putStockMove);
       audit.forEach(db.putAudit);
       vouchers.forEach(db.putVoucher);
+      sessions.forEach(db.putCashSession);
       db.putSettings(settings);
       db.log(
         action: AuditAction.restore,
