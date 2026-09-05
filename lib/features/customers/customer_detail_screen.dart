@@ -483,6 +483,8 @@ class PartyTxTile extends StatelessWidget {
       RefType.purchaseCancel => ' (إلغاء شراء)',
       RefType.expense => ' (مصروف)',
       RefType.expenseCancel => ' (إلغاء مصروف)',
+      RefType.voucher => ' (سند)',
+      RefType.voucherCancel => ' (إلغاء سند)',
       RefType.manual => '',
     };
     return '$base$src';

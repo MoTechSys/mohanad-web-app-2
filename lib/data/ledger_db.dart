@@ -8,6 +8,7 @@ import '../domain/models/documents.dart';
 import '../domain/models/inventory.dart';
 import '../domain/models/party.dart';
 import '../domain/models/settings.dart';
+import '../domain/models/voucher.dart';
 import 'kv_backend.dart';
 
 /// Box names — never rename (they are on-disk identifiers).
@@ -26,6 +27,7 @@ class Boxes {
   static const stockMoves = 'stock_moves';
   static const audit = 'audit';
   static const settings = 'settings';
+  static const vouchers = 'vouchers'; // v2.1 — سندات قبض/صرف
 
   static const all = [
     customers,
@@ -41,6 +43,7 @@ class Boxes {
     stockMoves,
     audit,
     settings,
+    vouchers,
   ];
 }
 
@@ -71,6 +74,7 @@ class LedgerDb extends ChangeNotifier {
   final Map<String, Product> products = {};
   final Map<String, StockMove> stockMoves = {};
   final Map<String, AuditEntry> audit = {};
+  final Map<String, Voucher> vouchers = {};
   AppSettings settings = const AppSettings();
 
   // Derived caches.
@@ -98,6 +102,7 @@ class LedgerDb extends ChangeNotifier {
     _barcodeIndex = null;
     _hydrate(Boxes.stockMoves, stockMoves, StockMove.fromMap);
     _hydrate(Boxes.audit, audit, AuditEntry.fromMap);
+    _hydrate(Boxes.vouchers, vouchers, Voucher.fromMap);
     final s = _backend.readAll(Boxes.settings)['main'];
     settings = s == null ? const AppSettings() : AppSettings.fromMap(s);
     if (categories.isEmpty) await _seedCategories();
@@ -147,6 +152,7 @@ class LedgerDb extends ChangeNotifier {
       products,
       stockMoves,
       audit,
+      vouchers,
     ]) {
       m.clear();
     }
@@ -186,6 +192,7 @@ class LedgerDb extends ChangeNotifier {
       Boxes.supplierTx,
       Boxes.stockMoves,
       Boxes.expenses,
+      Boxes.vouchers,
       Boxes.sales,
       Boxes.purchases,
       Boxes.dailyIncome,
@@ -255,6 +262,11 @@ class LedgerDb extends ChangeNotifier {
     products[p.id] = p;
     _barcodeIndex = null;
     _stage(Boxes.products, p.id, p.toMap());
+  }
+
+  void putVoucher(Voucher v) {
+    vouchers[v.id] = v;
+    _stage(Boxes.vouchers, v.id, v.toMap());
   }
 
   Map<String, Product>? _barcodeIndex;

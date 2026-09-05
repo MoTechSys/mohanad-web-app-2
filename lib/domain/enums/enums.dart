@@ -89,6 +89,28 @@ enum RefType {
   purchaseCancel,
   expense,
   expenseCancel,
+  // Appended (v2.1) — enums are stored by index, NEVER reorder.
+  voucher,
+  voucherCancel,
+}
+
+/// Official voucher kind (المرحلة م2 — طلب أصحاب البقالات).
+enum VoucherType {
+  receipt('سند قبض'),
+  payment('سند صرف');
+
+  const VoucherType(this.label);
+  final String label;
+}
+
+/// How the money moved.
+enum VoucherMethod {
+  cash('نقدًا'),
+  transfer('حوالة'),
+  network('شبكة/بطاقة');
+
+  const VoucherMethod(this.label);
+  final String label;
 }
 
 enum AuditAction {

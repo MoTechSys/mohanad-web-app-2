@@ -8,6 +8,7 @@ import '../data/services/inventory_service.dart';
 import '../data/services/party_service.dart';
 import '../data/services/report_service.dart';
 import '../data/services/settings_service.dart';
+import '../data/services/voucher_service.dart';
 
 /// Composition root. One instance per app; injected via Provider.
 class AppServices {
@@ -15,7 +16,8 @@ class AppServices {
     : parties = PartyService(db),
       inventory = InventoryService(db),
       reports = ReportService(db),
-      settings = SettingsService(db) {
+      settings = SettingsService(db),
+      vouchers = VoucherService(db) {
     documents = DocumentService(db, parties, inventory);
     pdf = PdfExporter(db, reports);
     excel = ExcelExporter(db, reports);
@@ -30,6 +32,7 @@ class AppServices {
   late final DocumentService documents;
   final ReportService reports;
   final SettingsService settings;
+  final VoucherService vouchers;
   late final PdfExporter pdf;
   late final ExcelExporter excel;
   final ShareService share = const ShareService();

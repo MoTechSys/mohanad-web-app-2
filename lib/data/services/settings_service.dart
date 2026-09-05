@@ -6,6 +6,7 @@ import '../../domain/models/documents.dart';
 import '../../domain/models/inventory.dart';
 import '../../domain/models/party.dart';
 import '../../domain/models/settings.dart';
+import '../../domain/models/voucher.dart';
 import '../ledger_db.dart';
 
 /// Settings, backup (JSON export) and restore.
@@ -58,6 +59,8 @@ class SettingsService {
       'products': db.products.values.map((e) => e.toMap()).toList(),
       'stockMoves': db.stockMoves.values.map((e) => e.toMap()).toList(),
       'audit': db.audit.values.map((e) => e.toMap()).toList(),
+      // v2.1 — old backups without this key import fine (defaults to []).
+      'vouchers': db.vouchers.values.map((e) => e.toMap()).toList(),
     };
     return jsonEncode(data);
   }
@@ -92,6 +95,7 @@ class SettingsService {
     final products = rows('products').map(Product.fromMap).toList();
     final moves = rows('stockMoves').map(StockMove.fromMap).toList();
     final audit = rows('audit').map(AuditEntry.fromMap).toList();
+    final vouchers = rows('vouchers').map(Voucher.fromMap).toList();
     final settings = data['settings'] == null
         ? const AppSettings()
         : AppSettings.fromMap(Map<String, dynamic>.from(data['settings'] as Map));
@@ -110,6 +114,7 @@ class SettingsService {
       products.forEach(db.putProduct);
       moves.forEach(db.putStockMove);
       audit.forEach(db.putAudit);
+      vouchers.forEach(db.putVoucher);
       db.putSettings(settings);
       db.log(
         action: AuditAction.restore,
