@@ -8,6 +8,9 @@ const kCommonUnits = <String>[
   'علبة', 'ربطة', 'درزن', 'شدة', 'كجم', 'جرام', 'لتر',
 ];
 
+/// Sentinel for copyWith so `expiryDate: null` can *clear* the date.
+const Object _unset = Object();
+
 /// A packaging unit for a product (e.g. كرتون = 24 حبة).
 /// Stock is ALWAYS stored in the product's base unit; pack units only
 /// convert at document-entry time — so totals never drift.
@@ -59,6 +62,7 @@ class Product {
     this.trackInventory = true,
     this.status = ProductStatus.active,
     this.packUnits = const [],
+    this.expiryDate,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -77,11 +81,23 @@ class Product {
   /// Larger packaging units (كرتون…). Base unit is [unit]; stock is kept
   /// in base units only.
   final List<PackUnit> packUnits;
+
+  /// تاريخ انتهاء أقرب دفعة (مٔ) — يُحدَّث عند استلام بضاعة جديدة. اختياري:
+  /// null = منتج بلا صلاحية (مواد غير غذائية مثلًا).
+  final DateTime? expiryDate;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
 
   bool get isDeleted => deletedAt != null;
+
+  /// منتهي الصلاحية؟
+  bool get isExpired =>
+      expiryDate != null && !expiryDate!.isAfter(DateTime.now());
+
+  /// الأيام المتبقية للانتهاء (سالب = منتهٍ، null = بلا صلاحية).
+  int? get daysToExpiry =>
+      expiryDate?.difference(DateTime.now()).inDays;
 
   /// Unit margin using current prices (informational only).
   Money get unitMargin => salePrice - purchasePrice;
@@ -102,6 +118,7 @@ class Product {
     bool? trackInventory,
     ProductStatus? status,
     List<PackUnit>? packUnits,
+    Object? expiryDate = _unset,
     DateTime? updatedAt,
     DateTime? deletedAt,
   }) => Product(
@@ -115,6 +132,9 @@ class Product {
     trackInventory: trackInventory ?? this.trackInventory,
     status: status ?? this.status,
     packUnits: packUnits ?? this.packUnits,
+    expiryDate: identical(expiryDate, _unset)
+        ? this.expiryDate
+        : expiryDate as DateTime?,
     createdAt: createdAt,
     updatedAt: updatedAt ?? DateTime.now(),
     deletedAt: deletedAt ?? this.deletedAt,
@@ -131,6 +151,7 @@ class Product {
     'trackInventory': trackInventory,
     'status': status.index,
     'packUnits': packUnits.map((u) => u.toMap()).toList(),
+    'expiryDate': Serde.dt(expiryDate),
     'createdAt': Serde.dt(createdAt),
     'updatedAt': Serde.dt(updatedAt),
     'deletedAt': Serde.dt(deletedAt),
@@ -151,6 +172,7 @@ class Product {
       ProductStatus.active,
     ),
     packUnits: Serde.listOfMaps(m['packUnits']).map(PackUnit.fromMap).toList(),
+    expiryDate: Serde.dtFrom(m['expiryDate']),
     createdAt: Serde.dtReq(m['createdAt']),
     updatedAt: Serde.dtReq(m['updatedAt']),
     deletedAt: Serde.dtFrom(m['deletedAt']),

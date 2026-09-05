@@ -20,6 +20,7 @@ class InventoryService {
     bool trackInventory = true,
     Qty openingQty = Qty.zero,
     List<PackUnit> packUnits = const [],
+    DateTime? expiryDate,
   }) {
     final n = name.trim();
     if (n.isEmpty) {
@@ -54,6 +55,7 @@ class InventoryService {
         minQty: minQty,
         trackInventory: trackInventory,
         packUnits: packUnits,
+        expiryDate: expiryDate,
         createdAt: now,
         updatedAt: now,
       );
@@ -88,6 +90,8 @@ class InventoryService {
     bool? trackInventory,
     ProductStatus? status,
     List<PackUnit>? packUnits,
+    DateTime? expiryDate,
+    bool clearExpiry = false,
   }) {
     final old = _product(id);
     if (packUnits != null) {
@@ -117,6 +121,7 @@ class InventoryService {
         trackInventory: trackInventory,
         status: status,
         packUnits: packUnits,
+        expiryDate: clearExpiry ? null : (expiryDate ?? old.expiryDate),
       );
       db.putProduct(p);
       db.log(

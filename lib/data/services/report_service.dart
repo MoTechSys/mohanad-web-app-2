@@ -323,4 +323,21 @@ class ReportService {
           )
           .toList()
         ..sort((a, b) => db.stockOf(a.id).milli.compareTo(db.stockOf(b.id).milli));
+
+  /// المنتجات التي قاربت (أو تجاوزت) انتهاء الصلاحية خلال [days] يومًا.
+  /// تشمل المنتهية فعلًا (daysToExpiry سالب) — مرتبة من الأقرب انتهاءً.
+  List<Product> expiringSoon({int days = 30}) =>
+      db.activeProducts
+          .where(
+            (p) =>
+                p.status == ProductStatus.active &&
+                p.expiryDate != null &&
+                p.daysToExpiry! <= days,
+          )
+          .toList()
+        ..sort((a, b) => a.expiryDate!.compareTo(b.expiryDate!));
+
+  /// المنتجات المنتهية صلاحيتها فعلًا.
+  List<Product> expiredProducts() =>
+      expiringSoon(days: 0).where((p) => p.isExpired).toList();
 }

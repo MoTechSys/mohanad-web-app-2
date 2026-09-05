@@ -30,6 +30,8 @@ class DashboardScreen extends StatelessWidget {
     final cur = s.currency;
     final debtors = rep.topDebtors(limit: 5);
     final lowStock = s.inventoryEnabled ? rep.lowStock() : const [];
+    final expiring = rep.expiringSoon();
+    final expiredCount = expiring.where((p) => p.isExpired).length;
     final overLimit = rep.overLimitCustomers();
     final totalDebt = rep.customersDebt().total;
     final totalSupplierDebt = rep.suppliersDebt().total;
@@ -239,7 +241,9 @@ class DashboardScreen extends StatelessWidget {
                 ),
               ],
             ),
-            if (overLimit.isNotEmpty || lowStock.isNotEmpty) ...[
+            if (overLimit.isNotEmpty ||
+                lowStock.isNotEmpty ||
+                expiring.isNotEmpty) ...[
               const SectionTitle('تنبيهات'),
               if (overLimit.isNotEmpty)
                 _alert(
@@ -255,6 +259,21 @@ class DashboardScreen extends StatelessWidget {
                   Icons.inventory_outlined,
                   context.c.danger,
                   '${lowStock.length} منتج وصل حد النقص',
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ProductsScreen()),
+                  ),
+                ),
+              if (expiring.isNotEmpty)
+                _alert(
+                  context,
+                  Icons.event_busy_outlined,
+                  expiredCount > 0 ? context.c.danger : context.c.warning,
+                  expiredCount == 0
+                      ? '${expiring.length} منتج قارب انتهاء الصلاحية'
+                      : expiredCount == expiring.length
+                      ? '$expiredCount منتج منتهي الصلاحية'
+                      : '$expiredCount منتج منتهي الصلاحية و${expiring.length - expiredCount} قارب الانتهاء',
                   () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const ProductsScreen()),

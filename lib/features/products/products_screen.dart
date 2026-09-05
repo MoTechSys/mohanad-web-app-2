@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../app/app_services.dart';
 import '../../core/money/money.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/formatters.dart';
 import '../../core/widgets/barcode_scanner_view.dart';
 import '../../core/widgets/common.dart';
 import '../../core/widgets/export_actions.dart';
@@ -111,6 +112,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
                           onTap: () => _actions(context, p),
                           title: Row(children: [
                             Expanded(child: Text(p.name, style: const TextStyle(fontWeight: FontWeight.w700))),
+                            if (p.isExpired)
+                              Tag('منتهي', color: context.c.danger)
+                            else if (p.daysToExpiry != null && p.daysToExpiry! <= 30)
+                              Tag('ينتهي خلال ${p.daysToExpiry} يوم', color: context.c.warning),
                             if (low) Tag('ناقص', color: context.c.danger),
                           ]),
                           subtitle: Text(
@@ -297,6 +302,7 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
   final _opening = TextEditingController();
   late bool _track = widget.existing?.trackInventory ?? true;
   late List<PackUnit> _packUnits = [...?widget.existing?.packUnits];
+  late DateTime? _expiry = widget.existing?.expiryDate;
   bool get isEdit => widget.existing != null;
 
   @override
@@ -386,6 +392,47 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
             ],
           ]),
         const SizedBox(height: 8),
+        // ── تاريخ الصلاحية (اختياري) ──
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: Icon(
+            Icons.event_busy_outlined,
+            color: _expiry == null
+                ? null
+                : (!_expiry!.isAfter(DateTime.now())
+                      ? context.c.danger
+                      : context.c.warning),
+          ),
+          title: Text(
+            _expiry == null
+                ? 'تاريخ انتهاء الصلاحية (اختياري)'
+                : 'ينتهي: ${Fmt.date(_expiry!)}',
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          subtitle: _expiry == null
+              ? const Text('اتركه فارغًا للمنتجات بلا صلاحية',
+                  style: TextStyle(fontSize: 12))
+              : null,
+          trailing: _expiry == null
+              ? const Icon(Icons.chevron_left)
+              : IconButton(
+                  tooltip: 'إزالة التاريخ',
+                  icon: Icon(Icons.close, color: context.c.danger),
+                  onPressed: () => setState(() => _expiry = null),
+                ),
+          onTap: () async {
+            final now = DateTime.now();
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: _expiry ?? now.add(const Duration(days: 90)),
+              firstDate: DateTime(now.year - 2),
+              lastDate: DateTime(now.year + 10),
+              helpText: 'تاريخ انتهاء الصلاحية',
+            );
+            if (picked != null) setState(() => _expiry = picked);
+          },
+        ),
+        const SizedBox(height: 4),
         // ── وحدات العبوة (كرتون / جوتة / قرطاس …) ──
         Row(children: [
           const Expanded(
@@ -439,11 +486,13 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
               if (isEdit) {
                 result = await app.inventory.updateProduct(widget.existing!.id, name: _name.text, barcode: barcode,
                     unit: _unit.text, purchasePrice: m(_buy), salePrice: m(_sell), minQty: qq(_min),
-                    trackInventory: _track, packUnits: _packUnits);
+                    trackInventory: _track, packUnits: _packUnits,
+                    expiryDate: _expiry, clearExpiry: _expiry == null);
               } else {
                 result = await app.inventory.createProduct(name: _name.text, barcode: barcode.isEmpty ? null : barcode,
                     unit: _unit.text.trim().isEmpty ? 'حبة' : _unit.text, purchasePrice: m(_buy), salePrice: m(_sell),
-                    minQty: qq(_min), trackInventory: _track, openingQty: qq(_opening), packUnits: _packUnits);
+                    minQty: qq(_min), trackInventory: _track, openingQty: qq(_opening), packUnits: _packUnits,
+                    expiryDate: _expiry);
               }
             }, successMessage: isEdit ? 'تم التحديث' : 'تمت الإضافة');
             if (ok && context.mounted) Navigator.pop(context, result);
