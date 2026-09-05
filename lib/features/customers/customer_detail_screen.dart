@@ -68,6 +68,8 @@ class CustomerDetailScreen extends StatelessWidget {
                 const PopupMenuItem(value: 'freeze', child: Text('تجميد الحساب')),
               if (c.status != CustomerStatus.gracePeriod)
                 const PopupMenuItem(value: 'grace', child: Text('منح مهلة سداد')),
+              if (bal.isPositive && (c.phone ?? '').isNotEmpty)
+                const PopupMenuItem(value: 'sms_reminder', child: Text('تذكير بالدين (SMS مباشر)')),
               const PopupMenuItem(value: 'adjust', child: Text('تسوية يدوية')),
               if (!bal.isZero)
                 const PopupMenuItem(value: 'clear', child: Text('تصفير الرصيد')),
@@ -165,6 +167,16 @@ class CustomerDetailScreen extends StatelessWidget {
   ) async {
     final app = context.read<AppServices>();
     switch (v) {
+      case 'sms_reminder':
+        final ok = await app.sms.sendReminder(c.id);
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(ok
+              ? 'تم إرسال تذكير بالدين لـ ${c.name}'
+              : 'تعذّر الإرسال — تأكد من الرقم وصلاحية الرسائل'),
+          backgroundColor: ok ? context.c.primaryStrong : context.c.danger,
+          behavior: SnackBarBehavior.floating,
+        ));
       case 'activate':
         await guarded(
           context,

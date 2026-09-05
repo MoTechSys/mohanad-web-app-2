@@ -39,6 +39,11 @@ class NativeBridge {
   static Future<bool> share(String text, {String? subject}) async =>
       (await _call<bool>('share', {'text': text, 'subject': subject})) ?? false;
 
+  /// إرسال SMS مباشر عبر SmsManager (بدون فتح تطبيق الرسائل).
+  /// يطلب صلاحية SEND_SMS تلقائيًا أول مرة. يرجع false عند الرفض/الفشل.
+  static Future<bool> sendSms(String number, String text) async =>
+      (await _call<bool>('sendSms', {'number': number, 'text': text})) ?? false;
+
   /// Combined scan feedback: sound + haptic.
   static Future<void> scanOk() async {
     await beep('ok');

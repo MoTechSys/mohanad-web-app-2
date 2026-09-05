@@ -90,6 +90,12 @@ class _SaleSheetState extends State<SaleSheet> {
     for (var attempt = 0; attempt < 4; attempt++) {
       try {
         await doIt();
+        // إشعار SMS مباشر للعميل عند البيع الآجل (أفضل جهد — لا يعطّل الحفظ).
+        if (_pay == PaymentType.credit && _customer != null) {
+          // ignore: unawaited_futures
+          app.sms.notifyCreditSale(
+              customerId: _customer!.id, saleAmount: _net);
+        }
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

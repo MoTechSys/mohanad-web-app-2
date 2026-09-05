@@ -16,6 +16,7 @@ import '../products/products_screen.dart';
 import '../settings/branding_screen.dart';
 import '../purchases/purchases_screen.dart';
 import '../reports/reports_screen.dart';
+import '../vouchers/vouchers_screen.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
@@ -33,6 +34,9 @@ class MoreScreen extends StatelessWidget {
                 subtitle: const Text('بيع سريع بالكاميرا أو الماسح', style: TextStyle(fontSize: 12)),
                 trailing: const Icon(Icons.chevron_left),
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosScreen(), fullscreenDialog: true))),
+            const Divider(),
+            ListTile(leading: Icon(Icons.receipt_outlined, color: context.c.primaryStrong), title: const Text('سندات القبض والصرف'),
+                trailing: const Icon(Icons.chevron_left), onTap: () => go(const VouchersScreen())),
             const Divider(),
             ListTile(leading: Icon(Icons.receipt_long_outlined, color: context.c.danger), title: Text('المصروفات'),
                 trailing: const Icon(Icons.chevron_left), onTap: () => go(const ExpensesScreen())),
