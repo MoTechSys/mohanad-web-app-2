@@ -179,4 +179,56 @@ void main() {
     expect(LedgerDb.normalizeBarcode(' ١٢٣ 456 '), '123456');
     expect(LedgerDb.normalizeBarcode('ABC-1'), 'ABC-1');
   });
+
+  group('pack units in cart', () {
+    late Product soda;
+
+    setUp(() async {
+      soda = await app.inventory.createProduct(
+        name: 'مياه غازية',
+        purchasePrice: Money.units(100),
+        salePrice: Money.units(150),
+        openingQty: Qty.units(48), // = كرتونان
+        packUnits: [
+          PackUnit(name: 'كرتون', factor: Qty.units(24), salePrice: Money.units(3300)),
+        ],
+      );
+    });
+
+    test('pack line uses pack price and is kept separate from base line', () {
+      final carton = soda.packUnits.single;
+      cart.addProduct(soda); // 1 حبة
+      cart.addProduct(soda, packUnit: carton); // 1 كرتون
+      expect(cart.lines.length, 2);
+      expect(cart.gross, Money.units(150 + 3300));
+      // Re-adding the pack bumps the pack line only.
+      cart.addProduct(soda, packUnit: carton);
+      expect(cart.lines.length, 2);
+      expect(cart.lines.last.qty, Qty.units(2));
+    });
+
+    test('checkout deducts stock in base units (كرتون = 24 حبة)', () async {
+      final carton = soda.packUnits.single;
+      cart.addProduct(soda, packUnit: carton); // 24 حبة
+      await cart.checkout(paymentType: PaymentType.cash);
+      expect(app.db.stockOf(soda.id), Qty.units(24));
+    });
+
+    test('oversell in packs is blocked: بعت 3 كراتين والموجود 2', () async {
+      final carton = soda.packUnits.single;
+      cart.addProduct(soda, packUnit: carton, qty: Qty.units(3)); // 72 > 48
+      expect(
+        () => cart.checkout(paymentType: PaymentType.cash),
+        throwsA(predicate((e) => e is DomainException && e.code == ErrorCodes.insufficientStock)),
+      );
+      // Stock untouched after the rejected attempt.
+      expect(app.db.stockOf(soda.id), Qty.units(48));
+    });
+
+    test('pack cost falls back to base cost × factor for accurate profit', () {
+      final carton = soda.packUnits.single; // no purchasePrice set on the pack
+      cart.addProduct(soda, packUnit: carton);
+      expect(cart.lines.single.unitCost, Money.units(2400)); // 100 × 24
+    });
+  });
 }

@@ -101,13 +101,14 @@ class ExcelExporter {
           TextCellValue(l.name),
           TextCellValue(l.productId == null ? '' : (db.products[l.productId!]?.barcode ?? '')),
           DoubleCellValue(_q(l.qty)),
+          TextCellValue(l.unitName ?? (l.productId == null ? '' : (db.products[l.productId!]?.unit ?? ''))),
           DoubleCellValue(_n(l.unitPrice)),
           DoubleCellValue(_n(l.lineTotal)),
           DoubleCellValue(_n(l.unitCost.timesQty(l.qty))),
         ]);
       }
     }
-    _sheet(x, 'أصناف المبيعات', ['التاريخ', 'الصنف', 'الباركود', 'الكمية', 'سعر الوحدة', 'الإجمالي', 'التكلفة'], lines);
+    _sheet(x, 'أصناف المبيعات', ['التاريخ', 'الصنف', 'الباركود', 'الكمية', 'الوحدة', 'سعر الوحدة', 'الإجمالي', 'التكلفة'], lines);
 
     final purchases = reports.purchasesIn(r).toList()..sort((a, b) => a.purchaseDate.compareTo(b.purchaseDate));
     _sheet(x, 'المشتريات', ['التاريخ', 'المورد', 'رقم الفاتورة', 'الدفع', 'المبلغ', 'الحالة', 'ملاحظات'], [

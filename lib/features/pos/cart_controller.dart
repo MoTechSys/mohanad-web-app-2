@@ -19,13 +19,19 @@ class CartLine {
     required this.qty,
     required this.unitPrice,
     required this.unitCost,
+    this.unitFactor = Qty.one,
     this.barcode,
   });
 
   final String key;
   final String? productId;
   final String name;
+
+  /// Display unit for this line (حبة / كرتون …).
   final String unit;
+
+  /// Base units per one [unit] — 1 for the base unit, >1 for packs.
+  final Qty unitFactor;
   final String? barcode;
   Qty qty;
   Money unitPrice;
@@ -39,6 +45,8 @@ class CartLine {
     qty: qty,
     unitPrice: unitPrice,
     unitCost: unitCost,
+    unitName: productId == null ? null : unit,
+    unitFactor: unitFactor,
   );
 }
 
@@ -100,8 +108,11 @@ class CartController extends ChangeNotifier {
   }
 
   /// Adds one unit of [p] or bumps its quantity if already in the cart.
-  ScanOutcome addProduct(Product p, {Qty qty = Qty.one}) {
-    final i = _lines.indexWhere((l) => l.productId == p.id);
+  /// Pass [packUnit] to sell by the pack (كرتون/جوتة…) — pack lines are
+  /// kept separate from base-unit lines of the same product.
+  ScanOutcome addProduct(Product p, {Qty qty = Qty.one, PackUnit? packUnit}) {
+    final key = packUnit == null ? p.id : '${p.id}§${packUnit.name}';
+    final i = _lines.indexWhere((l) => l.key == key);
     if (i >= 0) {
       _lines[i].qty = _lines[i].qty + qty;
       _lastKey = _lines[i].key;
@@ -109,14 +120,15 @@ class CartController extends ChangeNotifier {
       return ScanOutcome.incremented;
     }
     final line = CartLine(
-      key: p.id,
+      key: key,
       productId: p.id,
       name: p.name,
-      unit: p.unit,
+      unit: packUnit?.name ?? p.unit,
+      unitFactor: packUnit?.factor ?? Qty.one,
       barcode: p.barcode,
       qty: qty,
-      unitPrice: p.salePrice,
-      unitCost: p.purchasePrice,
+      unitPrice: packUnit?.saleOf(p.salePrice) ?? p.salePrice,
+      unitCost: packUnit?.purchaseOf(p.purchasePrice) ?? p.purchasePrice,
     );
     _lines.add(line);
     _lastKey = line.key;

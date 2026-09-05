@@ -157,6 +157,44 @@ class _PosScreenState extends State<PosScreen> {
     }
   }
 
+  /// Long-press on a quick pick: choose the selling unit (حبة / كرتون / …)
+  /// then add one of it to the cart with the unit's price.
+  Future<void> _addWithUnitChoice(Product p) async {
+    final db = context.read<LedgerDb>();
+    final u = await showModalBottomSheet<PackUnit>(
+      context: context,
+      useSafeArea: true,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text('بيع «${p.name}» بأي وحدة؟',
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+            ),
+            for (final u in p.allUnits)
+              ListTile(
+                leading: Icon(u.factor == Qty.one
+                    ? Icons.looks_one_outlined
+                    : Icons.inventory_2_outlined),
+                title: Text(u.factor == Qty.one
+                    ? u.name
+                    : '${u.name} (${u.factor.format()} ${p.unit})'),
+                subtitle: Text('السعر: ${u.saleOf(p.salePrice).format()} ${db.settings.currency}'),
+                onTap: () => Navigator.pop(context, u),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (u == null || !mounted) return;
+    _cart.addProduct(p, packUnit: u.factor == Qty.one ? null : u);
+    unawaited(NativeBridge.scanOk());
+    _flash(_cart.lastTouchedKey);
+  }
+
   Future<Product?> _pickProduct() async {
     final db = context.read<LedgerDb>();
     return showModalBottomSheet<Product>(
@@ -384,6 +422,7 @@ class _PosScreenState extends State<PosScreen> {
                           unawaited(NativeBridge.scanOk());
                           _flash(p.id);
                         },
+                        onPickUnit: _addWithUnitChoice,
                       );
                     }
                     return ListView.separated(
@@ -633,9 +672,12 @@ class _SearchBarState extends State<_SearchBar> {
 }
 
 class _QuickPicks extends StatelessWidget {
-  const _QuickPicks({required this.db, required this.onPick});
+  const _QuickPicks({required this.db, required this.onPick, this.onPickUnit});
   final LedgerDb db;
   final ValueChanged<Product> onPick;
+
+  /// Long-press: choose a pack unit (كرتون/جوتة…) before adding.
+  final ValueChanged<Product>? onPickUnit;
 
   @override
   Widget build(BuildContext context) {
@@ -688,6 +730,9 @@ class _QuickPicks extends StatelessWidget {
                 child: InkWell(
                   borderRadius: BorderRadius.circular(14),
                   onTap: () => onPick(p),
+                  onLongPress: p.packUnits.isEmpty || onPickUnit == null
+                      ? null
+                      : () => onPickUnit!(p),
                   child: Padding(
                     padding: const EdgeInsets.all(10),
                     child: Column(
