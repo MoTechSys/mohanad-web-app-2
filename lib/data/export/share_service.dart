@@ -42,6 +42,19 @@ class ShareService {
     );
   }
 
+  /// Shares an existing file (e.g. a daily auto-backup JSON) via the OS
+  /// share sheet — WhatsApp / Drive / email…
+  Future<void> shareFile(File file, {String? text, String? mimeType}) async {
+    if (spy != null) {
+      return spy!('shareFile', file.uri.pathSegments.last,
+          Uint8List.fromList(await file.readAsBytes()));
+    }
+    await Share.shareXFiles(
+      [XFile(file.path, mimeType: mimeType ?? 'application/json')],
+      text: text,
+    );
+  }
+
   /// Opens the Android print dialog (system PDF preview → any printer,
   /// including Bluetooth label/receipt printers via their print service).
   Future<void> printPdf(Uint8List bytes, String jobName) async {

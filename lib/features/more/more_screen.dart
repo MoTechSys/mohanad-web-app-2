@@ -377,6 +377,12 @@ class _BackupScreenState extends State<BackupScreen> {
                     style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                 trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                   IconButton(
+                    tooltip: 'مشاركة (واتساب/درايف)',
+                    icon: const Icon(Icons.share_outlined, size: 20),
+                    onPressed: () => app.share.shareFile(f,
+                        text: 'نسخة احتياطية — دفتر البقالة'),
+                  ),
+                  IconButton(
                     tooltip: 'نسخ للحافظة',
                     icon: const Icon(Icons.copy, size: 20),
                     onPressed: () async {

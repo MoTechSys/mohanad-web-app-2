@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:grocery_ledger/app/app_services.dart';
 import 'package:grocery_ledger/data/kv_backend.dart';
+import 'package:grocery_ledger/data/export/share_service.dart';
 import 'package:grocery_ledger/data/services/backup_service.dart';
 
 Future<AppServices> boot() async {
@@ -68,6 +69,26 @@ void main() {
       final app2 = await boot();
       await app2.settings.importJson(await f!.readAsString());
       expect(app2.db.activeProducts.map((p) => p.name), contains('أرز بسمتي'));
+    });
+
+    test('مشاركة النسخة التلقائية عبر ShareService (spy)', () async {
+      final app = await boot();
+      await app.inventory.createProduct(name: 'شاي');
+      final f = await app.backup.runDailyBackup(dir: tmp);
+
+      String? op, name;
+      List<int>? bytes;
+      ShareService.spy = (o, n, b) {
+        op = o;
+        name = n;
+        bytes = b;
+      };
+      addTearDown(() => ShareService.spy = null);
+
+      await app.share.shareFile(f!, text: 'نسخة احتياطية');
+      expect(op, 'shareFile');
+      expect(name, BackupService.fileNameFor(DateTime.now()));
+      expect(String.fromCharCodes(bytes!), contains('cashSessions'));
     });
   });
 }

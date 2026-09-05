@@ -103,7 +103,7 @@ lib/
 وقت التشغيل مع **إعادة المحاولة بعد المنح** (pendingSms) + تقسيم الرسائل الطويلة (multipart).
 `AndroidManifest.xml`: `SEND_SMS` + `telephony required=false`.
 
-## 5. الاختبارات (143/143)
+## 5. الاختبارات (144/144)
 
 ```bash
 flutter analyze && flutter test   # يجب أن يكونا نظيفين قبل أي commit
