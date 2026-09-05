@@ -90,7 +90,9 @@ class PeriodSummary {
         ProfitMode.accurate => revenue - cogs - manualCogs - operatingExpenses,
         ProfitMode.estimated =>
           revenue -
-              (cashPurchaseAsCogs ? cashPurchases + creditPurchases : Money.zero) -
+              (cashPurchaseAsCogs
+                  ? cashPurchases + creditPurchases
+                  : Money.zero) -
               manualCogs -
               operatingExpenses,
       };
@@ -164,7 +166,9 @@ class ReportService {
     var creditPur = Money.zero;
     for (final p in db.purchases.values) {
       if (!p.isActive || !r.contains(p.purchaseDate)) continue;
-      if (p.paymentType == PaymentType.credit) creditPur = creditPur + p.totalAmount;
+      if (p.paymentType == PaymentType.credit) {
+        creditPur = creditPur + p.totalAmount;
+      }
     }
     return PeriodSummary(
       range: r,
@@ -212,28 +216,37 @@ class ReportService {
   }
 
   List<Customer> topDebtors({int limit = 10}) {
-    final l = db.activeCustomers
-        .where((c) => db.customerBalance(c.id).isPositive)
-        .toList()
-      ..sort(
-        (a, b) => db.customerBalance(b.id).minor.compareTo(db.customerBalance(a.id).minor),
-      );
+    final l =
+        db.activeCustomers
+            .where((c) => db.customerBalance(c.id).isPositive)
+            .toList()
+          ..sort(
+            (a, b) => db
+                .customerBalance(b.id)
+                .minor
+                .compareTo(db.customerBalance(a.id).minor),
+          );
     return l.length > limit ? l.sublist(0, limit) : l;
   }
 
   List<Supplier> topSupplierDebts({int limit = 10}) {
-    final l = db.activeSuppliers
-        .where((s) => db.supplierBalance(s.id).isPositive)
-        .toList()
-      ..sort(
-        (a, b) => db.supplierBalance(b.id).minor.compareTo(db.supplierBalance(a.id).minor),
-      );
+    final l =
+        db.activeSuppliers
+            .where((s) => db.supplierBalance(s.id).isPositive)
+            .toList()
+          ..sort(
+            (a, b) => db
+                .supplierBalance(b.id)
+                .minor
+                .compareTo(db.supplierBalance(a.id).minor),
+          );
     return l.length > limit ? l.sublist(0, limit) : l;
   }
 
   List<Customer> overLimitCustomers() => db.activeCustomers
       .where(
-        (c) => c.creditLimit != null && db.customerBalance(c.id) > c.creditLimit!,
+        (c) =>
+            c.creditLimit != null && db.customerBalance(c.id) > c.creditLimit!,
       )
       .toList();
 
@@ -248,10 +261,11 @@ class ReportService {
       totals[name] = (totals[name] ?? Money.zero) + e.amount;
       counts[name] = (counts[name] ?? 0) + 1;
     }
-    final out = totals.entries
-        .map((e) => ExpenseByCategory(e.key, e.value, counts[e.key]!))
-        .toList()
-      ..sort((a, b) => b.total.minor.compareTo(a.total.minor));
+    final out =
+        totals.entries
+            .map((e) => ExpenseByCategory(e.key, e.value, counts[e.key]!))
+            .toList()
+          ..sort((a, b) => b.total.minor.compareTo(a.total.minor));
     return out;
   }
 
@@ -268,30 +282,36 @@ class ReportService {
         prof[k] = (prof[k] ?? Money.zero) + (l.lineTotal - l.lineCost);
       }
     }
-    final out = qty.keys
-        .map(
-          (k) => TopProduct(
-            db.products[k]?.name ?? k,
-            qty[k]!,
-            rev[k]!,
-            prof[k]!,
-          ),
-        )
-        .toList()
-      ..sort((a, b) => b.revenue.minor.compareTo(a.revenue.minor));
+    final out =
+        qty.keys
+            .map(
+              (k) => TopProduct(
+                db.products[k]?.name ?? k,
+                qty[k]!,
+                rev[k]!,
+                prof[k]!,
+              ),
+            )
+            .toList()
+          ..sort((a, b) => b.revenue.minor.compareTo(a.revenue.minor));
     return out.length > limit ? out.sublist(0, limit) : out;
   }
 
   /// Daily revenue series for charts.
   List<DayPoint> dailyRevenue(DateRange r) {
     final map = <DateTime, Money>{};
-    for (var d = r.start; d.isBefore(r.endExclusive); d = d.add(const Duration(days: 1))) {
+    for (
+      var d = r.start;
+      d.isBefore(r.endExclusive);
+      d = d.add(const Duration(days: 1))
+    ) {
       map[d] = Money.zero;
     }
     void add(DateTime dt, Money m) {
       final k = DateTime(dt.year, dt.month, dt.day);
       if (map.containsKey(k)) map[k] = map[k]! + m;
     }
+
     for (final s in db.sales.values) {
       if (s.isActive && r.contains(s.saleDate)) add(s.saleDate, s.netAmount);
     }
@@ -322,7 +342,9 @@ class ReportService {
                 db.stockOf(p.id) <= p.minQty,
           )
           .toList()
-        ..sort((a, b) => db.stockOf(a.id).milli.compareTo(db.stockOf(b.id).milli));
+        ..sort(
+          (a, b) => db.stockOf(a.id).milli.compareTo(db.stockOf(b.id).milli),
+        );
 
   /// المنتجات التي قاربت (أو تجاوزت) انتهاء الصلاحية خلال [days] يومًا.
   /// تشمل المنتهية فعلًا (daysToExpiry سالب) — مرتبة من الأقرب انتهاءً.

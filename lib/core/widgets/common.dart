@@ -207,7 +207,9 @@ class QtyField extends StatelessWidget {
       textDirection: TextDirection.ltr,
       textAlign: TextAlign.right,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9٠-٩.]'))],
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'[0-9٠-٩.]')),
+      ],
       decoration: InputDecoration(labelText: label, hintText: '1'),
       onChanged: onChanged == null ? null : (v) => onChanged!(Qty.tryParse(v)),
       validator: (v) {
@@ -251,8 +253,9 @@ class DateField extends StatelessWidget {
           lastDate: DateTime.now().add(const Duration(days: 1)),
         );
         if (picked != null) {
-          onChanged(DateTime(picked.year, picked.month, picked.day, d.hour,
-              d.minute));
+          onChanged(
+            DateTime(picked.year, picked.month, picked.day, d.hour, d.minute),
+          );
         }
       },
       child: InputDecorator(
@@ -473,7 +476,11 @@ class Tag extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color),
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: color,
+        ),
       ),
     );
   }

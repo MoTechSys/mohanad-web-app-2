@@ -73,7 +73,10 @@ class SettingsService {
     try {
       data = jsonDecode(json) as Map<String, dynamic>;
     } catch (_) {
-      throw const DomainException(ErrorCodes.invalidAmount, 'ملف النسخة غير صالح');
+      throw const DomainException(
+        ErrorCodes.invalidAmount,
+        'ملف النسخة غير صالح',
+      );
     }
     if (data['version'] != backupVersion) {
       throw const DomainException(
@@ -82,7 +85,9 @@ class SettingsService {
       );
     }
     List<Map<String, dynamic>> rows(String k) =>
-        ((data[k] as List?) ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        ((data[k] as List?) ?? const [])
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
 
     // Parse everything first — throws before any destructive step.
     final customers = rows('customers').map(Customer.fromMap).toList();
@@ -101,7 +106,9 @@ class SettingsService {
     final sessions = rows('cashSessions').map(CashSession.fromMap).toList();
     final settings = data['settings'] == null
         ? const AppSettings()
-        : AppSettings.fromMap(Map<String, dynamic>.from(data['settings'] as Map));
+        : AppSettings.fromMap(
+            Map<String, dynamic>.from(data['settings'] as Map),
+          );
 
     await db.wipeAll(seedDefaults: false);
     await db.run(() {

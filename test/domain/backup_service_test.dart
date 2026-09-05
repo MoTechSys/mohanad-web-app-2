@@ -29,8 +29,10 @@ void main() {
       final f1 = await app.backup.runDailyBackup(dir: tmp);
       expect(f1, isNotNull);
       expect(await f1!.exists(), isTrue);
-      expect(f1.uri.pathSegments.last,
-          BackupService.fileNameFor(DateTime.now()));
+      expect(
+        f1.uri.pathSegments.last,
+        BackupService.fileNameFor(DateTime.now()),
+      );
       expect(f1.path, endsWith('.glbak'));
 
       // المحتوى مضغوط gzip (البايتات السحرية 1f 8b) ويحتوي البيانات
@@ -55,17 +57,24 @@ void main() {
       // 10 أيام متتالية
       for (var i = 9; i >= 0; i--) {
         await app.backup.runDailyBackup(
-            dir: tmp, now: DateTime.now().subtract(Duration(days: i)));
+          dir: tmp,
+          now: DateTime.now().subtract(Duration(days: i)),
+        );
       }
       final files = await app.backup.listBackups(tmp);
       expect(files.length, BackupService.keepLast); // 7
       // الأحدث أولًا = نسخة اليوم
-      expect(files.first.uri.pathSegments.last,
-          BackupService.fileNameFor(DateTime.now()));
+      expect(
+        files.first.uri.pathSegments.last,
+        BackupService.fileNameFor(DateTime.now()),
+      );
       // الأقدم المتبقي = قبل 6 أيام (حُذفت 7 و8 و9)
-      expect(files.last.uri.pathSegments.last,
-          BackupService.fileNameFor(
-              DateTime.now().subtract(const Duration(days: 6))));
+      expect(
+        files.last.uri.pathSegments.last,
+        BackupService.fileNameFor(
+          DateTime.now().subtract(const Duration(days: 6)),
+        ),
+      );
     });
 
     test('النسخة المضغوطة قابلة للاستعادة الكاملة', () async {
@@ -130,7 +139,10 @@ void main() {
     });
 
     test('dateOf و sizeLabel يعملان لكل الصيغ', () {
-      expect(BackupService.dateOf('دفتر-البقالة-2026-03-15.glbak'), '2026-03-15');
+      expect(
+        BackupService.dateOf('دفتر-البقالة-2026-03-15.glbak'),
+        '2026-03-15',
+      );
       expect(BackupService.dateOf('backup-2026-01-02.json'), '2026-01-02');
       expect(BackupService.sizeLabel(500), '500 ب');
       expect(BackupService.sizeLabel(2048), '2.0 ك.ب');

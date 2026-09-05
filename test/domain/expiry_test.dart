@@ -46,38 +46,42 @@ void main() {
       expect(p.expiryDate, isNull);
 
       final exp = DateTime.now().add(const Duration(days: 10));
-      final updated = await app.inventory.updateProduct(
-        p.id,
-        expiryDate: exp,
-      );
+      final updated = await app.inventory.updateProduct(p.id, expiryDate: exp);
       expect(updated.expiryDate, exp);
 
       // تعديل آخر بدون تمرير التاريخ يجب أن يُبقيه
-      final renamed =
-          await app.inventory.updateProduct(p.id, name: 'بسكويت شاي');
+      final renamed = await app.inventory.updateProduct(
+        p.id,
+        name: 'بسكويت شاي',
+      );
       expect(renamed.expiryDate, exp);
 
       // المسح الصريح
-      final cleared =
-          await app.inventory.updateProduct(p.id, clearExpiry: true);
+      final cleared = await app.inventory.updateProduct(
+        p.id,
+        clearExpiry: true,
+      );
       expect(cleared.expiryDate, isNull);
     });
 
-    test('copyWith بنمط sentinel: تمرير null يمسح، عدم التمرير يُبقي', () async {
-      final exp = DateTime.now().add(const Duration(days: 5));
-      final now = DateTime.now();
-      final p = Product(
-        id: 'x1',
-        name: 'عصير',
-        expiryDate: exp,
-        createdAt: now,
-        updatedAt: now,
-      );
-      // عدم التمرير → يبقى
-      expect(p.copyWith(name: 'عصير برتقال').expiryDate, exp);
-      // تمرير null صراحةً → يُمسح
-      expect(p.copyWith(expiryDate: null).expiryDate, isNull);
-    });
+    test(
+      'copyWith بنمط sentinel: تمرير null يمسح، عدم التمرير يُبقي',
+      () async {
+        final exp = DateTime.now().add(const Duration(days: 5));
+        final now = DateTime.now();
+        final p = Product(
+          id: 'x1',
+          name: 'عصير',
+          expiryDate: exp,
+          createdAt: now,
+          updatedAt: now,
+        );
+        // عدم التمرير → يبقى
+        expect(p.copyWith(name: 'عصير برتقال').expiryDate, exp);
+        // تمرير null صراحةً → يُمسح
+        expect(p.copyWith(expiryDate: null).expiryDate, isNull);
+      },
+    );
 
     test('isExpired و daysToExpiry للمنتهي فعلًا', () {
       final now = DateTime.now();
@@ -92,35 +96,44 @@ void main() {
       expect(p.daysToExpiry, lessThan(0));
     });
 
-    test('تقرير expiringSoon: نافذة 30 يومًا مرتبة من الأقرب انتهاءً',
-        () async {
-      final app = await boot();
-      final now = DateTime.now();
-      await app.inventory.createProduct(
+    test(
+      'تقرير expiringSoon: نافذة 30 يومًا مرتبة من الأقرب انتهاءً',
+      () async {
+        final app = await boot();
+        final now = DateTime.now();
+        await app.inventory.createProduct(
           name: 'قريب جدًا',
-          expiryDate: now.add(const Duration(days: 5)));
-      await app.inventory.createProduct(
+          expiryDate: now.add(const Duration(days: 5)),
+        );
+        await app.inventory.createProduct(
           name: 'منتهي',
-          expiryDate: now.subtract(const Duration(days: 2)));
-      await app.inventory.createProduct(
+          expiryDate: now.subtract(const Duration(days: 2)),
+        );
+        await app.inventory.createProduct(
           name: 'قريب',
-          expiryDate: now.add(const Duration(days: 25)));
-      await app.inventory.createProduct(
+          expiryDate: now.add(const Duration(days: 25)),
+        );
+        await app.inventory.createProduct(
           name: 'بعيد',
-          expiryDate: now.add(const Duration(days: 200)));
-      await app.inventory.createProduct(name: 'بلا صلاحية');
+          expiryDate: now.add(const Duration(days: 200)),
+        );
+        await app.inventory.createProduct(name: 'بلا صلاحية');
 
-      final soon = app.reports.expiringSoon();
-      expect(soon.map((p) => p.name).toList(),
-          ['منتهي', 'قريب جدًا', 'قريب']); // مرتبة تصاعديًا بالتاريخ
+        final soon = app.reports.expiringSoon();
+        expect(soon.map((p) => p.name).toList(), [
+          'منتهي',
+          'قريب جدًا',
+          'قريب',
+        ]); // مرتبة تصاعديًا بالتاريخ
 
-      final expired = app.reports.expiredProducts();
-      expect(expired.length, 1);
-      expect(expired.first.name, 'منتهي');
+        final expired = app.reports.expiredProducts();
+        expect(expired.length, 1);
+        expect(expired.first.name, 'منتهي');
 
-      // نافذة أضيق
-      expect(app.reports.expiringSoon(days: 7).length, 2);
-    });
+        // نافذة أضيق
+        expect(app.reports.expiringSoon(days: 7).length, 2);
+      },
+    );
 
     test('النسخة الاحتياطية القديمة (بدون expiryDate) تُستورد بأمان', () async {
       final app = await boot();
@@ -131,8 +144,7 @@ void main() {
         name: 'قديم',
         createdAt: now,
         updatedAt: now,
-      ).toMap()
-        ..remove('expiryDate');
+      ).toMap()..remove('expiryDate');
       final p = Product.fromMap(oldMap);
       expect(p.expiryDate, isNull);
       expect(p.isExpired, isFalse);
@@ -144,10 +156,13 @@ void main() {
 
       final app2 = await boot();
       await app2.settings.importJson(json);
-      final restored = app2.db.activeProducts
-          .firstWhere((p) => p.name == 'معلبات');
-      expect(restored.expiryDate!.millisecondsSinceEpoch,
-          exp.millisecondsSinceEpoch);
+      final restored = app2.db.activeProducts.firstWhere(
+        (p) => p.name == 'معلبات',
+      );
+      expect(
+        restored.expiryDate!.millisecondsSinceEpoch,
+        exp.millisecondsSinceEpoch,
+      );
     });
   });
 }

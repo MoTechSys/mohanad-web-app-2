@@ -42,55 +42,53 @@ class CashSession {
   bool get isOpen => closedAt == null;
 
   /// الفرق = المعدود − المتوقع (موجب: زيادة، سالب: عجز).
-  Money? get difference =>
-      (countedCash != null && expectedCash != null)
-          ? countedCash! - expectedCash!
-          : null;
+  Money? get difference => (countedCash != null && expectedCash != null)
+      ? countedCash! - expectedCash!
+      : null;
 
   CashSession closed({
     required DateTime at,
     required Money counted,
     required Money expected,
     String? notes,
-  }) =>
-      CashSession(
-        id: id,
-        sessionNo: sessionNo,
-        workerName: workerName,
-        openingCash: openingCash,
-        openedAt: openedAt,
-        notes: this.notes,
-        closedAt: at,
-        countedCash: counted,
-        expectedCash: expected,
-        closeNotes: notes,
-      );
+  }) => CashSession(
+    id: id,
+    sessionNo: sessionNo,
+    workerName: workerName,
+    openingCash: openingCash,
+    openedAt: openedAt,
+    notes: this.notes,
+    closedAt: at,
+    countedCash: counted,
+    expectedCash: expected,
+    closeNotes: notes,
+  );
 
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'session_no': sessionNo,
-        'worker_name': workerName,
-        'opening_cash': openingCash.minor,
-        'opened_at': Serde.dt(openedAt),
-        'notes': notes,
-        'closed_at': Serde.dt(closedAt),
-        'counted_cash': countedCash?.minor,
-        'expected_cash': expectedCash?.minor,
-        'close_notes': closeNotes,
-      };
+    'id': id,
+    'session_no': sessionNo,
+    'worker_name': workerName,
+    'opening_cash': openingCash.minor,
+    'opened_at': Serde.dt(openedAt),
+    'notes': notes,
+    'closed_at': Serde.dt(closedAt),
+    'counted_cash': countedCash?.minor,
+    'expected_cash': expectedCash?.minor,
+    'close_notes': closeNotes,
+  };
 
   factory CashSession.fromMap(Map<String, dynamic> m) => CashSession(
-        id: m['id'] as String,
-        sessionNo: m['session_no'] as String,
-        workerName: m['worker_name'] as String,
-        openingCash: Serde.moneyReq(m['opening_cash']),
-        openedAt: Serde.dtReq(m['opened_at']),
-        notes: m['notes'] as String?,
-        closedAt: Serde.dtFrom(m['closed_at']),
-        countedCash: Serde.moneyOpt(m['counted_cash']),
-        expectedCash: Serde.moneyOpt(m['expected_cash']),
-        closeNotes: m['close_notes'] as String?,
-      );
+    id: m['id'] as String,
+    sessionNo: m['session_no'] as String,
+    workerName: m['worker_name'] as String,
+    openingCash: Serde.moneyReq(m['opening_cash']),
+    openedAt: Serde.dtReq(m['opened_at']),
+    notes: m['notes'] as String?,
+    closedAt: Serde.dtFrom(m['closed_at']),
+    countedCash: Serde.moneyOpt(m['counted_cash']),
+    expectedCash: Serde.moneyOpt(m['expected_cash']),
+    closeNotes: m['close_notes'] as String?,
+  );
 }
 
 /// ملخص تقرير Z لوردية: كل الأرقام مشتقة من الدفاتر خلال نافذة الوردية.
@@ -133,7 +131,8 @@ class ZReport {
   final Money expenses;
   final int expensesCount;
 
-  Money get cashIn => cashSales + customerPayments + otherReceipts + dailyIncome;
+  Money get cashIn =>
+      cashSales + customerPayments + otherReceipts + dailyIncome;
   Money get cashOut => expenses;
 
   /// النقد المتوقع في الدرج = الافتتاحي + الداخل − الخارج.

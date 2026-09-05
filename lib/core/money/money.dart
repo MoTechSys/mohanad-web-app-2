@@ -108,7 +108,9 @@ extension type const Qty(int milli) implements Object {
     if (s.isEmpty) return null;
     final neg = s.startsWith('-');
     if (neg) s = s.substring(1);
-    if (!RegExp(r'^\d*\.?\d*$').hasMatch(s) || s.isEmpty || s == '.') return null;
+    if (!RegExp(r'^\d*\.?\d*$').hasMatch(s) || s.isEmpty || s == '.') {
+      return null;
+    }
     final parts = s.split('.');
     final whole = parts[0].isEmpty ? 0 : int.tryParse(parts[0]);
     var fracStr = parts.length > 1 ? parts[1] : '';
@@ -132,6 +134,7 @@ extension type const Qty(int milli) implements Object {
     final rounded = (abs + scale ~/ 2) ~/ scale;
     return Qty(num < 0 ? -rounded : rounded);
   }
+
   bool operator <(Qty o) => milli < o.milli;
   bool operator <=(Qty o) => milli <= o.milli;
   bool operator >(Qty o) => milli > o.milli;

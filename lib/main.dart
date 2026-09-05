@@ -44,7 +44,9 @@ Future<void> notifyExpiringProducts(AppServices services) async {
       title: 'تنبيه صلاحية — دفتر البقالة',
       body: '${parts.join(' و')}: $names${list.length > 3 ? '…' : ''}',
     );
-  } catch (_) {/* لا يعطل الإقلاع */}
+  } catch (_) {
+    /* لا يعطل الإقلاع */
+  }
 }
 
 class GroceryLedgerApp extends StatelessWidget {

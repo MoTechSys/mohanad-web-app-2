@@ -89,7 +89,11 @@ class LineItemsEditor extends StatelessWidget {
     final p = db.productByBarcode(code);
     if (p == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('لا يوجد منتج بالباركود ${LedgerDb.normalizeBarcode(code)} — أضفه من شاشة المنتجات أولاً')),
+        SnackBar(
+          content: Text(
+            'لا يوجد منتج بالباركود ${LedgerDb.normalizeBarcode(code)} — أضفه من شاشة المنتجات أولاً',
+          ),
+        ),
       );
       return;
     }
@@ -110,13 +114,15 @@ class LineItemsEditor extends StatelessWidget {
         unitFactor: l.unitFactor,
       );
     } else {
-      n.add(DocLine(
-        productId: p.id,
-        name: p.name,
-        qty: Qty.one,
-        unitPrice: forPurchase ? p.purchasePrice : p.salePrice,
-        unitCost: p.purchasePrice,
-      ));
+      n.add(
+        DocLine(
+          productId: p.id,
+          name: p.name,
+          qty: Qty.one,
+          unitPrice: forPurchase ? p.purchasePrice : p.salePrice,
+          unitCost: p.purchasePrice,
+        ),
+      );
     }
     onChanged(n);
   }
@@ -234,8 +240,8 @@ class _LineFormState extends State<_LineForm> {
       _unit = null; // reset to base unit on product change
       if (p != null) {
         _name.text = p.name;
-        _price.text =
-            (widget.forPurchase ? p.purchasePrice : p.salePrice).toEditable();
+        _price.text = (widget.forPurchase ? p.purchasePrice : p.salePrice)
+            .toEditable();
       }
     });
   }
@@ -247,17 +253,19 @@ class _LineFormState extends State<_LineForm> {
     if (p == null) return;
     setState(() {
       _unit = (u != null && u.factor == Qty.one && u.name == p.unit) ? null : u;
-      final chosen = _unit ??
+      final chosen =
+          _unit ??
           PackUnit(
             name: p.unit,
             factor: Qty.one,
             salePrice: p.salePrice,
             purchasePrice: p.purchasePrice,
           );
-      _price.text = (widget.forPurchase
-              ? chosen.purchaseOf(p.purchasePrice)
-              : chosen.saleOf(p.salePrice))
-          .toEditable();
+      _price.text =
+          (widget.forPurchase
+                  ? chosen.purchaseOf(p.purchasePrice)
+                  : chosen.saleOf(p.salePrice))
+              .toEditable();
     });
   }
 
@@ -299,12 +307,17 @@ class _LineFormState extends State<_LineForm> {
                     tooltip: 'مسح باركود',
                     icon: const Icon(Icons.qr_code_scanner_rounded),
                     onPressed: () async {
-                      final code = await scanBarcodeOnce(context, title: 'مسح باركود الصنف');
+                      final code = await scanBarcodeOnce(
+                        context,
+                        title: 'مسح باركود الصنف',
+                      );
                       if (code == null || !context.mounted) return;
                       final p = db.productByBarcode(code);
                       if (p == null) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('لا يوجد منتج بهذا الباركود')),
+                          const SnackBar(
+                            content: Text('لا يوجد منتج بهذا الباركود'),
+                          ),
                         );
                       } else {
                         _pickProduct(p);
@@ -377,8 +390,8 @@ class _LineFormState extends State<_LineForm> {
                   label: _unit == null
                       ? (widget.forPurchase ? 'سعر الشراء *' : 'سعر البيع *')
                       : (widget.forPurchase
-                          ? 'سعر شراء الـ${_unit!.name} *'
-                          : 'سعر بيع الـ${_unit!.name} *'),
+                            ? 'سعر شراء الـ${_unit!.name} *'
+                            : 'سعر بيع الـ${_unit!.name} *'),
                   allowZero: true,
                   onChanged: (_) => setState(() {}),
                 ),

@@ -48,10 +48,13 @@ class AppSettings {
 
   /// Branding used on invoices / reports (PDF).
   final String? address;
+
   /// Free text printed under the store name (e.g. slogan / tax no.).
   final String? receiptHeader;
+
   /// Free text printed at the bottom of every document.
   final String? receiptFooter;
+
   /// PNG/JPEG logo, base64 (kept small; ≤ 512px recommended).
   final String? logoBase64;
 
@@ -174,8 +177,7 @@ class AppSettings {
     logoBase64: Serde.str(m['logoBase64']),
     blockOversell: (m['blockOversell'] as bool?) ?? true,
     warnBelowCost: (m['warnBelowCost'] as bool?) ?? true,
-    updatePricesFromPurchase:
-        (m['updatePricesFromPurchase'] as bool?) ?? true,
+    updatePricesFromPurchase: (m['updatePricesFromPurchase'] as bool?) ?? true,
     hideScanner: (m['hideScanner'] as bool?) ?? false,
     largeFont: (m['largeFont'] as bool?) ?? false,
   );

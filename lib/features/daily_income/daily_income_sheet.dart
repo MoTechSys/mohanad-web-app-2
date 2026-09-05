@@ -64,7 +64,11 @@ class _DailyIncomeSheetState extends State<DailyIncomeSheet> {
             style: TextStyle(color: context.c.textMuted, fontSize: 13),
           ),
           const SizedBox(height: 14),
-          MoneyField(controller: _amount, label: 'إجمالي الدخل *', autofocus: true),
+          MoneyField(
+            controller: _amount,
+            label: 'إجمالي الدخل *',
+            autofocus: true,
+          ),
           const SizedBox(height: 12),
           MoneyField(
             controller: _cogs,

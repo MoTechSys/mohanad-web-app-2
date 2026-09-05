@@ -112,7 +112,11 @@ class _PosScreenState extends State<PosScreen> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 4),
-            Text(code, textDirection: TextDirection.ltr, style: TextStyle(color: ctx.c.textMuted)),
+            Text(
+              code,
+              textDirection: TextDirection.ltr,
+              style: TextStyle(color: ctx.c.textMuted),
+            ),
             const SizedBox(height: 12),
             ListTile(
               leading: Icon(Icons.add_box_outlined, color: ctx.c.primaryStrong),
@@ -173,18 +177,29 @@ class _PosScreenState extends State<PosScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text('بيع «${p.name}» بأي وحدة؟',
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+              child: Text(
+                'بيع «${p.name}» بأي وحدة؟',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                ),
+              ),
             ),
             for (final u in p.allUnits)
               ListTile(
-                leading: Icon(u.factor == Qty.one
-                    ? Icons.looks_one_outlined
-                    : Icons.inventory_2_outlined),
-                title: Text(u.factor == Qty.one
-                    ? u.name
-                    : '${u.name} (${u.factor.format()} ${p.unit})'),
-                subtitle: Text('السعر: ${u.saleOf(p.salePrice).format()} ${db.settings.currency}'),
+                leading: Icon(
+                  u.factor == Qty.one
+                      ? Icons.looks_one_outlined
+                      : Icons.inventory_2_outlined,
+                ),
+                title: Text(
+                  u.factor == Qty.one
+                      ? u.name
+                      : '${u.name} (${u.factor.format()} ${p.unit})',
+                ),
+                subtitle: Text(
+                  'السعر: ${u.saleOf(p.salePrice).format()} ${db.settings.currency}',
+                ),
                 onTap: () => Navigator.pop(context, u),
               ),
             const SizedBox(height: 8),
@@ -270,7 +285,10 @@ class _PosScreenState extends State<PosScreen> {
         };
         if (!canConfirm) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.message), backgroundColor: context.c.danger),
+            SnackBar(
+              content: Text(e.message),
+              backgroundColor: context.c.danger,
+            ),
           );
           return;
         }
@@ -306,22 +324,26 @@ class _PosScreenState extends State<PosScreen> {
         action: SnackBarAction(
           label: 'إيصال',
           textColor: Colors.white,
-          onPressed: () => showExportSheet(context, title: 'إيصال البيع', options: [
-            ExportOption(
-              title: 'إيصال 80mm',
-              subtitle: 'للطابعة الحرارية أو المشاركة عبر واتساب',
-              icon: Icons.receipt_rounded,
-              fileBase: 'إيصال-${sale.invoiceNo ?? sale.id.substring(0, 6)}',
-              build: () => app.pdf.saleReceipt(sale),
-            ),
-            ExportOption(
-              title: 'فاتورة A4',
-              subtitle: 'فاتورة رسمية بشعار المحل',
-              icon: Icons.description_rounded,
-              fileBase: 'فاتورة-${sale.invoiceNo ?? sale.id.substring(0, 6)}',
-              build: () => app.pdf.saleInvoice(sale),
-            ),
-          ]),
+          onPressed: () => showExportSheet(
+            context,
+            title: 'إيصال البيع',
+            options: [
+              ExportOption(
+                title: 'إيصال 80mm',
+                subtitle: 'للطابعة الحرارية أو المشاركة عبر واتساب',
+                icon: Icons.receipt_rounded,
+                fileBase: 'إيصال-${sale.invoiceNo ?? sale.id.substring(0, 6)}',
+                build: () => app.pdf.saleReceipt(sale),
+              ),
+              ExportOption(
+                title: 'فاتورة A4',
+                subtitle: 'فاتورة رسمية بشعار المحل',
+                icon: Icons.description_rounded,
+                fileBase: 'فاتورة-${sale.invoiceNo ?? sale.id.substring(0, 6)}',
+                build: () => app.pdf.saleInvoice(sale),
+              ),
+            ],
+          ),
         ),
         content: Row(
           children: [
@@ -332,7 +354,10 @@ class _PosScreenState extends State<PosScreen> {
                 change != null && change.isPositive
                     ? 'تم البيع ${sale.netAmount.format()} $cur — الباقي ${change.format()} $cur'
                     : 'تم البيع ${sale.netAmount.format()} $cur',
-                style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
               ),
             ),
           ],
@@ -357,7 +382,9 @@ class _PosScreenState extends State<PosScreen> {
             if (_scannerAllowed)
               IconButton(
                 tooltip: _cameraOn ? 'إيقاف الكاميرا' : 'تشغيل الكاميرا',
-                icon: Icon(_cameraOn ? Icons.videocam : Icons.videocam_off_outlined),
+                icon: Icon(
+                  _cameraOn ? Icons.videocam : Icons.videocam_off_outlined,
+                ),
                 onPressed: () => setState(() => _cameraOn = !_cameraOn),
               ),
             AnimatedBuilder(
@@ -449,7 +476,12 @@ class _PosScreenState extends State<PosScreen> {
                   },
                 ),
               ),
-              _TotalsBar(cart: _cart, currency: db.settings.currency, onCheckout: _checkout, onDiscount: _editDiscount),
+              _TotalsBar(
+                cart: _cart,
+                currency: db.settings.currency,
+                onCheckout: _checkout,
+                onDiscount: _editDiscount,
+              ),
             ],
           ),
         ),
@@ -469,24 +501,34 @@ class _PosScreenState extends State<PosScreen> {
       _cart.setQty(l.key, r.qty);
     } on DomainException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message)));
       }
     }
   }
 
   Future<void> _editDiscount() async {
-    final ctrl = TextEditingController(text: _cart.discount.isZero ? '' : _cart.discount.toEditable());
+    final ctrl = TextEditingController(
+      text: _cart.discount.isZero ? '' : _cart.discount.toEditable(),
+    );
     final v = await showFormSheet<Money>(
       context,
       Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           const SheetTitle('خصم على الفاتورة'),
-          MoneyField(controller: ctrl, label: 'قيمة الخصم', allowZero: true, autofocus: true),
+          MoneyField(
+            controller: ctrl,
+            label: 'قيمة الخصم',
+            allowZero: true,
+            autofocus: true,
+          ),
           const SizedBox(height: 12),
           Builder(
             builder: (ctx) => FilledButton(
-              onPressed: () => Navigator.pop(ctx, Money.tryParse(ctrl.text) ?? Money.zero),
+              onPressed: () =>
+                  Navigator.pop(ctx, Money.tryParse(ctrl.text) ?? Money.zero),
               child: const Text('تطبيق'),
             ),
           ),
@@ -566,7 +608,10 @@ class _SearchBarState extends State<_SearchBar> {
     if (_overlay != null) return;
     _overlay = OverlayEntry(
       builder: (ctx) {
-        final results = widget.db.searchProducts(widget.controller.text, limit: 8);
+        final results = widget.db.searchProducts(
+          widget.controller.text,
+          limit: 8,
+        );
         final c = ctx.c;
         return Positioned(
           width: MediaQuery.sizeOf(ctx).width - 32,
@@ -583,7 +628,9 @@ class _SearchBarState extends State<_SearchBar> {
                   ? ListTile(
                       leading: Icon(Icons.search_off, color: c.textMuted),
                       title: const Text('لا توجد نتائج'),
-                      subtitle: const Text('اضغط Enter لمعالجة النص كباركود، أو أضف صنفاً حراً'),
+                      subtitle: const Text(
+                        'اضغط Enter لمعالجة النص كباركود، أو أضف صنفاً حراً',
+                      ),
                     )
                   : ListView.separated(
                       shrinkWrap: true,
@@ -594,12 +641,28 @@ class _SearchBarState extends State<_SearchBar> {
                         final p = results[i];
                         return ListTile(
                           dense: true,
-                          leading: Icon(Icons.inventory_2_outlined, color: c.primaryStrong),
-                          title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.w700)),
+                          leading: Icon(
+                            Icons.inventory_2_outlined,
+                            color: c.primaryStrong,
+                          ),
+                          title: Text(
+                            p.name,
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
                           subtitle: p.barcode == null
                               ? null
-                              : Text(p.barcode!, textDirection: TextDirection.ltr, style: TextStyle(color: c.textMuted, fontSize: 11)),
-                          trailing: MoneyText(p.salePrice, color: c.primaryStrong),
+                              : Text(
+                                  p.barcode!,
+                                  textDirection: TextDirection.ltr,
+                                  style: TextStyle(
+                                    color: c.textMuted,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                          trailing: MoneyText(
+                            p.salePrice,
+                            color: c.primaryStrong,
+                          ),
                           onTap: () {
                             widget.onPick(p);
                             _focus.requestFocus();
@@ -630,7 +693,10 @@ class _SearchBarState extends State<_SearchBar> {
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: widget.controller.text.isEmpty
                     ? null
-                    : IconButton(icon: const Icon(Icons.clear), onPressed: widget.controller.clear),
+                    : IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: widget.controller.clear,
+                      ),
                 isDense: true,
               ),
               textInputAction: TextInputAction.search,
@@ -638,7 +704,8 @@ class _SearchBarState extends State<_SearchBar> {
                 final t = v.trim();
                 if (t.isEmpty) return;
                 final r = widget.db.searchProducts(t, limit: 1);
-                if (r.length == 1 && r.first.barcode == LedgerDb.normalizeBarcode(t)) {
+                if (r.length == 1 &&
+                    r.first.barcode == LedgerDb.normalizeBarcode(t)) {
                   widget.onPick(r.first);
                 } else if (RegExp(r'^[0-9٠-٩\s-]{3,}$').hasMatch(t)) {
                   widget.onSubmitCode(t);
@@ -690,12 +757,17 @@ class _QuickPicks extends StatelessWidget {
       return EmptyState(
         icon: Icons.qr_code_scanner,
         title: 'ابدأ بمسح الباركود',
-        subtitle: 'أو أضف أصنافك من «المزيد ← المنتجات والمخزون» ليظهروا هنا كأزرار سريعة.',
+        subtitle:
+            'أو أضف أصنافك من «المزيد ← المنتجات والمخزون» ليظهروا هنا كأزرار سريعة.',
       );
     }
     // Products without barcodes first (they can't be scanned), then the rest.
-    final noCode = all.where((p) => p.barcode == null || p.barcode!.isEmpty).toList();
-    final withCode = all.where((p) => p.barcode != null && p.barcode!.isNotEmpty).toList();
+    final noCode = all
+        .where((p) => p.barcode == null || p.barcode!.isEmpty)
+        .toList();
+    final withCode = all
+        .where((p) => p.barcode != null && p.barcode!.isNotEmpty)
+        .toList();
     final items = [...noCode, ...withCode].take(24).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -706,9 +778,18 @@ class _QuickPicks extends StatelessWidget {
             children: [
               Icon(Icons.bolt, size: 18, color: c.warning),
               const SizedBox(width: 6),
-              Text('أصناف سريعة', style: TextStyle(fontWeight: FontWeight.w800, color: c.textMuted)),
+              Text(
+                'أصناف سريعة',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: c.textMuted,
+                ),
+              ),
               const Spacer(),
-              Text('السلة فارغة', style: TextStyle(color: c.textMuted, fontSize: 12)),
+              Text(
+                'السلة فارغة',
+                style: TextStyle(color: c.textMuted, fontSize: 12),
+              ),
             ],
           ),
         ),
@@ -746,10 +827,17 @@ class _QuickPicks extends StatelessWidget {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
                         ),
                         const SizedBox(height: 6),
-                        MoneyText(p.salePrice, size: 13, color: c.primaryStrong),
+                        MoneyText(
+                          p.salePrice,
+                          size: 13,
+                          color: c.primaryStrong,
+                        ),
                       ],
                     ),
                   ),
@@ -791,7 +879,10 @@ class _CartTile extends StatelessWidget {
       background: Container(
         alignment: AlignmentDirectional.centerEnd,
         padding: const EdgeInsets.symmetric(horizontal: 20),
-        decoration: BoxDecoration(color: c.danger, borderRadius: BorderRadius.circular(14)),
+        decoration: BoxDecoration(
+          color: c.danger,
+          borderRadius: BorderRadius.circular(14),
+        ),
         child: const Icon(Icons.delete_outline, color: Colors.white),
       ),
       child: AnimatedContainer(
@@ -799,7 +890,10 @@ class _CartTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: highlight ? c.primarySoft : c.card,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: highlight ? c.primary : c.border, width: highlight ? 1.5 : 1),
+          border: Border.all(
+            color: highlight ? c.primary : c.border,
+            width: highlight ? 1.5 : 1,
+          ),
         ),
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
@@ -812,7 +906,15 @@ class _CartTile extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(line.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      Text(
+                        line.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       const SizedBox(height: 2),
                       Text(
                         '${line.unitPrice.format()} × ${line.qty.format()} ${line.unit}',
@@ -834,7 +936,11 @@ class _CartTile extends StatelessWidget {
 }
 
 class _QtyStepper extends StatelessWidget {
-  const _QtyStepper({required this.onInc, required this.onDec, required this.qty});
+  const _QtyStepper({
+    required this.onInc,
+    required this.onDec,
+    required this.qty,
+  });
   final VoidCallback onInc;
   final VoidCallback onDec;
   final Qty qty;
@@ -852,10 +958,17 @@ class _QtyStepper extends StatelessWidget {
         children: [
           IconButton(
             visualDensity: VisualDensity.compact,
-            icon: Icon(qty <= Qty.one ? Icons.delete_outline : Icons.remove, size: 20, color: qty <= Qty.one ? c.danger : c.text),
+            icon: Icon(
+              qty <= Qty.one ? Icons.delete_outline : Icons.remove,
+              size: 20,
+              color: qty <= Qty.one ? c.danger : c.text,
+            ),
             onPressed: onDec,
           ),
-          Text(qty.format(), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+          Text(
+            qty.format(),
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+          ),
           IconButton(
             visualDensity: VisualDensity.compact,
             icon: Icon(Icons.add, size: 20, color: c.primaryStrong),
@@ -868,7 +981,12 @@ class _QtyStepper extends StatelessWidget {
 }
 
 class _TotalsBar extends StatelessWidget {
-  const _TotalsBar({required this.cart, required this.currency, required this.onCheckout, required this.onDiscount});
+  const _TotalsBar({
+    required this.cart,
+    required this.currency,
+    required this.onCheckout,
+    required this.onDiscount,
+  });
   final CartController cart;
   final String currency;
   final VoidCallback onCheckout;
@@ -885,7 +1003,11 @@ class _TotalsBar extends StatelessWidget {
           color: c.card,
           border: Border(top: BorderSide(color: c.border)),
           boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: c.isDark ? 0.4 : 0.06), blurRadius: 12, offset: const Offset(0, -4)),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: c.isDark ? 0.4 : 0.06),
+              blurRadius: 12,
+              offset: const Offset(0, -4),
+            ),
           ],
         ),
         child: Column(
@@ -893,12 +1015,19 @@ class _TotalsBar extends StatelessWidget {
           children: [
             Row(
               children: [
-                Text('${cart.itemCount} صنف • ${cart.totalQty.format()} قطعة', style: TextStyle(color: c.textMuted, fontSize: 12)),
+                Text(
+                  '${cart.itemCount} صنف • ${cart.totalQty.format()} قطعة',
+                  style: TextStyle(color: c.textMuted, fontSize: 12),
+                ),
                 const Spacer(),
                 TextButton.icon(
                   onPressed: cart.isEmpty ? null : onDiscount,
                   icon: const Icon(Icons.percent, size: 16),
-                  label: Text(cart.discount.isZero ? 'خصم' : 'خصم ${cart.discount.format()}'),
+                  label: Text(
+                    cart.discount.isZero
+                        ? 'خصم'
+                        : 'خصم ${cart.discount.format()}',
+                  ),
                 ),
               ],
             ),
@@ -908,7 +1037,10 @@ class _TotalsBar extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('الإجمالي', style: TextStyle(color: c.textMuted, fontSize: 12)),
+                      Text(
+                        'الإجمالي',
+                        style: TextStyle(color: c.textMuted, fontSize: 12),
+                      ),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
@@ -916,7 +1048,13 @@ class _TotalsBar extends StatelessWidget {
                           const SizedBox(width: 4),
                           Padding(
                             padding: const EdgeInsets.only(bottom: 5),
-                            child: Text(currency, style: TextStyle(color: c.textMuted, fontWeight: FontWeight.w700)),
+                            child: Text(
+                              currency,
+                              style: TextStyle(
+                                color: c.textMuted,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -951,7 +1089,9 @@ class _LineEditSheet extends StatefulWidget {
 
 class _LineEditSheetState extends State<_LineEditSheet> {
   late final _qty = TextEditingController(text: widget.line.qty.format());
-  late final _price = TextEditingController(text: widget.line.unitPrice.toEditable());
+  late final _price = TextEditingController(
+    text: widget.line.unitPrice.toEditable(),
+  );
   final _form = GlobalKey<FormState>();
 
   @override
@@ -971,16 +1111,27 @@ class _LineEditSheetState extends State<_LineEditSheet> {
           SheetTitle(widget.line.name),
           Row(
             children: [
-              Expanded(child: QtyField(controller: _qty, label: 'الكمية')),
+              Expanded(
+                child: QtyField(controller: _qty, label: 'الكمية'),
+              ),
               const SizedBox(width: 12),
-              Expanded(child: MoneyField(controller: _price, label: 'سعر الوحدة', allowZero: true)),
+              Expanded(
+                child: MoneyField(
+                  controller: _price,
+                  label: 'سعر الوحدة',
+                  allowZero: true,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
           FilledButton(
             onPressed: () {
               if (!_form.currentState!.validate()) return;
-              Navigator.pop(context, (qty: Qty.tryParse(_qty.text)!, price: Money.tryParse(_price.text)!));
+              Navigator.pop(context, (
+                qty: Qty.tryParse(_qty.text)!,
+                price: Money.tryParse(_price.text)!,
+              ));
             },
             child: const Text('حفظ'),
           ),
@@ -1016,7 +1167,10 @@ class _AdHocSheetState extends State<_AdHocSheet> {
         mainAxisSize: MainAxisSize.min,
         children: [
           const SheetTitle('صنف حر'),
-          Text('للأصناف غير المسجّلة (خضار، بقايا…). لا يؤثر على المخزون.', style: TextStyle(color: context.c.textMuted, fontSize: 12)),
+          Text(
+            'للأصناف غير المسجّلة (خضار، بقايا…). لا يؤثر على المخزون.',
+            style: TextStyle(color: context.c.textMuted, fontSize: 12),
+          ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _name,
@@ -1030,7 +1184,10 @@ class _AdHocSheetState extends State<_AdHocSheet> {
           FilledButton(
             onPressed: () {
               if (!_form.currentState!.validate()) return;
-              Navigator.pop(context, (name: _name.text.trim(), price: Money.tryParse(_price.text)!));
+              Navigator.pop(context, (
+                name: _name.text.trim(),
+                price: Money.tryParse(_price.text)!,
+              ));
             },
             child: const Text('إضافة للسلة'),
           ),
@@ -1041,7 +1198,12 @@ class _AdHocSheetState extends State<_AdHocSheet> {
 }
 
 class _CheckoutResult {
-  const _CheckoutResult({required this.paymentType, this.customer, this.paid, this.note});
+  const _CheckoutResult({
+    required this.paymentType,
+    this.customer,
+    this.paid,
+    this.note,
+  });
   final PaymentType paymentType;
   final Customer? customer;
   final Money? paid;
@@ -1076,8 +1238,11 @@ class _CheckoutSheetState extends State<_CheckoutSheet> {
     final paid = Money.tryParse(_paid.text);
     final change = paid == null ? null : widget.cart.changeFor(paid);
     final cur = db.settings.currency;
-    final customers = db.activeCustomers.where((x) => x.status != CustomerStatus.frozen).toList()
-      ..sort((a, b) => a.name.compareTo(b.name));
+    final customers =
+        db.activeCustomers
+            .where((x) => x.status != CustomerStatus.frozen)
+            .toList()
+          ..sort((a, b) => a.name.compareTo(b.name));
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -1086,10 +1251,19 @@ class _CheckoutSheetState extends State<_CheckoutSheet> {
         const SheetTitle('إتمام البيع'),
         Container(
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(color: c.primarySoft, borderRadius: BorderRadius.circular(14)),
+          decoration: BoxDecoration(
+            color: c.primarySoft,
+            borderRadius: BorderRadius.circular(14),
+          ),
           child: Row(
             children: [
-              Text('المطلوب', style: TextStyle(color: c.primaryStrong, fontWeight: FontWeight.w700)),
+              Text(
+                'المطلوب',
+                style: TextStyle(
+                  color: c.primaryStrong,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
               const Spacer(),
               MoneyText(net, size: 24, color: c.primaryStrong),
               const SizedBox(width: 4),
@@ -1100,8 +1274,16 @@ class _CheckoutSheetState extends State<_CheckoutSheet> {
         const SizedBox(height: 14),
         SegmentedButton<PaymentType>(
           segments: const [
-            ButtonSegment(value: PaymentType.cash, icon: Icon(Icons.payments_outlined), label: Text('نقدي')),
-            ButtonSegment(value: PaymentType.credit, icon: Icon(Icons.schedule), label: Text('آجل (دين)')),
+            ButtonSegment(
+              value: PaymentType.cash,
+              icon: Icon(Icons.payments_outlined),
+              label: Text('نقدي'),
+            ),
+            ButtonSegment(
+              value: PaymentType.credit,
+              icon: Icon(Icons.schedule),
+              label: Text('آجل (دين)'),
+            ),
           ],
           selected: {_pay},
           onSelectionChanged: (s) => setState(() => _pay = s.first),
@@ -1119,7 +1301,12 @@ class _CheckoutSheetState extends State<_CheckoutSheet> {
             const SizedBox(height: 8),
             Row(
               children: [
-                Text(change == null ? 'المبلغ أقل من المطلوب' : 'الباقي للعميل', style: TextStyle(color: change == null ? c.danger : c.textMuted)),
+                Text(
+                  change == null ? 'المبلغ أقل من المطلوب' : 'الباقي للعميل',
+                  style: TextStyle(
+                    color: change == null ? c.danger : c.textMuted,
+                  ),
+                ),
                 const Spacer(),
                 if (change != null) MoneyText(change, size: 20, color: c.info),
               ],
@@ -1141,7 +1328,8 @@ class _CheckoutSheetState extends State<_CheckoutSheet> {
             label: 'العميل *',
             items: customers,
             labelOf: (x) => x.name,
-            subtitleOf: (x) => 'الرصيد: ${db.customerBalance(x.id).format()} $cur',
+            subtitleOf: (x) =>
+                'الرصيد: ${db.customerBalance(x.id).format()} $cur',
             value: _customer,
             onChanged: (v) => setState(() => _customer = v),
             allowClear: false,
@@ -1173,7 +1361,11 @@ class _CheckoutSheetState extends State<_CheckoutSheet> {
                   ),
                 ),
           icon: const Icon(Icons.check),
-          label: Text(_pay == PaymentType.cash ? 'تأكيد البيع النقدي' : 'تسجيل الدين وإتمام البيع'),
+          label: Text(
+            _pay == PaymentType.cash
+                ? 'تأكيد البيع النقدي'
+                : 'تسجيل الدين وإتمام البيع',
+          ),
         ),
         const SizedBox(height: 4),
         Text(
@@ -1227,18 +1419,29 @@ class _ProductSearchSheetState extends State<_ProductSearchSheet> {
             child: TextField(
               controller: _q,
               autofocus: true,
-              decoration: const InputDecoration(hintText: 'اختر الصنف…', prefixIcon: Icon(Icons.search)),
+              decoration: const InputDecoration(
+                hintText: 'اختر الصنف…',
+                prefixIcon: Icon(Icons.search),
+              ),
               onChanged: (_) => setState(() {}),
             ),
           ),
           Expanded(
             child: results.isEmpty
-                ? const EmptyState(icon: Icons.search_off, title: 'لا توجد نتائج')
+                ? const EmptyState(
+                    icon: Icons.search_off,
+                    title: 'لا توجد نتائج',
+                  )
                 : ListView.builder(
                     itemCount: results.length,
                     itemBuilder: (_, i) => ListTile(
                       title: Text(results[i].name),
-                      subtitle: results[i].barcode == null ? const Text('بدون باركود') : Text(results[i].barcode!, textDirection: TextDirection.ltr),
+                      subtitle: results[i].barcode == null
+                          ? const Text('بدون باركود')
+                          : Text(
+                              results[i].barcode!,
+                              textDirection: TextDirection.ltr,
+                            ),
                       trailing: MoneyText(results[i].salePrice),
                       onTap: () => Navigator.pop(context, results[i]),
                     ),

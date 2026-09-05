@@ -63,7 +63,11 @@ class _BrandingScreenState extends State<BrandingScreen> {
       if (bytes.lengthInBytes > 400 * 1024) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('الصورة كبيرة جداً — اختر صورة أصغر (أقل من 400KB)')),
+            const SnackBar(
+              content: Text(
+                'الصورة كبيرة جداً — اختر صورة أصغر (أقل من 400KB)',
+              ),
+            ),
           );
         }
         return;
@@ -71,7 +75,9 @@ class _BrandingScreenState extends State<BrandingScreen> {
       setState(() => _logo = base64Encode(bytes));
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذّر اختيار الصورة: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('تعذّر اختيار الصورة: $e')));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -91,7 +97,11 @@ class _BrandingScreenState extends State<BrandingScreen> {
       logoBase64: _logo,
       clearLogo: _logo == null,
     );
-    final ok = await guarded(context, () => app.settings.update(s), successMessage: 'تم حفظ هوية المحل');
+    final ok = await guarded(
+      context,
+      () => app.settings.update(s),
+      successMessage: 'تم حفظ هوية المحل',
+    );
     if (ok && mounted) Navigator.pop(context);
   }
 
@@ -107,15 +117,22 @@ class _BrandingScreenState extends State<BrandingScreen> {
           IconButton(
             tooltip: 'معاينة PDF بالإعدادات المحفوظة',
             icon: const Icon(Icons.preview_rounded),
-            onPressed: () => showExportSheet(context, title: 'معاينة الهوية', options: [
-              ExportOption(
-                title: 'نموذج تقرير هذا الشهر',
-                subtitle: 'يظهر فيه الشعار والبيان العلوي والسفلي كما ستُطبع',
-                icon: Icons.picture_as_pdf_rounded,
-                fileBase: 'معاينة',
-                build: () => app.pdf.periodReport(DateRange.thisMonth(), title: 'معاينة'),
-              ),
-            ]),
+            onPressed: () => showExportSheet(
+              context,
+              title: 'معاينة الهوية',
+              options: [
+                ExportOption(
+                  title: 'نموذج تقرير هذا الشهر',
+                  subtitle: 'يظهر فيه الشعار والبيان العلوي والسفلي كما ستُطبع',
+                  icon: Icons.picture_as_pdf_rounded,
+                  fileBase: 'معاينة',
+                  build: () => app.pdf.periodReport(
+                    DateRange.thisMonth(),
+                    title: 'معاينة',
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -133,81 +150,145 @@ class _BrandingScreenState extends State<BrandingScreen> {
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: c.border),
                 ),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                  Row(children: [
-                    Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: c.primarySoft,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: c.border),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: bytes == null
-                          ? Icon(Icons.storefront_rounded, color: c.primaryStrong, size: 32)
-                          : Image.memory(bytes, fit: BoxFit.contain),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(_store.text.isEmpty ? 'اسم المحل' : _store.text,
-                            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: c.primaryStrong)),
-                        if (_header.text.isNotEmpty) Text(_header.text, style: const TextStyle(fontSize: 12)),
-                        Text(
-                          [if (_address.text.isNotEmpty) _address.text, if (_phone.text.isNotEmpty) 'هاتف: ${_phone.text}'].join(' • '),
-                          style: TextStyle(fontSize: 11, color: c.textMuted),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: c.primarySoft,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: c.border),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: bytes == null
+                              ? Icon(
+                                  Icons.storefront_rounded,
+                                  color: c.primaryStrong,
+                                  size: 32,
+                                )
+                              : Image.memory(bytes, fit: BoxFit.contain),
                         ),
-                      ]),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _store.text.isEmpty ? 'اسم المحل' : _store.text,
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w800,
+                                  color: c.primaryStrong,
+                                ),
+                              ),
+                              if (_header.text.isNotEmpty)
+                                Text(
+                                  _header.text,
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              Text(
+                                [
+                                  if (_address.text.isNotEmpty) _address.text,
+                                  if (_phone.text.isNotEmpty)
+                                    'هاتف: ${_phone.text}',
+                                ].join(' • '),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: c.textMuted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ]),
-                  Divider(color: c.primary, thickness: 1.2, height: 18),
-                  Container(height: 6, margin: const EdgeInsets.only(bottom: 4), color: c.border.withValues(alpha: 0.5)),
-                  Container(height: 6, margin: const EdgeInsets.only(bottom: 4), color: c.border.withValues(alpha: 0.3)),
-                  Container(height: 6, width: 120, color: c.border.withValues(alpha: 0.3)),
-                  Divider(color: c.border, height: 18),
-                  Center(child: Text(_footer.text.isEmpty ? '— البيان السفلي —' : _footer.text, style: TextStyle(fontSize: 11, color: c.textMuted))),
-                ]),
+                    Divider(color: c.primary, thickness: 1.2, height: 18),
+                    Container(
+                      height: 6,
+                      margin: const EdgeInsets.only(bottom: 4),
+                      color: c.border.withValues(alpha: 0.5),
+                    ),
+                    Container(
+                      height: 6,
+                      margin: const EdgeInsets.only(bottom: 4),
+                      color: c.border.withValues(alpha: 0.3),
+                    ),
+                    Container(
+                      height: 6,
+                      width: 120,
+                      color: c.border.withValues(alpha: 0.3),
+                    ),
+                    Divider(color: c.border, height: 18),
+                    Center(
+                      child: Text(
+                        _footer.text.isEmpty
+                            ? '— البيان السفلي —'
+                            : _footer.text,
+                        style: TextStyle(fontSize: 11, color: c.textMuted),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 6),
-              Center(child: Text('معاينة مباشرة لرأس وتذييل كل فاتورة وتقرير', style: TextStyle(fontSize: 11, color: c.textMuted))),
+              Center(
+                child: Text(
+                  'معاينة مباشرة لرأس وتذييل كل فاتورة وتقرير',
+                  style: TextStyle(fontSize: 11, color: c.textMuted),
+                ),
+              ),
 
               const SectionTitle('الشعار'),
-              Row(children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _busy ? null : () => _pickLogo(ImageSource.gallery),
-                    icon: const Icon(Icons.photo_library_outlined),
-                    label: const Text('من المعرض'),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _busy
+                          ? null
+                          : () => _pickLogo(ImageSource.gallery),
+                      icon: const Icon(Icons.photo_library_outlined),
+                      label: const Text('من المعرض'),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _busy ? null : () => _pickLogo(ImageSource.camera),
-                    icon: const Icon(Icons.photo_camera_outlined),
-                    label: const Text('بالكاميرا'),
-                  ),
-                ),
-                if (bytes != null) ...[
                   const SizedBox(width: 8),
-                  IconButton.filledTonal(
-                    tooltip: 'إزالة الشعار',
-                    onPressed: () => setState(() => _logo = null),
-                    icon: Icon(Icons.delete_outline, color: c.danger),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _busy
+                          ? null
+                          : () => _pickLogo(ImageSource.camera),
+                      icon: const Icon(Icons.photo_camera_outlined),
+                      label: const Text('بالكاميرا'),
+                    ),
                   ),
+                  if (bytes != null) ...[
+                    const SizedBox(width: 8),
+                    IconButton.filledTonal(
+                      tooltip: 'إزالة الشعار',
+                      onPressed: () => setState(() => _logo = null),
+                      icon: Icon(Icons.delete_outline, color: c.danger),
+                    ),
+                  ],
                 ],
-              ]),
+              ),
 
               const SectionTitle('بيانات المحل'),
               TextFormField(
                 controller: _store,
                 decoration: const InputDecoration(labelText: 'اسم المحل *'),
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'مطلوب' : null,
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? 'مطلوب' : null,
                 onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: 12),
-              TextFormField(controller: _owner, decoration: const InputDecoration(labelText: 'اسم المالك'), onChanged: (_) => setState(() {})),
+              TextFormField(
+                controller: _owner,
+                decoration: const InputDecoration(labelText: 'اسم المالك'),
+                onChanged: (_) => setState(() {}),
+              ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _phone,
@@ -217,7 +298,11 @@ class _BrandingScreenState extends State<BrandingScreen> {
                 onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: 12),
-              TextFormField(controller: _address, decoration: const InputDecoration(labelText: 'العنوان'), onChanged: (_) => setState(() {})),
+              TextFormField(
+                controller: _address,
+                decoration: const InputDecoration(labelText: 'العنوان'),
+                onChanged: (_) => setState(() {}),
+              ),
 
               const SectionTitle('البيان العلوي والسفلي'),
               TextFormField(
@@ -225,7 +310,8 @@ class _BrandingScreenState extends State<BrandingScreen> {
                 maxLines: 2,
                 decoration: const InputDecoration(
                   labelText: 'البيان العلوي (تحت اسم المحل)',
-                  hintText: 'مثال: مواد غذائية • جملة وقطاعي • السجل التجاري 12345',
+                  hintText:
+                      'مثال: مواد غذائية • جملة وقطاعي • السجل التجاري 12345',
                 ),
                 onChanged: (_) => setState(() {}),
               ),
@@ -235,12 +321,17 @@ class _BrandingScreenState extends State<BrandingScreen> {
                 maxLines: 2,
                 decoration: const InputDecoration(
                   labelText: 'البيان السفلي (أسفل كل فاتورة وتقرير)',
-                  hintText: 'مثال: شكراً لتسوقكم معنا — البضاعة المباعة لا تُرد بعد 3 أيام',
+                  hintText:
+                      'مثال: شكراً لتسوقكم معنا — البضاعة المباعة لا تُرد بعد 3 أيام',
                 ),
                 onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: 22),
-              FilledButton.icon(onPressed: _busy ? null : _save, icon: const Icon(Icons.save_rounded), label: const Text('حفظ هوية المحل')),
+              FilledButton.icon(
+                onPressed: _busy ? null : _save,
+                icon: const Icon(Icons.save_rounded),
+                label: const Text('حفظ هوية المحل'),
+              ),
             ],
           ),
         ),

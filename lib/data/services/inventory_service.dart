@@ -182,7 +182,13 @@ class InventoryService {
       );
     }
     return db.run(() {
-      final m = _move(productId, type, delta, notes: notes, now: DateTime.now());
+      final m = _move(
+        productId,
+        type,
+        delta,
+        notes: notes,
+        now: DateTime.now(),
+      );
       db.log(
         action: AuditAction.create,
         entityType: 'stock_move',
@@ -211,7 +217,10 @@ class InventoryService {
       );
     }
     if (reason.trim().isEmpty) {
-      throw const DomainException(ErrorCodes.invalidAmount, 'سبب الإلغاء مطلوب');
+      throw const DomainException(
+        ErrorCodes.invalidAmount,
+        'سبب الإلغاء مطلوب',
+      );
     }
     final p = _product(m.productId);
     return db.run(() {
@@ -285,7 +294,9 @@ class InventoryService {
                 db.stockOf(p.id) <= p.minQty,
           )
           .toList()
-        ..sort((a, b) => db.stockOf(a.id).milli.compareTo(db.stockOf(b.id).milli));
+        ..sort(
+          (a, b) => db.stockOf(a.id).milli.compareTo(db.stockOf(b.id).milli),
+        );
 
   /// Inventory valuation at purchase price.
   Money stockValue() {
@@ -332,10 +343,7 @@ class InventoryService {
         );
       }
       if (!seen.add(nm)) {
-        throw DomainException(
-          ErrorCodes.duplicate,
-          'اسم الوحدة «$nm» مكرر',
-        );
+        throw DomainException(ErrorCodes.duplicate, 'اسم الوحدة «$nm» مكرر');
       }
     }
   }

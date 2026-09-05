@@ -131,7 +131,9 @@ class BackupService {
     for (final f in files.sublist(keepLast)) {
       try {
         await f.delete();
-      } catch (_) {/* تجاهل */}
+      } catch (_) {
+        /* تجاهل */
+      }
     }
   }
 
@@ -160,7 +162,9 @@ class BackupService {
         for (final f in await listBackups(d)) {
           if (seen.add(f.uri.pathSegments.last)) out.add(f);
         }
-      } catch (_) {/* منصة لا تدعم */}
+      } catch (_) {
+        /* منصة لا تدعم */
+      }
     }
     out.sort((a, b) {
       final da = dateOf(a.uri.pathSegments.last) ?? '';

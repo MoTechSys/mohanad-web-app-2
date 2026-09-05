@@ -156,7 +156,8 @@ class DocumentService {
             amount: net,
             balanceBefore: before,
             balanceAfter: before + net,
-            notes: 'فاتورة بيع${sale.invoiceNo != null ? ' #${sale.invoiceNo}' : ''}',
+            notes:
+                'فاتورة بيع${sale.invoiceNo != null ? ' #${sale.invoiceNo}' : ''}',
             refType: RefType.sale,
             refId: sale.id,
             txDate: sale.saleDate,
@@ -235,7 +236,11 @@ class DocumentService {
           throw DomainException(
             ErrorCodes.insufficientStock,
             'المخزون لا يكفي لـ «${p.name}» — المتاح ${available.format()} ${p.unit} والمطلوب ${e.value.format()} ${p.unit}',
-            meta: {'productId': e.key, 'available': available.milli, 'needed': e.value.milli},
+            meta: {
+              'productId': e.key,
+              'available': available.milli,
+              'needed': e.value.milli,
+            },
           );
         } else {
           // Oversell allowed but requires explicit confirmation.
@@ -432,7 +437,9 @@ class DocumentService {
             if (prod != null && !prod.isDeleted) {
               final baseCost = l.unitFactor == Qty.one
                   ? l.unitPrice
-                  : Money((l.unitPrice.minor * Qty.scale) ~/ l.unitFactor.milli);
+                  : Money(
+                      (l.unitPrice.minor * Qty.scale) ~/ l.unitFactor.milli,
+                    );
               if (prod.purchasePrice != baseCost && baseCost.isPositive) {
                 db.putProduct(prod.copyWith(purchasePrice: baseCost));
               }
@@ -508,7 +515,8 @@ class DocumentService {
         'المبلغ يجب أن يكون أكبر من الصفر',
       );
     }
-    if (type == ExpenseType.supplierPayment || type == ExpenseType.cashPurchase) {
+    if (type == ExpenseType.supplierPayment ||
+        type == ExpenseType.cashPurchase) {
       throw const DomainException(
         ErrorCodes.invalidAmount,
         'استخدم شاشة الموردين/المشتريات لهذا النوع',
@@ -582,7 +590,10 @@ class DocumentService {
   Future<ExpenseCategory> createCategory(String name) {
     final n = name.trim();
     if (n.isEmpty) {
-      throw const DomainException(ErrorCodes.invalidAmount, 'اسم التصنيف مطلوب');
+      throw const DomainException(
+        ErrorCodes.invalidAmount,
+        'اسم التصنيف مطلوب',
+      );
     }
     if (db.categories.values.any((c) => c.isActive && c.name == n)) {
       throw const DomainException(ErrorCodes.duplicate, 'التصنيف موجود بالفعل');

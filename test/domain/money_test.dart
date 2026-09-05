@@ -27,7 +27,11 @@ void main() {
       expect(Money.tryParse('1.2.3'), isNull);
       expect(Money.tryParse('.'), isNull);
       expect(Money.tryParse('-'), isNull);
-      expect(Money.tryParse('12.345'), isNull, reason: '3 decimals not allowed');
+      expect(
+        Money.tryParse('12.345'),
+        isNull,
+        reason: '3 decimals not allowed',
+      );
     });
   });
 

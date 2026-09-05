@@ -131,11 +131,18 @@ class VoucherService {
       // stay complete (supplierPayment settles debt; other = general outflow).
       final e = Expense(
         id: IdGen.next(),
-        type: supplier != null ? ExpenseType.supplierPayment : ExpenseType.other,
+        type: supplier != null
+            ? ExpenseType.supplierPayment
+            : ExpenseType.other,
         supplierId: supplier?.id,
         amount: amount,
-        details: _clean(details) ??
-            'سند صرف $no${supplier != null ? ' — ${supplier.name}' : partyNameManual != null ? ' — $partyNameManual' : ''}',
+        details:
+            _clean(details) ??
+            'سند صرف $no${supplier != null
+                ? ' — ${supplier.name}'
+                : partyNameManual != null
+                ? ' — $partyNameManual'
+                : ''}',
         expenseDate: date ?? now,
         createdAt: now,
       );
@@ -248,10 +255,9 @@ class VoucherService {
 
   /// Vouchers sorted newest first.
   List<Voucher> all({VoucherType? type}) {
-    final list = db.vouchers.values
-        .where((v) => type == null || v.type == type)
-        .toList()
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final list =
+        db.vouchers.values.where((v) => type == null || v.type == type).toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return list;
   }
 

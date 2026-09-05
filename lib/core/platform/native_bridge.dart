@@ -13,7 +13,10 @@ class NativeBridge {
   @visibleForTesting
   static void Function(String method, Map<String, dynamic> args)? spy;
 
-  static Future<T?> _call<T>(String m, [Map<String, dynamic> args = const {}]) async {
+  static Future<T?> _call<T>(
+    String m, [
+    Map<String, dynamic> args = const {},
+  ]) async {
     spy?.call(m, args);
     if (spy != null) return null;
     try {
@@ -26,7 +29,8 @@ class NativeBridge {
   }
 
   /// Short scanner beep. [kind]: `ok` | `success` | `error`.
-  static Future<void> beep([String kind = 'ok']) => _call('beep', {'kind': kind});
+  static Future<void> beep([String kind = 'ok']) =>
+      _call('beep', {'kind': kind});
 
   static Future<void> vibrate([int ms = 40]) => _call('vibrate', {'ms': ms});
 
@@ -51,10 +55,11 @@ class NativeBridge {
     required String title,
     required String body,
   }) async =>
-      (await _call<bool>(
-        'showNotification',
-        {'id': id, 'title': title, 'body': body},
-      )) ??
+      (await _call<bool>('showNotification', {
+        'id': id,
+        'title': title,
+        'body': body,
+      })) ??
       false;
 
   /// حفظ ملف في مجلد التنزيلات العام `Download/دفتر البقالة/` (مرئي للمستخدم).
@@ -63,12 +68,11 @@ class NativeBridge {
     required String name,
     required Uint8List bytes,
     String mime = 'application/octet-stream',
-  }) =>
-      _call<String>('saveToDownloads', {
-        'name': name,
-        'bytes': bytes,
-        'mime': mime,
-      });
+  }) => _call<String>('saveToDownloads', {
+    'name': name,
+    'bytes': bytes,
+    'mime': mime,
+  });
 
   /// Combined scan feedback: sound + haptic.
   static Future<void> scanOk() async {

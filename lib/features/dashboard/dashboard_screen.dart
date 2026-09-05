@@ -114,7 +114,10 @@ class DashboardScreen extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       'الهدف اليومي: ${Fmt.money(s.dailyTarget!, currency: cur)}',
-                      style: const TextStyle(color: Colors.white70, fontSize: 12),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                   const SizedBox(height: 14),
@@ -306,7 +309,8 @@ class DashboardScreen extends StatelessWidget {
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => CustomerDetailScreen(customerId: c.id),
+                            builder: (_) =>
+                                CustomerDetailScreen(customerId: c.id),
                           ),
                         ),
                       ),
@@ -426,7 +430,11 @@ class _CashierBanner extends StatelessWidget {
                   color: c.primaryStrong,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(Icons.qr_code_scanner_rounded, color: c.onPrimary, size: 30),
+                child: Icon(
+                  Icons.qr_code_scanner_rounded,
+                  color: c.onPrimary,
+                  size: 30,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(

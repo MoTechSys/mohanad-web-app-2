@@ -30,41 +30,66 @@ class PdfExporter {
   Future<Uint8List> saleInvoice(Sale sale) async {
     final b = await _brand();
     final doc = b.document();
-    final customer = sale.customerId == null ? null : db.customers[sale.customerId!];
+    final customer = sale.customerId == null
+        ? null
+        : db.customers[sale.customerId!];
     final lines = sale.lines;
     doc.addPage(
       b.page(
         title: 'فاتورة بيع',
-        subtitle: 'رقم: ${sale.invoiceNo ?? sale.id.substring(0, 8).toUpperCase()}',
+        subtitle:
+            'رقم: ${sale.invoiceNo ?? sale.id.substring(0, 8).toUpperCase()}',
         build: (ctx) => [
           _metaBlock(b, [
             ('التاريخ', Fmt.dateTime(sale.saleDate)),
             ('طريقة الدفع', sale.paymentType.label),
             ('العميل', customer?.name ?? 'عميل نقدي'),
             if (customer?.phone != null) ('هاتف العميل', customer!.phone!),
-            if (sale.cancelledAt != null) ('الحالة', 'ملغاة — ${sale.cancelReason ?? ''}'),
+            if (sale.cancelledAt != null)
+              ('الحالة', 'ملغاة — ${sale.cancelReason ?? ''}'),
           ]),
           pw.SizedBox(height: 10),
           if (lines.isNotEmpty)
             b.table(
               headers: const ['#', 'الصنف', 'الكمية', 'سعر الوحدة', 'الإجمالي'],
-              aligns: [pw.Alignment.center, pw.Alignment.centerRight, pw.Alignment.center, pw.Alignment.center, pw.Alignment.center],
-              widths: {0: const pw.FixedColumnWidth(24), 1: const pw.FlexColumnWidth(3), 2: const pw.FlexColumnWidth(1), 3: const pw.FlexColumnWidth(1.4), 4: const pw.FlexColumnWidth(1.4)},
+              aligns: [
+                pw.Alignment.center,
+                pw.Alignment.centerRight,
+                pw.Alignment.center,
+                pw.Alignment.center,
+                pw.Alignment.center,
+              ],
+              widths: {
+                0: const pw.FixedColumnWidth(24),
+                1: const pw.FlexColumnWidth(3),
+                2: const pw.FlexColumnWidth(1),
+                3: const pw.FlexColumnWidth(1.4),
+                4: const pw.FlexColumnWidth(1.4),
+              },
               rows: [
                 for (var i = 0; i < lines.length; i++)
-                  ['${i + 1}', lines[i].name, lines[i].qtyLabel(), lines[i].unitPrice.format(), lines[i].lineTotal.format()],
+                  [
+                    '${i + 1}',
+                    lines[i].name,
+                    lines[i].qtyLabel(),
+                    lines[i].unitPrice.format(),
+                    lines[i].lineTotal.format(),
+                  ],
               ],
             )
           else
             pw.Container(
               padding: const pw.EdgeInsets.all(10),
-              decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfBrand.line)),
+              decoration: pw.BoxDecoration(
+                border: pw.Border.all(color: PdfBrand.line),
+              ),
               child: pw.Text(sale.details ?? 'بيع إجمالي'),
             ),
           pw.SizedBox(height: 12),
           _totals(b, [
             ('المجموع', b.money(sale.grossAmount)),
-            if (sale.discount.isPositive) ('الخصم', '- ${b.money(sale.discount)}'),
+            if (sale.discount.isPositive)
+              ('الخصم', '- ${b.money(sale.discount)}'),
             ('الصافي', b.money(sale.netAmount)),
             if (customer != null && sale.paymentType == PaymentType.credit)
               ('رصيد العميل الحالي', b.money(db.customerBalance(customer.id))),
@@ -83,54 +108,141 @@ class PdfExporter {
   Future<Uint8List> saleReceipt(Sale sale) async {
     final b = await _brand();
     final doc = b.document();
-    final customer = sale.customerId == null ? null : db.customers[sale.customerId!];
-    const fmt = PdfPageFormat(80 * PdfPageFormat.mm, double.infinity, marginAll: 4 * PdfPageFormat.mm);
+    final customer = sale.customerId == null
+        ? null
+        : db.customers[sale.customerId!];
+    const fmt = PdfPageFormat(
+      80 * PdfPageFormat.mm,
+      double.infinity,
+      marginAll: 4 * PdfPageFormat.mm,
+    );
     doc.addPage(
       pw.Page(
         pageFormat: fmt,
         textDirection: pw.TextDirection.rtl,
-        build: (_) => pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.stretch, children: [
-          if (b.logo != null) pw.Center(child: pw.SizedBox(height: 40, child: pw.Image(b.logo!))),
-          pw.Center(child: pw.Text(b.settings.storeName, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold))),
-          if ((b.settings.receiptHeader ?? '').isNotEmpty) pw.Center(child: pw.Text(b.settings.receiptHeader!, style: const pw.TextStyle(fontSize: 8))),
-          if ((b.settings.phone ?? '').isNotEmpty) pw.Center(child: pw.Text(b.settings.phone!, style: const pw.TextStyle(fontSize: 8))),
-          pw.Divider(),
-          pw.Text('فاتورة: ${sale.invoiceNo ?? sale.id.substring(0, 8).toUpperCase()}', style: const pw.TextStyle(fontSize: 8)),
-          pw.Text('التاريخ: ${Fmt.dateTime(sale.saleDate)}', style: const pw.TextStyle(fontSize: 8)),
-          pw.Text('العميل: ${customer?.name ?? 'نقدي'} • ${sale.paymentType.label}', style: const pw.TextStyle(fontSize: 8)),
-          pw.Divider(),
-          for (final l in sale.lines) ...[
-            pw.Text(l.name, style: const pw.TextStyle(fontSize: 9)),
-            pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-              pw.Text('${l.qtyLabel()} × ${l.unitPrice.format()}', style: const pw.TextStyle(fontSize: 8)),
-              pw.Text(l.lineTotal.format(), style: const pw.TextStyle(fontSize: 9)),
-            ]),
-          ],
-          if (sale.lines.isEmpty) pw.Text(sale.details ?? 'بيع إجمالي', style: const pw.TextStyle(fontSize: 9)),
-          pw.Divider(),
-          if (sale.discount.isPositive)
-            pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [pw.Text('الخصم'), pw.Text(sale.discount.format())]),
-          pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-            pw.Text('الصافي', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12)),
-            pw.Text(b.money(sale.netAmount), style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12)),
-          ]),
-          if (customer != null && sale.paymentType == PaymentType.credit)
-            pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-              pw.Text('الرصيد الحالي', style: const pw.TextStyle(fontSize: 8)),
-              pw.Text(b.money(db.customerBalance(customer.id)), style: const pw.TextStyle(fontSize: 8)),
-            ]),
-          pw.Divider(),
-          if ((b.settings.receiptFooter ?? '').isNotEmpty) pw.Center(child: pw.Text(b.settings.receiptFooter!, style: const pw.TextStyle(fontSize: 8))),
-          pw.SizedBox(height: 4),
-          pw.Center(
-            child: pw.BarcodeWidget(
-              barcode: pw.Barcode.code128(),
-              data: sale.invoiceNo ?? sale.id.substring(0, 12),
-              height: 28,
-              drawText: false,
+        build: (_) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+          children: [
+            if (b.logo != null)
+              pw.Center(
+                child: pw.SizedBox(height: 40, child: pw.Image(b.logo!)),
+              ),
+            pw.Center(
+              child: pw.Text(
+                b.settings.storeName,
+                style: pw.TextStyle(
+                  fontSize: 14,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
             ),
-          ),
-        ]),
+            if ((b.settings.receiptHeader ?? '').isNotEmpty)
+              pw.Center(
+                child: pw.Text(
+                  b.settings.receiptHeader!,
+                  style: const pw.TextStyle(fontSize: 8),
+                ),
+              ),
+            if ((b.settings.phone ?? '').isNotEmpty)
+              pw.Center(
+                child: pw.Text(
+                  b.settings.phone!,
+                  style: const pw.TextStyle(fontSize: 8),
+                ),
+              ),
+            pw.Divider(),
+            pw.Text(
+              'فاتورة: ${sale.invoiceNo ?? sale.id.substring(0, 8).toUpperCase()}',
+              style: const pw.TextStyle(fontSize: 8),
+            ),
+            pw.Text(
+              'التاريخ: ${Fmt.dateTime(sale.saleDate)}',
+              style: const pw.TextStyle(fontSize: 8),
+            ),
+            pw.Text(
+              'العميل: ${customer?.name ?? 'نقدي'} • ${sale.paymentType.label}',
+              style: const pw.TextStyle(fontSize: 8),
+            ),
+            pw.Divider(),
+            for (final l in sale.lines) ...[
+              pw.Text(l.name, style: const pw.TextStyle(fontSize: 9)),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text(
+                    '${l.qtyLabel()} × ${l.unitPrice.format()}',
+                    style: const pw.TextStyle(fontSize: 8),
+                  ),
+                  pw.Text(
+                    l.lineTotal.format(),
+                    style: const pw.TextStyle(fontSize: 9),
+                  ),
+                ],
+              ),
+            ],
+            if (sale.lines.isEmpty)
+              pw.Text(
+                sale.details ?? 'بيع إجمالي',
+                style: const pw.TextStyle(fontSize: 9),
+              ),
+            pw.Divider(),
+            if (sale.discount.isPositive)
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [pw.Text('الخصم'), pw.Text(sale.discount.format())],
+              ),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text(
+                  'الصافي',
+                  style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+                pw.Text(
+                  b.money(sale.netAmount),
+                  style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+            if (customer != null && sale.paymentType == PaymentType.credit)
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text(
+                    'الرصيد الحالي',
+                    style: const pw.TextStyle(fontSize: 8),
+                  ),
+                  pw.Text(
+                    b.money(db.customerBalance(customer.id)),
+                    style: const pw.TextStyle(fontSize: 8),
+                  ),
+                ],
+              ),
+            pw.Divider(),
+            if ((b.settings.receiptFooter ?? '').isNotEmpty)
+              pw.Center(
+                child: pw.Text(
+                  b.settings.receiptFooter!,
+                  style: const pw.TextStyle(fontSize: 8),
+                ),
+              ),
+            pw.SizedBox(height: 4),
+            pw.Center(
+              child: pw.BarcodeWidget(
+                barcode: pw.Barcode.code128(),
+                data: sale.invoiceNo ?? sale.id.substring(0, 12),
+                height: 28,
+                drawText: false,
+              ),
+            ),
+          ],
+        ),
       ),
     );
     return doc.save();
@@ -141,15 +253,26 @@ class PdfExporter {
   Future<Uint8List> customerStatement(Customer c, {DateRange? range}) async {
     final b = await _brand();
     final doc = b.document();
-    var txs = db.customerTx.values.where((t) => t.partyId == c.id && t.isActive).toList()
-      ..sort((a, b) => a.txDate.compareTo(b.txDate));
-    if (range != null) txs = txs.where((t) => range.contains(t.txDate)).toList();
-    final debt = txs.where((t) => t.signedDelta.isPositive).fold(Money.zero, (p, t) => p + t.signedDelta);
-    final paid = txs.where((t) => !t.signedDelta.isPositive && !t.signedDelta.isZero).fold(Money.zero, (p, t) => p + t.signedDelta.abs);
+    var txs =
+        db.customerTx.values
+            .where((t) => t.partyId == c.id && t.isActive)
+            .toList()
+          ..sort((a, b) => a.txDate.compareTo(b.txDate));
+    if (range != null) {
+      txs = txs.where((t) => range.contains(t.txDate)).toList();
+    }
+    final debt = txs
+        .where((t) => t.signedDelta.isPositive)
+        .fold(Money.zero, (p, t) => p + t.signedDelta);
+    final paid = txs
+        .where((t) => !t.signedDelta.isPositive && !t.signedDelta.isZero)
+        .fold(Money.zero, (p, t) => p + t.signedDelta.abs);
     doc.addPage(
       b.page(
         title: 'كشف حساب عميل',
-        subtitle: range == null ? 'كامل الفترة' : '${Fmt.date(range.start)} — ${Fmt.date(range.end)}',
+        subtitle: range == null
+            ? 'كامل الفترة'
+            : '${Fmt.date(range.start)} — ${Fmt.date(range.end)}',
         build: (ctx) => [
           _metaBlock(b, [
             ('العميل', c.name),
@@ -161,8 +284,22 @@ class PdfExporter {
           ]),
           pw.SizedBox(height: 10),
           b.table(
-            headers: const ['التاريخ', 'النوع', 'البيان', 'مدين (دين)', 'دائن (سداد)', 'الرصيد'],
-            aligns: [pw.Alignment.center, pw.Alignment.center, pw.Alignment.centerRight, pw.Alignment.center, pw.Alignment.center, pw.Alignment.center],
+            headers: const [
+              'التاريخ',
+              'النوع',
+              'البيان',
+              'مدين (دين)',
+              'دائن (سداد)',
+              'الرصيد',
+            ],
+            aligns: [
+              pw.Alignment.center,
+              pw.Alignment.center,
+              pw.Alignment.centerRight,
+              pw.Alignment.center,
+              pw.Alignment.center,
+              pw.Alignment.center,
+            ],
             widths: {2: const pw.FlexColumnWidth(2.4)},
             rows: [
               for (final t in txs)
@@ -171,11 +308,20 @@ class PdfExporter {
                   t.type.label,
                   t.notes ?? _refLabel(t),
                   t.signedDelta.isPositive ? t.signedDelta.format() : '',
-                  t.signedDelta.isPositive || t.signedDelta.isZero ? '' : t.signedDelta.abs.format(),
+                  t.signedDelta.isPositive || t.signedDelta.isZero
+                      ? ''
+                      : t.signedDelta.abs.format(),
                   t.balanceAfter.format(),
                 ],
             ],
-            totals: ['', '', 'الإجمالي', debt.format(), paid.format(), db.customerBalance(c.id).format()],
+            totals: [
+              '',
+              '',
+              'الإجمالي',
+              debt.format(),
+              paid.format(),
+              db.customerBalance(c.id).format(),
+            ],
           ),
         ],
       ),
@@ -186,13 +332,20 @@ class PdfExporter {
   Future<Uint8List> supplierStatement(Supplier s, {DateRange? range}) async {
     final b = await _brand();
     final doc = b.document();
-    var txs = db.supplierTx.values.where((t) => t.partyId == s.id && t.isActive).toList()
-      ..sort((a, b) => a.txDate.compareTo(b.txDate));
-    if (range != null) txs = txs.where((t) => range.contains(t.txDate)).toList();
+    var txs =
+        db.supplierTx.values
+            .where((t) => t.partyId == s.id && t.isActive)
+            .toList()
+          ..sort((a, b) => a.txDate.compareTo(b.txDate));
+    if (range != null) {
+      txs = txs.where((t) => range.contains(t.txDate)).toList();
+    }
     doc.addPage(
       b.page(
         title: 'كشف حساب مورد',
-        subtitle: range == null ? 'كامل الفترة' : '${Fmt.date(range.start)} — ${Fmt.date(range.end)}',
+        subtitle: range == null
+            ? 'كامل الفترة'
+            : '${Fmt.date(range.start)} — ${Fmt.date(range.end)}',
         build: (ctx) => [
           _metaBlock(b, [
             ('المورد', s.name),
@@ -201,12 +354,30 @@ class PdfExporter {
           ]),
           pw.SizedBox(height: 10),
           b.table(
-            headers: const ['التاريخ', 'النوع', 'البيان', 'لنا عليه / له علينا', 'الرصيد'],
-            aligns: [pw.Alignment.center, pw.Alignment.center, pw.Alignment.centerRight, pw.Alignment.center, pw.Alignment.center],
+            headers: const [
+              'التاريخ',
+              'النوع',
+              'البيان',
+              'لنا عليه / له علينا',
+              'الرصيد',
+            ],
+            aligns: [
+              pw.Alignment.center,
+              pw.Alignment.center,
+              pw.Alignment.centerRight,
+              pw.Alignment.center,
+              pw.Alignment.center,
+            ],
             widths: {2: const pw.FlexColumnWidth(2.4)},
             rows: [
               for (final t in txs)
-                [Fmt.date(t.txDate), t.type.label, t.notes ?? _refLabel(t), t.signedDelta.format(), t.balanceAfter.format()],
+                [
+                  Fmt.date(t.txDate),
+                  t.type.label,
+                  t.notes ?? _refLabel(t),
+                  t.signedDelta.format(),
+                  t.balanceAfter.format(),
+                ],
             ],
           ),
         ],
@@ -223,14 +394,24 @@ class PdfExporter {
     final doc = b.document();
     final s = reports.summary(r);
     final st = db.settings;
-    final profit = s.profit(st.profitMode, cashPurchaseAsCogs: st.cashPurchaseAsCogs);
+    final profit = s.profit(
+      st.profitMode,
+      cashPurchaseAsCogs: st.cashPurchaseAsCogs,
+    );
     final byCat = reports.expensesByCategory(r);
     final top = reports.topProducts(r, limit: 15);
     final debtors = reports.topDebtors(limit: 15);
     final daily = reports.dailyRevenue(r);
-    final sales = reports.salesIn(r).where((x) => x.isActive).toList()..sort((a, b) => a.saleDate.compareTo(b.saleDate));
-    final purchases = reports.purchasesIn(r).where((x) => x.isActive).toList()..sort((a, b) => a.purchaseDate.compareTo(b.purchaseDate));
-    final expenses = reports.expensesIn(r).where((x) => x.isActive && x.type == ExpenseType.normal).toList()..sort((a, b) => a.expenseDate.compareTo(b.expenseDate));
+    final sales = reports.salesIn(r).where((x) => x.isActive).toList()
+      ..sort((a, b) => a.saleDate.compareTo(b.saleDate));
+    final purchases = reports.purchasesIn(r).where((x) => x.isActive).toList()
+      ..sort((a, b) => a.purchaseDate.compareTo(b.purchaseDate));
+    final expenses =
+        reports
+            .expensesIn(r)
+            .where((x) => x.isActive && x.type == ExpenseType.normal)
+            .toList()
+          ..sort((a, b) => a.expenseDate.compareTo(b.expenseDate));
 
     doc.addPage(
       b.page(
@@ -251,7 +432,10 @@ class PdfExporter {
             ('مشتريات آجلة', b.money(s.creditPurchases)),
             ('دفعات للموردين', b.money(s.supplierPayments)),
             ('تكلفة البضاعة المباعة', b.money(s.cogs + s.manualCogs)),
-            ('صافي الربح (${st.profitMode == ProfitMode.accurate ? 'دقيق' : 'تقديري'})', b.money(profit)),
+            (
+              'صافي الربح (${st.profitMode == ProfitMode.accurate ? 'دقيق' : 'تقديري'})',
+              b.money(profit),
+            ),
           ]),
           pw.SizedBox(height: 10),
           pw.Text('التدفق النقدي', style: b.h2),
@@ -273,9 +457,22 @@ class PdfExporter {
             pw.SizedBox(height: 6),
             b.table(
               headers: const ['الصنف', 'الكمية', 'الإيراد', 'الربح'],
-              aligns: [pw.Alignment.centerRight, pw.Alignment.center, pw.Alignment.center, pw.Alignment.center],
+              aligns: [
+                pw.Alignment.centerRight,
+                pw.Alignment.center,
+                pw.Alignment.center,
+                pw.Alignment.center,
+              ],
               widths: {0: const pw.FlexColumnWidth(2.5)},
-              rows: [for (final t in top) [t.name, t.qty.format(), t.revenue.format(), t.profit.format()]],
+              rows: [
+                for (final t in top)
+                  [
+                    t.name,
+                    t.qty.format(),
+                    t.revenue.format(),
+                    t.profit.format(),
+                  ],
+              ],
             ),
             pw.SizedBox(height: 12),
           ],
@@ -284,10 +481,20 @@ class PdfExporter {
             pw.SizedBox(height: 6),
             b.table(
               headers: const ['الفئة', 'عدد', 'الإجمالي'],
-              aligns: [pw.Alignment.centerRight, pw.Alignment.center, pw.Alignment.center],
+              aligns: [
+                pw.Alignment.centerRight,
+                pw.Alignment.center,
+                pw.Alignment.center,
+              ],
               widths: {0: const pw.FlexColumnWidth(3)},
-              rows: [for (final e in byCat) [e.name, '${e.count}', e.total.format()]],
-              totals: ['الإجمالي', '${byCat.fold(0, (p, e) => p + e.count)}', s.operatingExpenses.format()],
+              rows: [
+                for (final e in byCat) [e.name, '${e.count}', e.total.format()],
+              ],
+              totals: [
+                'الإجمالي',
+                '${byCat.fold(0, (p, e) => p + e.count)}',
+                s.operatingExpenses.format(),
+              ],
             ),
             pw.SizedBox(height: 12),
           ],
@@ -296,10 +503,30 @@ class PdfExporter {
             pw.SizedBox(height: 6),
             b.table(
               headers: const ['العميل', 'الهاتف', 'الرصيد', 'الحالة'],
-              aligns: [pw.Alignment.centerRight, pw.Alignment.center, pw.Alignment.center, pw.Alignment.center],
+              aligns: [
+                pw.Alignment.centerRight,
+                pw.Alignment.center,
+                pw.Alignment.center,
+                pw.Alignment.center,
+              ],
               widths: {0: const pw.FlexColumnWidth(2.5)},
-              rows: [for (final c in debtors) [c.name, c.phone ?? '—', db.customerBalance(c.id).format(), c.status.label]],
-              totals: ['الإجمالي', '', debtors.fold(Money.zero, (p, c) => p + db.customerBalance(c.id)).format(), ''],
+              rows: [
+                for (final c in debtors)
+                  [
+                    c.name,
+                    c.phone ?? '—',
+                    db.customerBalance(c.id).format(),
+                    c.status.label,
+                  ],
+              ],
+              totals: [
+                'الإجمالي',
+                '',
+                debtors
+                    .fold(Money.zero, (p, c) => p + db.customerBalance(c.id))
+                    .format(),
+                '',
+              ],
             ),
             pw.SizedBox(height: 12),
           ],
@@ -307,14 +534,40 @@ class PdfExporter {
             pw.Text('سجل المبيعات', style: b.h2),
             pw.SizedBox(height: 6),
             b.table(
-              headers: const ['التاريخ', 'الفاتورة', 'العميل', 'الدفع', 'الصافي'],
-              aligns: [pw.Alignment.center, pw.Alignment.center, pw.Alignment.centerRight, pw.Alignment.center, pw.Alignment.center],
+              headers: const [
+                'التاريخ',
+                'الفاتورة',
+                'العميل',
+                'الدفع',
+                'الصافي',
+              ],
+              aligns: [
+                pw.Alignment.center,
+                pw.Alignment.center,
+                pw.Alignment.centerRight,
+                pw.Alignment.center,
+                pw.Alignment.center,
+              ],
               widths: {2: const pw.FlexColumnWidth(2.2)},
               rows: [
                 for (final x in sales)
-                  [Fmt.date(x.saleDate), x.invoiceNo ?? x.id.substring(0, 6).toUpperCase(), x.customerId == null ? 'نقدي' : (db.customers[x.customerId!]?.name ?? '—'), x.paymentType.label, x.netAmount.format()],
+                  [
+                    Fmt.date(x.saleDate),
+                    x.invoiceNo ?? x.id.substring(0, 6).toUpperCase(),
+                    x.customerId == null
+                        ? 'نقدي'
+                        : (db.customers[x.customerId!]?.name ?? '—'),
+                    x.paymentType.label,
+                    x.netAmount.format(),
+                  ],
               ],
-              totals: ['', '', 'الإجمالي', '${sales.length} فاتورة', s.totalSales.format()],
+              totals: [
+                '',
+                '',
+                'الإجمالي',
+                '${sales.length} فاتورة',
+                s.totalSales.format(),
+              ],
             ),
             pw.SizedBox(height: 12),
           ],
@@ -323,13 +576,30 @@ class PdfExporter {
             pw.SizedBox(height: 6),
             b.table(
               headers: const ['التاريخ', 'المورد', 'الدفع', 'المبلغ'],
-              aligns: [pw.Alignment.center, pw.Alignment.centerRight, pw.Alignment.center, pw.Alignment.center],
+              aligns: [
+                pw.Alignment.center,
+                pw.Alignment.centerRight,
+                pw.Alignment.center,
+                pw.Alignment.center,
+              ],
               widths: {1: const pw.FlexColumnWidth(2.5)},
               rows: [
                 for (final x in purchases)
-                  [Fmt.date(x.purchaseDate), x.supplierId == null ? (x.supplierNameManual ?? '—') : (db.suppliers[x.supplierId!]?.name ?? '—'), x.paymentType.label, x.totalAmount.format()],
+                  [
+                    Fmt.date(x.purchaseDate),
+                    x.supplierId == null
+                        ? (x.supplierNameManual ?? '—')
+                        : (db.suppliers[x.supplierId!]?.name ?? '—'),
+                    x.paymentType.label,
+                    x.totalAmount.format(),
+                  ],
               ],
-              totals: ['', 'الإجمالي', '', (s.cashPurchases + s.creditPurchases).format()],
+              totals: [
+                '',
+                'الإجمالي',
+                '',
+                (s.cashPurchases + s.creditPurchases).format(),
+              ],
             ),
             pw.SizedBox(height: 12),
           ],
@@ -338,11 +608,23 @@ class PdfExporter {
             pw.SizedBox(height: 6),
             b.table(
               headers: const ['التاريخ', 'الفئة', 'البيان', 'المبلغ'],
-              aligns: [pw.Alignment.center, pw.Alignment.center, pw.Alignment.centerRight, pw.Alignment.center],
+              aligns: [
+                pw.Alignment.center,
+                pw.Alignment.center,
+                pw.Alignment.centerRight,
+                pw.Alignment.center,
+              ],
               widths: {2: const pw.FlexColumnWidth(2.5)},
               rows: [
                 for (final x in expenses)
-                  [Fmt.date(x.expenseDate), x.categoryId == null ? '—' : (db.categories[x.categoryId!]?.name ?? '—'), x.details ?? '', x.amount.format()],
+                  [
+                    Fmt.date(x.expenseDate),
+                    x.categoryId == null
+                        ? '—'
+                        : (db.categories[x.categoryId!]?.name ?? '—'),
+                    x.details ?? '',
+                    x.amount.format(),
+                  ],
               ],
               totals: ['', '', 'الإجمالي', s.operatingExpenses.format()],
             ),
@@ -362,8 +644,14 @@ class PdfExporter {
     final doc = b.document();
     final s = reports.summary(r);
     final st = db.settings;
-    final accurate = s.profit(ProfitMode.accurate, cashPurchaseAsCogs: st.cashPurchaseAsCogs);
-    final estimated = s.profit(ProfitMode.estimated, cashPurchaseAsCogs: st.cashPurchaseAsCogs);
+    final accurate = s.profit(
+      ProfitMode.accurate,
+      cashPurchaseAsCogs: st.cashPurchaseAsCogs,
+    );
+    final estimated = s.profit(
+      ProfitMode.estimated,
+      cashPurchaseAsCogs: st.cashPurchaseAsCogs,
+    );
     final cogs = s.cogs + s.manualCogs;
     final gross = s.revenue - cogs;
     final byCat = reports.expensesByCategory(r);
@@ -409,9 +697,22 @@ class PdfExporter {
             pw.SizedBox(height: 6),
             b.table(
               headers: const ['الصنف', 'الكمية', 'الإيراد', 'الربح'],
-              aligns: [pw.Alignment.centerRight, pw.Alignment.center, pw.Alignment.center, pw.Alignment.center],
+              aligns: [
+                pw.Alignment.centerRight,
+                pw.Alignment.center,
+                pw.Alignment.center,
+                pw.Alignment.center,
+              ],
               widths: {0: const pw.FlexColumnWidth(2.5)},
-              rows: [for (final t in top) [t.name, t.qty.format(), t.revenue.format(), t.profit.format()]],
+              rows: [
+                for (final t in top)
+                  [
+                    t.name,
+                    t.qty.format(),
+                    t.revenue.format(),
+                    t.profit.format(),
+                  ],
+              ],
             ),
             pw.SizedBox(height: 12),
           ],
@@ -420,10 +721,20 @@ class PdfExporter {
             pw.SizedBox(height: 6),
             b.table(
               headers: const ['الفئة', 'عدد', 'الإجمالي'],
-              aligns: [pw.Alignment.centerRight, pw.Alignment.center, pw.Alignment.center],
+              aligns: [
+                pw.Alignment.centerRight,
+                pw.Alignment.center,
+                pw.Alignment.center,
+              ],
               widths: {0: const pw.FlexColumnWidth(3)},
-              rows: [for (final e in byCat) [e.name, '${e.count}', e.total.format()]],
-              totals: ['الإجمالي', '${byCat.fold(0, (p, e) => p + e.count)}', s.operatingExpenses.format()],
+              rows: [
+                for (final e in byCat) [e.name, '${e.count}', e.total.format()],
+              ],
+              totals: [
+                'الإجمالي',
+                '${byCat.fold(0, (p, e) => p + e.count)}',
+                s.operatingExpenses.format(),
+              ],
             ),
           ],
         ],
@@ -437,14 +748,24 @@ class PdfExporter {
   Future<Uint8List> inventoryReport() async {
     final b = await _brand();
     final doc = b.document();
-    final products = db.activeProducts.toList()..sort((a, b) => a.name.compareTo(b.name));
+    final products = db.activeProducts.toList()
+      ..sort((a, b) => a.name.compareTo(b.name));
     var value = Money.zero;
     final rows = <List<String>>[];
     for (final p in products) {
       final q = db.stockOf(p.id);
       final v = p.purchasePrice.timesQty(q);
       value += v;
-      rows.add([p.name, p.barcode ?? '—', p.unit, q.format(), p.purchasePrice.format(), p.salePrice.format(), v.format(), (p.trackInventory && q <= p.minQty) ? 'ناقص' : '']);
+      rows.add([
+        p.name,
+        p.barcode ?? '—',
+        p.unit,
+        q.format(),
+        p.purchasePrice.format(),
+        p.salePrice.format(),
+        v.format(),
+        (p.trackInventory && q <= p.minQty) ? 'ناقص' : '',
+      ]);
     }
     doc.addPage(
       b.page(
@@ -452,12 +773,37 @@ class PdfExporter {
         subtitle: Fmt.date(DateTime.now()),
         format: PdfPageFormat.a4.landscape,
         build: (ctx) => [
-          b.kpis([('عدد الأصناف', '${products.length}'), ('قيمة المخزون (بالتكلفة)', b.money(value)), ('أصناف ناقصة', '${reports.lowStock().length}')]),
+          b.kpis([
+            ('عدد الأصناف', '${products.length}'),
+            ('قيمة المخزون (بالتكلفة)', b.money(value)),
+            ('أصناف ناقصة', '${reports.lowStock().length}'),
+          ]),
           pw.SizedBox(height: 10),
           b.table(
-            headers: const ['الصنف', 'الباركود', 'الوحدة', 'الكمية', 'تكلفة', 'بيع', 'القيمة', 'تنبيه'],
-            aligns: [pw.Alignment.centerRight, pw.Alignment.center, pw.Alignment.center, pw.Alignment.center, pw.Alignment.center, pw.Alignment.center, pw.Alignment.center, pw.Alignment.center],
-            widths: {0: const pw.FlexColumnWidth(2.5), 1: const pw.FlexColumnWidth(1.6)},
+            headers: const [
+              'الصنف',
+              'الباركود',
+              'الوحدة',
+              'الكمية',
+              'تكلفة',
+              'بيع',
+              'القيمة',
+              'تنبيه',
+            ],
+            aligns: [
+              pw.Alignment.centerRight,
+              pw.Alignment.center,
+              pw.Alignment.center,
+              pw.Alignment.center,
+              pw.Alignment.center,
+              pw.Alignment.center,
+              pw.Alignment.center,
+              pw.Alignment.center,
+            ],
+            widths: {
+              0: const pw.FlexColumnWidth(2.5),
+              1: const pw.FlexColumnWidth(1.6),
+            },
             rows: rows,
             totals: ['الإجمالي', '', '', '', '', '', value.format(), ''],
           ),
@@ -472,10 +818,17 @@ class PdfExporter {
   /// Sheet of price labels (name + barcode + price). [copies] per product.
   /// If a product has no barcode, a Code-128 of its id is generated so it can
   /// still be scanned (the id-code is also indexed by the cashier).
-  Future<Uint8List> barcodeLabels(List<Product> products, {int copies = 1, LabelSize size = LabelSize.medium}) async {
+  Future<Uint8List> barcodeLabels(
+    List<Product> products, {
+    int copies = 1,
+    LabelSize size = LabelSize.medium,
+  }) async {
     final b = await _brand();
     final doc = b.document();
-    final items = <Product>[for (final p in products) for (var i = 0; i < copies; i++) p];
+    final items = <Product>[
+      for (final p in products)
+        for (var i = 0; i < copies; i++) p,
+    ];
     final cols = size.columns;
     final w = (PdfPageFormat.a4.availableWidth - 40) / cols;
     final h = size.height;
@@ -494,21 +847,48 @@ class PdfExporter {
                   width: w,
                   height: h,
                   padding: const pw.EdgeInsets.all(5),
-                  decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfBrand.line, width: 0.4)),
-                  child: pw.Column(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-                    pw.Text(b.settings.storeName, style: const pw.TextStyle(fontSize: 7, color: PdfBrand.muted), maxLines: 1),
-                    pw.Text(p.name, style: pw.TextStyle(fontSize: size.nameSize, fontWeight: pw.FontWeight.bold), maxLines: 1, textAlign: pw.TextAlign.center),
-                    pw.Expanded(
-                      child: pw.BarcodeWidget(
-                        barcode: _barcodeFor(p.barcode),
-                        data: _codeData(p),
-                        drawText: true,
-                        textStyle: const pw.TextStyle(fontSize: 6.5),
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: PdfBrand.line, width: 0.4),
+                  ),
+                  child: pw.Column(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text(
+                        b.settings.storeName,
+                        style: const pw.TextStyle(
+                          fontSize: 7,
+                          color: PdfBrand.muted,
+                        ),
+                        maxLines: 1,
                       ),
-                    ),
-                    pw.SizedBox(height: 2),
-                    pw.Text('${p.salePrice.format()} ${b.settings.currency}', style: pw.TextStyle(fontSize: size.priceSize, fontWeight: pw.FontWeight.bold, color: PdfBrand.primary)),
-                  ]),
+                      pw.Text(
+                        p.name,
+                        style: pw.TextStyle(
+                          fontSize: size.nameSize,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        textAlign: pw.TextAlign.center,
+                      ),
+                      pw.Expanded(
+                        child: pw.BarcodeWidget(
+                          barcode: _barcodeFor(p.barcode),
+                          data: _codeData(p),
+                          drawText: true,
+                          textStyle: const pw.TextStyle(fontSize: 6.5),
+                        ),
+                      ),
+                      pw.SizedBox(height: 2),
+                      pw.Text(
+                        '${p.salePrice.format()} ${b.settings.currency}',
+                        style: pw.TextStyle(
+                          fontSize: size.priceSize,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfBrand.primary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
             ],
           ),
@@ -520,15 +900,23 @@ class PdfExporter {
 
   static String _codeData(Product p) {
     final c = p.barcode ?? '';
-    return c.isNotEmpty ? c : 'GL${p.id.replaceAll('-', '').substring(0, 10).toUpperCase()}';
+    return c.isNotEmpty
+        ? c
+        : 'GL${p.id.replaceAll('-', '').substring(0, 10).toUpperCase()}';
   }
 
   static pw.Barcode _barcodeFor(String? code) {
     final c = code ?? '';
     final digits = RegExp(r'^\d+$').hasMatch(c);
-    if (digits && c.length == 13 && pw.Barcode.ean13().isValid(c)) return pw.Barcode.ean13();
-    if (digits && c.length == 8 && pw.Barcode.ean8().isValid(c)) return pw.Barcode.ean8();
-    if (digits && c.length == 12 && pw.Barcode.upcA().isValid(c)) return pw.Barcode.upcA();
+    if (digits && c.length == 13 && pw.Barcode.ean13().isValid(c)) {
+      return pw.Barcode.ean13();
+    }
+    if (digits && c.length == 8 && pw.Barcode.ean8().isValid(c)) {
+      return pw.Barcode.ean8();
+    }
+    if (digits && c.length == 12 && pw.Barcode.upcA().isValid(c)) {
+      return pw.Barcode.upcA();
+    }
     return pw.Barcode.code128();
   }
 
@@ -550,147 +938,305 @@ class PdfExporter {
     final b = await _brand();
     final doc = b.document();
     final isReceipt = v.type == VoucherType.receipt;
-    final accent = isReceipt ? PdfBrand.primary : const PdfColor.fromInt(0xFFB3541E);
+    final accent = isReceipt
+        ? PdfBrand.primary
+        : const PdfColor.fromInt(0xFFB3541E);
     const fmt = PdfPageFormat(
-      210 * PdfPageFormat.mm, 148 * PdfPageFormat.mm,
+      210 * PdfPageFormat.mm,
+      148 * PdfPageFormat.mm,
       marginAll: 10 * PdfPageFormat.mm,
     );
-    doc.addPage(pw.Page(
-      pageFormat: fmt,
-      textDirection: pw.TextDirection.rtl,
-      build: (_) => pw.Container(
-        decoration: pw.BoxDecoration(
-          border: pw.Border.all(color: accent, width: 1.2),
-          borderRadius: pw.BorderRadius.circular(8),
-        ),
-        padding: const pw.EdgeInsets.all(14),
-        child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.stretch, children: [
-          // ── Header: store identity + voucher No/date ──
-          pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-            pw.Expanded(
-              child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-                pw.Text(b.settings.storeName, style: b.h1),
-                if ((b.settings.ownerName ?? '').isNotEmpty)
-                  pw.Text(b.settings.ownerName!, style: b.small),
-                if ((b.settings.phone ?? '').isNotEmpty)
-                  pw.Text('هاتف: ${b.settings.phone}', style: b.small),
-              ]),
-            ),
-            if (b.logo != null) pw.SizedBox(height: 46, child: pw.Image(b.logo!)),
-            pw.SizedBox(width: 10),
-            pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.end, children: [
-              pw.Container(
-                padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                decoration: pw.BoxDecoration(color: accent, borderRadius: pw.BorderRadius.circular(6)),
-                child: pw.Text(v.type.label,
-                    style: pw.TextStyle(color: PdfColors.white, fontSize: 15, fontWeight: pw.FontWeight.bold)),
+    doc.addPage(
+      pw.Page(
+        pageFormat: fmt,
+        textDirection: pw.TextDirection.rtl,
+        build: (_) => pw.Container(
+          decoration: pw.BoxDecoration(
+            border: pw.Border.all(color: accent, width: 1.2),
+            borderRadius: pw.BorderRadius.circular(8),
+          ),
+          padding: const pw.EdgeInsets.all(14),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+            children: [
+              // ── Header: store identity + voucher No/date ──
+              pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Expanded(
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text(b.settings.storeName, style: b.h1),
+                        if ((b.settings.ownerName ?? '').isNotEmpty)
+                          pw.Text(b.settings.ownerName!, style: b.small),
+                        if ((b.settings.phone ?? '').isNotEmpty)
+                          pw.Text('هاتف: ${b.settings.phone}', style: b.small),
+                      ],
+                    ),
+                  ),
+                  if (b.logo != null)
+                    pw.SizedBox(height: 46, child: pw.Image(b.logo!)),
+                  pw.SizedBox(width: 10),
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
+                    children: [
+                      pw.Container(
+                        padding: const pw.EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 6,
+                        ),
+                        decoration: pw.BoxDecoration(
+                          color: accent,
+                          borderRadius: pw.BorderRadius.circular(6),
+                        ),
+                        child: pw.Text(
+                          v.type.label,
+                          style: pw.TextStyle(
+                            color: PdfColors.white,
+                            fontSize: 15,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      pw.SizedBox(height: 4),
+                      pw.Text('رقم: ${v.voucherNo}', style: b.bold),
+                      pw.Text(
+                        'التاريخ: ${Fmt.date(v.voucherDate)}',
+                        style: b.small,
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              pw.SizedBox(height: 4),
-              pw.Text('رقم: ${v.voucherNo}', style: b.bold),
-              pw.Text('التاريخ: ${Fmt.date(v.voucherDate)}', style: b.small),
-            ]),
-          ]),
-          pw.Divider(color: accent),
-          pw.SizedBox(height: 6),
-          // ── Amount box (digits) ──
-          pw.Row(children: [
-            pw.Expanded(
-              child: _voucherField(
+              pw.Divider(color: accent),
+              pw.SizedBox(height: 6),
+              // ── Amount box (digits) ──
+              pw.Row(
+                children: [
+                  pw.Expanded(
+                    child: _voucherField(
+                      b,
+                      isReceipt
+                          ? 'استلمنا من السيد/السادة'
+                          : 'صرفنا إلى السيد/السادة',
+                      partyName,
+                    ),
+                  ),
+                  pw.SizedBox(width: 8),
+                  pw.Container(
+                    padding: const pw.EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: pw.BoxDecoration(
+                      border: pw.Border.all(color: accent, width: 1),
+                      borderRadius: pw.BorderRadius.circular(6),
+                    ),
+                    child: pw.Column(
+                      children: [
+                        pw.Text('المبلغ', style: b.small),
+                        pw.Text(
+                          b.money(v.amount),
+                          style: pw.TextStyle(
+                            fontSize: 16,
+                            fontWeight: pw.FontWeight.bold,
+                            color: accent,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              pw.SizedBox(height: 6),
+              _voucherField(
                 b,
-                isReceipt ? 'استلمنا من السيد/السادة' : 'صرفنا إلى السيد/السادة',
-                partyName,
-              ),
-            ),
-            pw.SizedBox(width: 8),
-            pw.Container(
-              padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: pw.BoxDecoration(
-                border: pw.Border.all(color: accent, width: 1),
-                borderRadius: pw.BorderRadius.circular(6),
-              ),
-              child: pw.Column(children: [
-                pw.Text('المبلغ', style: b.small),
-                pw.Text(b.money(v.amount),
-                    style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: accent)),
-              ]),
-            ),
-          ]),
-          pw.SizedBox(height: 6),
-          _voucherField(b, 'المبلغ كتابةً',
-              tafqit(v.amount.minor ~/ Money.scale, currency: b.settings.currency)),
-          pw.SizedBox(height: 6),
-          _voucherField(b, 'وذلك مقابل', v.details ?? (isReceipt ? 'سداد دفعة من الحساب' : 'دفعة من الحساب')),
-          pw.SizedBox(height: 6),
-          pw.Row(children: [
-            pw.Expanded(child: _voucherField(b, 'طريقة الدفع', v.method.label)),
-            if (v.isCancelled) ...[
-              pw.SizedBox(width: 8),
-              pw.Expanded(
-                child: pw.Container(
-                  padding: const pw.EdgeInsets.all(6),
-                  decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.red, width: 1)),
-                  child: pw.Text('ملغى — ${v.cancelReason ?? ''}',
-                      style: const pw.TextStyle(color: PdfColors.red, fontSize: 10)),
+                'المبلغ كتابةً',
+                tafqit(
+                  v.amount.minor ~/ Money.scale,
+                  currency: b.settings.currency,
                 ),
               ),
+              pw.SizedBox(height: 6),
+              _voucherField(
+                b,
+                'وذلك مقابل',
+                v.details ??
+                    (isReceipt ? 'سداد دفعة من الحساب' : 'دفعة من الحساب'),
+              ),
+              pw.SizedBox(height: 6),
+              pw.Row(
+                children: [
+                  pw.Expanded(
+                    child: _voucherField(b, 'طريقة الدفع', v.method.label),
+                  ),
+                  if (v.isCancelled) ...[
+                    pw.SizedBox(width: 8),
+                    pw.Expanded(
+                      child: pw.Container(
+                        padding: const pw.EdgeInsets.all(6),
+                        decoration: pw.BoxDecoration(
+                          border: pw.Border.all(color: PdfColors.red, width: 1),
+                        ),
+                        child: pw.Text(
+                          'ملغى — ${v.cancelReason ?? ''}',
+                          style: const pw.TextStyle(
+                            color: PdfColors.red,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              pw.Spacer(),
+              // ── Signatures ──
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  _signature(b, isReceipt ? 'توقيع المستلم' : 'توقيع الصارف'),
+                  _signature(b, isReceipt ? 'توقيع الدافع' : 'توقيع المستلم'),
+                  _signature(b, 'المحاسب'),
+                ],
+              ),
             ],
-          ]),
-          pw.Spacer(),
-          // ── Signatures ──
-          pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-            _signature(b, isReceipt ? 'توقيع المستلم' : 'توقيع الصارف'),
-            _signature(b, isReceipt ? 'توقيع الدافع' : 'توقيع المستلم'),
-            _signature(b, 'المحاسب'),
-          ]),
-        ]),
+          ),
+        ),
       ),
-    ));
+    );
     return doc.save();
   }
 
   /// سند حراري 80mm للطابعات الصغيرة.
-  Future<Uint8List> voucherReceipt80(Voucher v, {required String partyName}) async {
+  Future<Uint8List> voucherReceipt80(
+    Voucher v, {
+    required String partyName,
+  }) async {
     final b = await _brand();
     final doc = b.document();
     final isReceipt = v.type == VoucherType.receipt;
-    const fmt = PdfPageFormat(80 * PdfPageFormat.mm, double.infinity, marginAll: 4 * PdfPageFormat.mm);
-    doc.addPage(pw.Page(
-      pageFormat: fmt,
-      textDirection: pw.TextDirection.rtl,
-      build: (_) => pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.stretch, children: [
-        if (b.logo != null) pw.Center(child: pw.SizedBox(height: 36, child: pw.Image(b.logo!))),
-        pw.Center(child: pw.Text(b.settings.storeName, style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold))),
-        if ((b.settings.phone ?? '').isNotEmpty)
-          pw.Center(child: pw.Text(b.settings.phone!, style: const pw.TextStyle(fontSize: 8))),
-        pw.Divider(),
-        pw.Center(child: pw.Text(v.type.label, style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold))),
-        pw.SizedBox(height: 2),
-        pw.Text('رقم: ${v.voucherNo}', style: const pw.TextStyle(fontSize: 9)),
-        pw.Text('التاريخ: ${Fmt.dateTime(v.voucherDate)}', style: const pw.TextStyle(fontSize: 9)),
-        pw.Text('${isReceipt ? 'من' : 'إلى'}: $partyName', style: const pw.TextStyle(fontSize: 9)),
-        pw.Text('طريقة الدفع: ${v.method.label}', style: const pw.TextStyle(fontSize: 9)),
-        pw.Divider(),
-        pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-          pw.Text('المبلغ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-          pw.Text(b.money(v.amount), style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold)),
-        ]),
-        pw.SizedBox(height: 2),
-        pw.Text(tafqit(v.amount.minor ~/ Money.scale, currency: b.settings.currency),
-            style: const pw.TextStyle(fontSize: 8)),
-        if ((v.details ?? '').isNotEmpty) ...[
-          pw.SizedBox(height: 2),
-          pw.Text('مقابل: ${v.details}', style: const pw.TextStyle(fontSize: 8.5)),
-        ],
-        if (v.isCancelled)
-          pw.Center(child: pw.Text('*** ملغى — ${v.cancelReason ?? ''} ***', style: const pw.TextStyle(fontSize: 9, color: PdfColors.red))),
-        pw.Divider(),
-        pw.SizedBox(height: 18),
-        pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-          pw.Text('التوقيع: ____________', style: const pw.TextStyle(fontSize: 8.5)),
-          pw.Text('دفتر البقالة', style: const pw.TextStyle(fontSize: 7.5, color: PdfBrand.muted)),
-        ]),
-      ]),
-    ));
+    const fmt = PdfPageFormat(
+      80 * PdfPageFormat.mm,
+      double.infinity,
+      marginAll: 4 * PdfPageFormat.mm,
+    );
+    doc.addPage(
+      pw.Page(
+        pageFormat: fmt,
+        textDirection: pw.TextDirection.rtl,
+        build: (_) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+          children: [
+            if (b.logo != null)
+              pw.Center(
+                child: pw.SizedBox(height: 36, child: pw.Image(b.logo!)),
+              ),
+            pw.Center(
+              child: pw.Text(
+                b.settings.storeName,
+                style: pw.TextStyle(
+                  fontSize: 13,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            ),
+            if ((b.settings.phone ?? '').isNotEmpty)
+              pw.Center(
+                child: pw.Text(
+                  b.settings.phone!,
+                  style: const pw.TextStyle(fontSize: 8),
+                ),
+              ),
+            pw.Divider(),
+            pw.Center(
+              child: pw.Text(
+                v.type.label,
+                style: pw.TextStyle(
+                  fontSize: 12,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            ),
+            pw.SizedBox(height: 2),
+            pw.Text(
+              'رقم: ${v.voucherNo}',
+              style: const pw.TextStyle(fontSize: 9),
+            ),
+            pw.Text(
+              'التاريخ: ${Fmt.dateTime(v.voucherDate)}',
+              style: const pw.TextStyle(fontSize: 9),
+            ),
+            pw.Text(
+              '${isReceipt ? 'من' : 'إلى'}: $partyName',
+              style: const pw.TextStyle(fontSize: 9),
+            ),
+            pw.Text(
+              'طريقة الدفع: ${v.method.label}',
+              style: const pw.TextStyle(fontSize: 9),
+            ),
+            pw.Divider(),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text(
+                  'المبلغ',
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                ),
+                pw.Text(
+                  b.money(v.amount),
+                  style: pw.TextStyle(
+                    fontSize: 13,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            pw.SizedBox(height: 2),
+            pw.Text(
+              tafqit(
+                v.amount.minor ~/ Money.scale,
+                currency: b.settings.currency,
+              ),
+              style: const pw.TextStyle(fontSize: 8),
+            ),
+            if ((v.details ?? '').isNotEmpty) ...[
+              pw.SizedBox(height: 2),
+              pw.Text(
+                'مقابل: ${v.details}',
+                style: const pw.TextStyle(fontSize: 8.5),
+              ),
+            ],
+            if (v.isCancelled)
+              pw.Center(
+                child: pw.Text(
+                  '*** ملغى — ${v.cancelReason ?? ''} ***',
+                  style: const pw.TextStyle(fontSize: 9, color: PdfColors.red),
+                ),
+              ),
+            pw.Divider(),
+            pw.SizedBox(height: 18),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text(
+                  'التوقيع: ____________',
+                  style: const pw.TextStyle(fontSize: 8.5),
+                ),
+                pw.Text(
+                  'دفتر البقالة',
+                  style: const pw.TextStyle(
+                    fontSize: 7.5,
+                    color: PdfBrand.muted,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
     return doc.save();
   }
 
@@ -699,101 +1245,209 @@ class PdfExporter {
     final b = await _brand();
     final doc = b.document();
     final s = r.session;
-    const fmt = PdfPageFormat(80 * PdfPageFormat.mm, double.infinity, marginAll: 4 * PdfPageFormat.mm);
+    const fmt = PdfPageFormat(
+      80 * PdfPageFormat.mm,
+      double.infinity,
+      marginAll: 4 * PdfPageFormat.mm,
+    );
 
-    pw.Widget line(String label, String value, {bool bold = false, PdfColor? color}) => pw.Padding(
+    pw.Widget line(
+      String label,
+      String value, {
+      bool bold = false,
+      PdfColor? color,
+    }) => pw.Padding(
       padding: const pw.EdgeInsets.symmetric(vertical: 1),
-      child: pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-        pw.Text(label, style: pw.TextStyle(fontSize: 9, fontWeight: bold ? pw.FontWeight.bold : null)),
-        pw.Text(value, style: pw.TextStyle(fontSize: bold ? 11 : 9.5, fontWeight: pw.FontWeight.bold, color: color)),
-      ]),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text(
+            label,
+            style: pw.TextStyle(
+              fontSize: 9,
+              fontWeight: bold ? pw.FontWeight.bold : null,
+            ),
+          ),
+          pw.Text(
+            value,
+            style: pw.TextStyle(
+              fontSize: bold ? 11 : 9.5,
+              fontWeight: pw.FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
     );
 
     final diff = s.difference;
-    doc.addPage(pw.Page(
-      pageFormat: fmt,
-      textDirection: pw.TextDirection.rtl,
-      build: (_) => pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.stretch, children: [
-        if (b.logo != null) pw.Center(child: pw.SizedBox(height: 36, child: pw.Image(b.logo!))),
-        pw.Center(child: pw.Text(b.settings.storeName, style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold))),
-        pw.Divider(),
-        pw.Center(child: pw.Text('تقرير الوردية ${s.sessionNo}', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold))),
-        pw.SizedBox(height: 2),
-        pw.Text('العامل: ${s.workerName}', style: const pw.TextStyle(fontSize: 9)),
-        pw.Text('من: ${Fmt.dateTime(s.openedAt)}', style: const pw.TextStyle(fontSize: 9)),
-        pw.Text('إلى: ${Fmt.dateTime(r.until)}${s.isOpen ? ' (ما تزال مفتوحة)' : ''}', style: const pw.TextStyle(fontSize: 9)),
-        pw.Divider(),
-        line('الرصيد الافتتاحي', b.money(s.openingCash), bold: true),
-        pw.SizedBox(height: 3),
-        pw.Text('النقد الداخل', style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold)),
-        line('مبيعات نقدية (${r.cashSalesCount})', b.money(r.cashSales)),
-        line('سدادات عملاء', b.money(r.customerPayments)),
-        if (r.otherReceipts.isPositive) line('مقبوضات أخرى', b.money(r.otherReceipts)),
-        if (r.dailyIncome.isPositive) line('دخل يومي إجمالي', b.money(r.dailyIncome)),
-        line('إجمالي الداخل', b.money(r.cashIn), bold: true),
-        pw.SizedBox(height: 3),
-        pw.Text('النقد الخارج', style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold)),
-        line('مصروفات ومدفوعات (${r.expensesCount})', b.money(r.expenses)),
-        pw.Divider(),
-        line('النقد المتوقع بالدرج', b.money(r.expectedCash), bold: true),
-        if (s.countedCash != null) ...[
-          line('النقد المعدود', b.money(s.countedCash!), bold: true),
-          line(
-            diff!.isZero ? 'الفرق (مطابق)' : diff.isPositive ? 'الفرق (زيادة)' : 'الفرق (عجز)',
-            b.money(diff),
-            bold: true,
-            color: diff.isZero ? null : diff.isPositive ? PdfColors.green800 : PdfColors.red,
-          ),
-        ],
-        pw.SizedBox(height: 3),
-        pw.Text('معلومة: مبيعات آجلة (${r.creditSalesCount}) بقيمة ${b.money(r.creditSales)} — لا تدخل الدرج.',
-            style: const pw.TextStyle(fontSize: 7.5, color: PdfBrand.muted)),
-        if ((s.closeNotes ?? '').isNotEmpty)
-          pw.Text('ملاحظات: ${s.closeNotes}', style: const pw.TextStyle(fontSize: 8)),
-        pw.Divider(),
-        pw.SizedBox(height: 16),
-        pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-          pw.Text('توقيع العامل: ________', style: const pw.TextStyle(fontSize: 8.5)),
-          pw.Text('توقيع المالك: ________', style: const pw.TextStyle(fontSize: 8.5)),
-        ]),
-      ]),
-    ));
+    doc.addPage(
+      pw.Page(
+        pageFormat: fmt,
+        textDirection: pw.TextDirection.rtl,
+        build: (_) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+          children: [
+            if (b.logo != null)
+              pw.Center(
+                child: pw.SizedBox(height: 36, child: pw.Image(b.logo!)),
+              ),
+            pw.Center(
+              child: pw.Text(
+                b.settings.storeName,
+                style: pw.TextStyle(
+                  fontSize: 13,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            ),
+            pw.Divider(),
+            pw.Center(
+              child: pw.Text(
+                'تقرير الوردية ${s.sessionNo}',
+                style: pw.TextStyle(
+                  fontSize: 12,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            ),
+            pw.SizedBox(height: 2),
+            pw.Text(
+              'العامل: ${s.workerName}',
+              style: const pw.TextStyle(fontSize: 9),
+            ),
+            pw.Text(
+              'من: ${Fmt.dateTime(s.openedAt)}',
+              style: const pw.TextStyle(fontSize: 9),
+            ),
+            pw.Text(
+              'إلى: ${Fmt.dateTime(r.until)}${s.isOpen ? ' (ما تزال مفتوحة)' : ''}',
+              style: const pw.TextStyle(fontSize: 9),
+            ),
+            pw.Divider(),
+            line('الرصيد الافتتاحي', b.money(s.openingCash), bold: true),
+            pw.SizedBox(height: 3),
+            pw.Text(
+              'النقد الداخل',
+              style: pw.TextStyle(
+                fontSize: 9.5,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            line('مبيعات نقدية (${r.cashSalesCount})', b.money(r.cashSales)),
+            line('سدادات عملاء', b.money(r.customerPayments)),
+            if (r.otherReceipts.isPositive)
+              line('مقبوضات أخرى', b.money(r.otherReceipts)),
+            if (r.dailyIncome.isPositive)
+              line('دخل يومي إجمالي', b.money(r.dailyIncome)),
+            line('إجمالي الداخل', b.money(r.cashIn), bold: true),
+            pw.SizedBox(height: 3),
+            pw.Text(
+              'النقد الخارج',
+              style: pw.TextStyle(
+                fontSize: 9.5,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            line('مصروفات ومدفوعات (${r.expensesCount})', b.money(r.expenses)),
+            pw.Divider(),
+            line('النقد المتوقع بالدرج', b.money(r.expectedCash), bold: true),
+            if (s.countedCash != null) ...[
+              line('النقد المعدود', b.money(s.countedCash!), bold: true),
+              line(
+                diff!.isZero
+                    ? 'الفرق (مطابق)'
+                    : diff.isPositive
+                    ? 'الفرق (زيادة)'
+                    : 'الفرق (عجز)',
+                b.money(diff),
+                bold: true,
+                color: diff.isZero
+                    ? null
+                    : diff.isPositive
+                    ? PdfColors.green800
+                    : PdfColors.red,
+              ),
+            ],
+            pw.SizedBox(height: 3),
+            pw.Text(
+              'معلومة: مبيعات آجلة (${r.creditSalesCount}) بقيمة ${b.money(r.creditSales)} — لا تدخل الدرج.',
+              style: const pw.TextStyle(fontSize: 7.5, color: PdfBrand.muted),
+            ),
+            if ((s.closeNotes ?? '').isNotEmpty)
+              pw.Text(
+                'ملاحظات: ${s.closeNotes}',
+                style: const pw.TextStyle(fontSize: 8),
+              ),
+            pw.Divider(),
+            pw.SizedBox(height: 16),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text(
+                  'توقيع العامل: ________',
+                  style: const pw.TextStyle(fontSize: 8.5),
+                ),
+                pw.Text(
+                  'توقيع المالك: ________',
+                  style: const pw.TextStyle(fontSize: 8.5),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
     return doc.save();
   }
 
-  pw.Widget _voucherField(PdfBrand b, String label, String value) => pw.Container(
-    padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-    decoration: pw.BoxDecoration(
-      color: PdfBrand.zebra,
-      borderRadius: pw.BorderRadius.circular(5),
-    ),
-    child: pw.Row(children: [
-      pw.Text('$label: ', style: b.small),
-      pw.Expanded(child: pw.Text(value, style: b.bold.copyWith(fontSize: 10.5))),
-    ]),
+  pw.Widget _voucherField(PdfBrand b, String label, String value) =>
+      pw.Container(
+        padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        decoration: pw.BoxDecoration(
+          color: PdfBrand.zebra,
+          borderRadius: pw.BorderRadius.circular(5),
+        ),
+        child: pw.Row(
+          children: [
+            pw.Text('$label: ', style: b.small),
+            pw.Expanded(
+              child: pw.Text(value, style: b.bold.copyWith(fontSize: 10.5)),
+            ),
+          ],
+        ),
+      );
+
+  pw.Widget _signature(PdfBrand b, String title) => pw.Column(
+    children: [
+      pw.Container(width: 110, height: 0.8, color: PdfBrand.muted),
+      pw.SizedBox(height: 3),
+      pw.Text(title, style: b.small),
+    ],
   );
 
-  pw.Widget _signature(PdfBrand b, String title) => pw.Column(children: [
-    pw.Container(width: 110, height: 0.8, color: PdfBrand.muted),
-    pw.SizedBox(height: 3),
-    pw.Text(title, style: b.small),
-  ]);
-
-  pw.Widget _metaBlock(PdfBrand b, List<(String, String)> items) => pw.Container(
-    padding: const pw.EdgeInsets.all(8),
-    decoration: pw.BoxDecoration(color: PdfBrand.zebra, borderRadius: pw.BorderRadius.circular(6)),
-    child: pw.Wrap(
-      spacing: 18,
-      runSpacing: 4,
-      children: [
-        for (final (k, v) in items)
-          pw.Row(mainAxisSize: pw.MainAxisSize.min, children: [
-            pw.Text('$k: ', style: b.small),
-            pw.Text(v, style: b.bold.copyWith(fontSize: 9.5)),
-          ]),
-      ],
-    ),
-  );
+  pw.Widget _metaBlock(PdfBrand b, List<(String, String)> items) =>
+      pw.Container(
+        padding: const pw.EdgeInsets.all(8),
+        decoration: pw.BoxDecoration(
+          color: PdfBrand.zebra,
+          borderRadius: pw.BorderRadius.circular(6),
+        ),
+        child: pw.Wrap(
+          spacing: 18,
+          runSpacing: 4,
+          children: [
+            for (final (k, v) in items)
+              pw.Row(
+                mainAxisSize: pw.MainAxisSize.min,
+                children: [
+                  pw.Text('$k: ', style: b.small),
+                  pw.Text(v, style: b.bold.copyWith(fontSize: 9.5)),
+                ],
+              ),
+          ],
+        ),
+      );
 
   pw.Widget _totals(PdfBrand b, List<(String, String)> items) => pw.Row(
     mainAxisAlignment: pw.MainAxisAlignment.start,
@@ -801,17 +1455,38 @@ class PdfExporter {
       pw.Container(
         width: 230,
         padding: const pw.EdgeInsets.all(8),
-        decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfBrand.primary, width: 0.8), borderRadius: pw.BorderRadius.circular(6)),
-        child: pw.Column(children: [
-          for (var i = 0; i < items.length; i++)
-            pw.Padding(
-              padding: const pw.EdgeInsets.symmetric(vertical: 2),
-              child: pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-                pw.Text(items[i].$1, style: i == items.length - 1 || items[i].$1 == 'الصافي' ? b.bold : null),
-                pw.Text(items[i].$2, style: items[i].$1 == 'الصافي' ? b.bold.copyWith(fontSize: 13, color: PdfBrand.primary) : null),
-              ]),
-            ),
-        ]),
+        decoration: pw.BoxDecoration(
+          border: pw.Border.all(color: PdfBrand.primary, width: 0.8),
+          borderRadius: pw.BorderRadius.circular(6),
+        ),
+        child: pw.Column(
+          children: [
+            for (var i = 0; i < items.length; i++)
+              pw.Padding(
+                padding: const pw.EdgeInsets.symmetric(vertical: 2),
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text(
+                      items[i].$1,
+                      style: i == items.length - 1 || items[i].$1 == 'الصافي'
+                          ? b.bold
+                          : null,
+                    ),
+                    pw.Text(
+                      items[i].$2,
+                      style: items[i].$1 == 'الصافي'
+                          ? b.bold.copyWith(
+                              fontSize: 13,
+                              color: PdfBrand.primary,
+                            )
+                          : null,
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
       ),
     ],
   );
@@ -821,19 +1496,35 @@ class PdfExporter {
     if (max == 0) return pw.SizedBox();
     return pw.Container(
       height: 110,
-      child: pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.end, children: [
-        for (final p in pts)
-          pw.Expanded(
-            child: pw.Padding(
-              padding: const pw.EdgeInsets.symmetric(horizontal: 1),
-              child: pw.Column(mainAxisAlignment: pw.MainAxisAlignment.end, children: [
-                pw.Container(height: 90 * p.value.minor / max, color: PdfBrand.primary),
-                pw.SizedBox(height: 2),
-                if (pts.length <= 31) pw.Text('${p.day.day}', style: const pw.TextStyle(fontSize: 6, color: PdfBrand.muted)),
-              ]),
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.end,
+        children: [
+          for (final p in pts)
+            pw.Expanded(
+              child: pw.Padding(
+                padding: const pw.EdgeInsets.symmetric(horizontal: 1),
+                child: pw.Column(
+                  mainAxisAlignment: pw.MainAxisAlignment.end,
+                  children: [
+                    pw.Container(
+                      height: 90 * p.value.minor / max,
+                      color: PdfBrand.primary,
+                    ),
+                    pw.SizedBox(height: 2),
+                    if (pts.length <= 31)
+                      pw.Text(
+                        '${p.day.day}',
+                        style: const pw.TextStyle(
+                          fontSize: 6,
+                          color: PdfBrand.muted,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
-          ),
-      ]),
+        ],
+      ),
     );
   }
 }
@@ -849,5 +1540,9 @@ enum LabelSize {
   final double nameSize;
   final double priceSize;
 
-  String get label => switch (this) { small => 'صغير (4 في الصف)', medium => 'متوسط (3 في الصف)', large => 'كبير (2 في الصف)' };
+  String get label => switch (this) {
+    small => 'صغير (4 في الصف)',
+    medium => 'متوسط (3 في الصف)',
+    large => 'كبير (2 في الصف)',
+  };
 }

@@ -4,8 +4,21 @@ import 'serde.dart';
 
 /// Common Yemeni grocery units offered in pickers (free text also allowed).
 const kCommonUnits = <String>[
-  'حبة', 'كرتون', 'جوتة', 'قرطاس', 'كيس', 'دبة', 'قارورة', 'سطل',
-  'علبة', 'ربطة', 'درزن', 'شدة', 'كجم', 'جرام', 'لتر',
+  'حبة',
+  'كرتون',
+  'جوتة',
+  'قرطاس',
+  'كيس',
+  'دبة',
+  'قارورة',
+  'سطل',
+  'علبة',
+  'ربطة',
+  'درزن',
+  'شدة',
+  'كجم',
+  'جرام',
+  'لتر',
 ];
 
 /// Sentinel for copyWith so `expiryDate: null` can *clear* the date.
@@ -33,7 +46,8 @@ class PackUnit {
   final Money? purchasePrice;
 
   Money saleOf(Money basePrice) => salePrice ?? basePrice.timesQty(factor);
-  Money purchaseOf(Money baseCost) => purchasePrice ?? baseCost.timesQty(factor);
+  Money purchaseOf(Money baseCost) =>
+      purchasePrice ?? baseCost.timesQty(factor);
 
   Map<String, dynamic> toMap() => {
     'name': name,
@@ -96,15 +110,19 @@ class Product {
       expiryDate != null && !expiryDate!.isAfter(DateTime.now());
 
   /// الأيام المتبقية للانتهاء (سالب = منتهٍ، null = بلا صلاحية).
-  int? get daysToExpiry =>
-      expiryDate?.difference(DateTime.now()).inDays;
+  int? get daysToExpiry => expiryDate?.difference(DateTime.now()).inDays;
 
   /// Unit margin using current prices (informational only).
   Money get unitMargin => salePrice - purchasePrice;
 
   /// All sellable units: base unit (factor 1) followed by pack units.
   List<PackUnit> get allUnits => [
-    PackUnit(name: unit, factor: Qty.one, salePrice: salePrice, purchasePrice: purchasePrice),
+    PackUnit(
+      name: unit,
+      factor: Qty.one,
+      salePrice: salePrice,
+      purchasePrice: purchasePrice,
+    ),
     ...packUnits,
   ];
 

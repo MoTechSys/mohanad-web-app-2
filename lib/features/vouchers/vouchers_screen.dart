@@ -37,39 +37,45 @@ class _VouchersScreenState extends State<VouchersScreen> {
         label: const Text('سند جديد'),
       ),
       body: SafeArea(
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: SegmentedButton<VoucherType?>(
-              segments: const [
-                ButtonSegment(value: null, label: Text('الكل')),
-                ButtonSegment(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: SegmentedButton<VoucherType?>(
+                segments: const [
+                  ButtonSegment(value: null, label: Text('الكل')),
+                  ButtonSegment(
                     value: VoucherType.receipt,
                     label: Text('قبض'),
-                    icon: Icon(Icons.south_west_rounded, size: 16)),
-                ButtonSegment(
+                    icon: Icon(Icons.south_west_rounded, size: 16),
+                  ),
+                  ButtonSegment(
                     value: VoucherType.payment,
                     label: Text('صرف'),
-                    icon: Icon(Icons.north_east_rounded, size: 16)),
-              ],
-              selected: {_filter},
-              onSelectionChanged: (s) => setState(() => _filter = s.first),
-            ),
-          ),
-          Expanded(
-            child: list.isEmpty
-                ? const EmptyState(
-                    icon: Icons.receipt_outlined,
-                    title: 'لا توجد سندات',
-                    subtitle: 'أنشئ سند قبض عند استلام مبلغ، أو سند صرف عند دفع مبلغ')
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 90),
-                    itemCount: list.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 8),
-                    itemBuilder: (_, i) => _VoucherTile(list[i]),
+                    icon: Icon(Icons.north_east_rounded, size: 16),
                   ),
-          ),
-        ]),
+                ],
+                selected: {_filter},
+                onSelectionChanged: (s) => setState(() => _filter = s.first),
+              ),
+            ),
+            Expanded(
+              child: list.isEmpty
+                  ? const EmptyState(
+                      icon: Icons.receipt_outlined,
+                      title: 'لا توجد سندات',
+                      subtitle:
+                          'أنشئ سند قبض عند استلام مبلغ، أو سند صرف عند دفع مبلغ',
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 90),
+                      itemCount: list.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 8),
+                      itemBuilder: (_, i) => _VoucherTile(list[i]),
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -87,20 +93,25 @@ class _VoucherTile extends StatelessWidget {
     final color = v.isCancelled
         ? c.textMuted
         : isReceipt
-            ? c.primaryStrong
-            : c.danger;
+        ? c.primaryStrong
+        : c.danger;
     return Card(
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: color.withValues(alpha: 0.12),
           child: Icon(
-              isReceipt ? Icons.south_west_rounded : Icons.north_east_rounded,
-              color: color, size: 20),
+            isReceipt ? Icons.south_west_rounded : Icons.north_east_rounded,
+            color: color,
+            size: 20,
+          ),
         ),
-        title: Text('${v.voucherNo} • ${app.vouchers.partyName(v)}',
-            style: TextStyle(
-                fontWeight: FontWeight.w700,
-                decoration: v.isCancelled ? TextDecoration.lineThrough : null)),
+        title: Text(
+          '${v.voucherNo} • ${app.vouchers.partyName(v)}',
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            decoration: v.isCancelled ? TextDecoration.lineThrough : null,
+          ),
+        ),
         subtitle: Text(
           [
             Fmt.relative(v.voucherDate),
@@ -125,86 +136,114 @@ class _VoucherTile extends StatelessWidget {
       context: context,
       showDragHandle: true,
       builder: (ctx) => SafeArea(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          ListTile(
-            title: Text('${v.type.label} ${v.voucherNo}',
-                style: const TextStyle(fontWeight: FontWeight.w800)),
-            subtitle: Text('$party — ${v.amount.format()}'),
-          ),
-          const Divider(height: 1),
-          ListTile(
-            leading: const Icon(Icons.print_outlined),
-            title: const Text('طباعة سند رسمي (A5)'),
-            onTap: () async {
-              Navigator.pop(ctx);
-              await guarded(context, () async {
-                final bytes = await app.pdf.voucherA5(v, partyName: party);
-                await app.share.printPdf(bytes, v.voucherNo);
-              });
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.receipt_long_outlined),
-            title: const Text('طباعة إيصال حراري (80mm)'),
-            onTap: () async {
-              Navigator.pop(ctx);
-              await guarded(context, () async {
-                final bytes = await app.pdf.voucherReceipt80(v, partyName: party);
-                await app.share.printPdf(bytes, v.voucherNo);
-              });
-            },
-          ),
-          if (v.type == VoucherType.receipt && v.customerId != null && v.isActive)
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
             ListTile(
-              leading: const Icon(Icons.sms_outlined),
-              title: const Text('إرسال SMS للعميل (مباشر)'),
-              subtitle: const Text('المدفوع + المتبقي من الدين', style: TextStyle(fontSize: 11)),
+              title: Text(
+                '${v.type.label} ${v.voucherNo}',
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+              subtitle: Text('$party — ${v.amount.format()}'),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.print_outlined),
+              title: const Text('طباعة سند رسمي (A5)'),
               onTap: () async {
                 Navigator.pop(ctx);
-                final ok = await app.sms.notifyVoucher(v);
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(ok
-                      ? 'تم إرسال الرسالة للعميل'
-                      : 'تعذّر الإرسال — تأكد من رقم العميل وصلاحية الرسائل'),
-                  backgroundColor:
-                      ok ? context.c.primaryStrong : context.c.danger,
-                  behavior: SnackBarBehavior.floating,
-                ));
+                await guarded(context, () async {
+                  final bytes = await app.pdf.voucherA5(v, partyName: party);
+                  await app.share.printPdf(bytes, v.voucherNo);
+                });
               },
             ),
-          ListTile(
-            leading: const Icon(Icons.share_outlined),
-            title: const Text('مشاركة PDF (واتساب وغيره)'),
-            onTap: () async {
-              Navigator.pop(ctx);
-              await guarded(context, () async {
-                final bytes = await app.pdf.voucherA5(v, partyName: party);
-                await app.share.sharePdf(bytes, '${v.voucherNo}.pdf',
-                    text: '${v.type.label} ${v.voucherNo} — ${v.amount.format()}');
-              });
-            },
-          ),
-          if (v.isActive)
             ListTile(
-              leading: Icon(Icons.cancel_outlined, color: context.c.danger),
-              title: Text('إلغاء السند (بسبب)',
-                  style: TextStyle(color: context.c.danger)),
+              leading: const Icon(Icons.receipt_long_outlined),
+              title: const Text('طباعة إيصال حراري (80mm)'),
               onTap: () async {
                 Navigator.pop(ctx);
-                final reason = await confirmWithReason(context,
+                await guarded(context, () async {
+                  final bytes = await app.pdf.voucherReceipt80(
+                    v,
+                    partyName: party,
+                  );
+                  await app.share.printPdf(bytes, v.voucherNo);
+                });
+              },
+            ),
+            if (v.type == VoucherType.receipt &&
+                v.customerId != null &&
+                v.isActive)
+              ListTile(
+                leading: const Icon(Icons.sms_outlined),
+                title: const Text('إرسال SMS للعميل (مباشر)'),
+                subtitle: const Text(
+                  'المدفوع + المتبقي من الدين',
+                  style: TextStyle(fontSize: 11),
+                ),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final ok = await app.sms.notifyVoucher(v);
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        ok
+                            ? 'تم إرسال الرسالة للعميل'
+                            : 'تعذّر الإرسال — تأكد من رقم العميل وصلاحية الرسائل',
+                      ),
+                      backgroundColor: ok
+                          ? context.c.primaryStrong
+                          : context.c.danger,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+              ),
+            ListTile(
+              leading: const Icon(Icons.share_outlined),
+              title: const Text('مشاركة PDF (واتساب وغيره)'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                await guarded(context, () async {
+                  final bytes = await app.pdf.voucherA5(v, partyName: party);
+                  await app.share.sharePdf(
+                    bytes,
+                    '${v.voucherNo}.pdf',
+                    text:
+                        '${v.type.label} ${v.voucherNo} — ${v.amount.format()}',
+                  );
+                });
+              },
+            ),
+            if (v.isActive)
+              ListTile(
+                leading: Icon(Icons.cancel_outlined, color: context.c.danger),
+                title: Text(
+                  'إلغاء السند (بسبب)',
+                  style: TextStyle(color: context.c.danger),
+                ),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final reason = await confirmWithReason(
+                    context,
                     title: 'إلغاء السند ${v.voucherNo}',
                     message:
                         'سيُعكس أثر السند على الحساب المرتبط. لا يمكن التراجع.',
-                    confirmLabel: 'إلغاء السند');
-                if (reason == null || !context.mounted) return;
-                await guarded(
-                    context, () => app.vouchers.cancelVoucher(v.id, reason),
-                    successMessage: 'تم إلغاء السند');
-              },
-            ),
-          const SizedBox(height: 8),
-        ]),
+                    confirmLabel: 'إلغاء السند',
+                  );
+                  if (reason == null || !context.mounted) return;
+                  await guarded(
+                    context,
+                    () => app.vouchers.cancelVoucher(v.id, reason),
+                    successMessage: 'تم إلغاء السند',
+                  );
+                },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }
@@ -260,13 +299,15 @@ class _VoucherFormSheetState extends State<VoucherFormSheet> {
           SegmentedButton<VoucherType>(
             segments: const [
               ButtonSegment(
-                  value: VoucherType.receipt,
-                  label: Text('سند قبض (استلام)'),
-                  icon: Icon(Icons.south_west_rounded, size: 16)),
+                value: VoucherType.receipt,
+                label: Text('سند قبض (استلام)'),
+                icon: Icon(Icons.south_west_rounded, size: 16),
+              ),
               ButtonSegment(
-                  value: VoucherType.payment,
-                  label: Text('سند صرف (دفع)'),
-                  icon: Icon(Icons.north_east_rounded, size: 16)),
+                value: VoucherType.payment,
+                label: Text('سند صرف (دفع)'),
+                icon: Icon(Icons.north_east_rounded, size: 16),
+              ),
             ],
             selected: {_type},
             onSelectionChanged: (s) => setState(() {
@@ -278,8 +319,12 @@ class _VoucherFormSheetState extends State<VoucherFormSheet> {
           const SizedBox(height: 16),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: Text(isReceipt ? 'طرف خارجي (ليس عميلًا مسجلًا)' : 'طرف خارجي (ليس مورّدًا مسجلًا)',
-                style: const TextStyle(fontSize: 13)),
+            title: Text(
+              isReceipt
+                  ? 'طرف خارجي (ليس عميلًا مسجلًا)'
+                  : 'طرف خارجي (ليس مورّدًا مسجلًا)',
+              style: const TextStyle(fontSize: 13),
+            ),
             value: _manualParty,
             onChanged: (v) => setState(() => _manualParty = v),
           ),
@@ -287,9 +332,11 @@ class _VoucherFormSheetState extends State<VoucherFormSheet> {
             TextFormField(
               controller: _manualName,
               decoration: InputDecoration(
-                  labelText: isReceipt ? 'استلمنا من (الاسم)' : 'صرفنا إلى (الاسم)'),
-              validator: (v) =>
-                  (v ?? '').trim().isEmpty ? 'الاسم مطلوب' : null,
+                labelText: isReceipt
+                    ? 'استلمنا من (الاسم)'
+                    : 'صرفنا إلى (الاسم)',
+              ),
+              validator: (v) => (v ?? '').trim().isEmpty ? 'الاسم مطلوب' : null,
             )
           else if (isReceipt)
             PickerField<Customer>(
@@ -333,7 +380,9 @@ class _VoucherFormSheetState extends State<VoucherFormSheet> {
           const SizedBox(height: 12),
           TextFormField(
             controller: _details,
-            decoration: const InputDecoration(labelText: 'وذلك مقابل (اختياري)'),
+            decoration: const InputDecoration(
+              labelText: 'وذلك مقابل (اختياري)',
+            ),
             maxLength: 120,
           ),
           const SizedBox(height: 8),
@@ -388,15 +437,17 @@ class _VoucherFormSheetState extends State<VoucherFormSheet> {
   void _offerPrint(Voucher v) {
     final app = context.read<AppServices>();
     final party = app.vouchers.partyName(v);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('${v.type.label} ${v.voucherNo} — ${v.amount.format()}'),
-      action: SnackBarAction(
-        label: 'طباعة',
-        onPressed: () async {
-          final bytes = await app.pdf.voucherA5(v, partyName: party);
-          await app.share.printPdf(bytes, v.voucherNo);
-        },
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${v.type.label} ${v.voucherNo} — ${v.amount.format()}'),
+        action: SnackBarAction(
+          label: 'طباعة',
+          onPressed: () async {
+            final bytes = await app.pdf.voucherA5(v, partyName: party);
+            await app.share.printPdf(bytes, v.voucherNo);
+          },
+        ),
       ),
-    ));
+    );
   }
 }

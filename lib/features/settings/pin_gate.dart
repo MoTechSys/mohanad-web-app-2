@@ -77,7 +77,10 @@ class _PinPadState extends State<PinPad> {
               const SizedBox(height: 12),
               Text(
                 widget.title,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 20),
               Row(
@@ -94,7 +97,9 @@ class _PinPadState extends State<PinPad> {
                           ? context.c.primaryDark
                           : Colors.transparent,
                       border: Border.all(
-                        color: _error ? context.c.danger : context.c.primaryDark,
+                        color: _error
+                            ? context.c.danger
+                            : context.c.primaryDark,
                         width: 2,
                       ),
                     ),

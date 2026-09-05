@@ -53,17 +53,20 @@ class CashSessionService {
   }) {
     final w = workerName.trim();
     if (w.isEmpty) {
-      throw const DomainException(
-          ErrorCodes.invalidAmount, 'اسم العامل مطلوب');
+      throw const DomainException(ErrorCodes.invalidAmount, 'اسم العامل مطلوب');
     }
     if (openingCash.isNegative) {
       throw const DomainException(
-          ErrorCodes.invalidAmount, 'الرصيد الافتتاحي لا يكون سالبًا');
+        ErrorCodes.invalidAmount,
+        'الرصيد الافتتاحي لا يكون سالبًا',
+      );
     }
     final existing = openSession;
     if (existing != null) {
-      throw DomainException(ErrorCodes.sessionOpen,
-          'توجد وردية مفتوحة (${existing.sessionNo} — ${existing.workerName}). أغلقها أولًا.');
+      throw DomainException(
+        ErrorCodes.sessionOpen,
+        'توجد وردية مفتوحة (${existing.sessionNo} — ${existing.workerName}). أغلقها أولًا.',
+      );
     }
 
     final no = nextSessionNo();
@@ -81,7 +84,8 @@ class CashSessionService {
         action: AuditAction.create,
         entityType: 'cash_session',
         entityId: s.id,
-        summary: 'فتح وردية ${s.sessionNo} — $w (افتتاحي ${openingCash.format()})',
+        summary:
+            'فتح وردية ${s.sessionNo} — $w (افتتاحي ${openingCash.format()})',
       );
       return s;
     });
@@ -100,11 +104,15 @@ class CashSessionService {
     }
     if (!s.isOpen) {
       throw const DomainException(
-          ErrorCodes.sessionClosed, 'الوردية مغلقة مسبقًا');
+        ErrorCodes.sessionClosed,
+        'الوردية مغلقة مسبقًا',
+      );
     }
     if (countedCash.isNegative) {
       throw const DomainException(
-          ErrorCodes.invalidAmount, 'النقد المعدود لا يكون سالبًا');
+        ErrorCodes.invalidAmount,
+        'النقد المعدود لا يكون سالبًا',
+      );
     }
 
     final now = DateTime.now();
@@ -122,7 +130,8 @@ class CashSessionService {
         action: AuditAction.update,
         entityType: 'cash_session',
         entityId: s.id,
-        summary: 'إغلاق وردية ${s.sessionNo} — معدود ${countedCash.format()}'
+        summary:
+            'إغلاق وردية ${s.sessionNo} — معدود ${countedCash.format()}'
             '، متوقع ${report.expectedCash.format()}'
             '${diff.isZero ? ' (مطابق)' : '، فرق ${diff.format()}'}',
       );

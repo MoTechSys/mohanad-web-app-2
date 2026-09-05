@@ -64,7 +64,9 @@ class DocLine {
     unitPrice: Serde.moneyReq(m['unitPrice']),
     unitCost: Serde.moneyReq(m['unitCost']),
     unitName: Serde.str(m['unitName']),
-    unitFactor: m['unitFactor'] == null ? Qty.one : Serde.qtyReq(m['unitFactor']),
+    unitFactor: m['unitFactor'] == null
+        ? Qty.one
+        : Serde.qtyReq(m['unitFactor']),
   );
 }
 
@@ -349,7 +351,11 @@ class ExpenseCategory {
   final String name;
   final bool isActive;
 
-  Map<String, dynamic> toMap() => {'id': id, 'name': name, 'isActive': isActive};
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'name': name,
+    'isActive': isActive,
+  };
   factory ExpenseCategory.fromMap(Map<String, dynamic> m) => ExpenseCategory(
     id: m['id'] as String,
     name: m['name'] as String,

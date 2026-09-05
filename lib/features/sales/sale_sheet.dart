@@ -73,19 +73,19 @@ class _SaleSheetState extends State<SaleSheet> {
     // stays approved on retry, so multiple guards can fire one after another.
     var overLimit = false, oversell = false, belowCost = false;
     Future<void> doIt() => app.documents.createSale(
-          customerId: _customer?.id,
-          paymentType: _pay,
-          mode: _mode,
-          totalAmount: _mode == DocMode.totalOnly ? _gross : null,
-          lines: _lines,
-          discount: _disc,
-          details: _details.text,
-          invoiceNo: _invoice.text,
-          date: _date,
-          approveOverLimit: overLimit,
-          approveOversell: oversell,
-          approveBelowCost: belowCost,
-        );
+      customerId: _customer?.id,
+      paymentType: _pay,
+      mode: _mode,
+      totalAmount: _mode == DocMode.totalOnly ? _gross : null,
+      lines: _lines,
+      discount: _disc,
+      details: _details.text,
+      invoiceNo: _invoice.text,
+      date: _date,
+      approveOverLimit: overLimit,
+      approveOversell: oversell,
+      approveBelowCost: belowCost,
+    );
 
     for (var attempt = 0; attempt < 4; attempt++) {
       try {
@@ -93,8 +93,7 @@ class _SaleSheetState extends State<SaleSheet> {
         // إشعار SMS مباشر للعميل عند البيع الآجل (أفضل جهد — لا يعطّل الحفظ).
         if (_pay == PaymentType.credit && _customer != null) {
           // ignore: unawaited_futures
-          app.sms.notifyCreditSale(
-              customerId: _customer!.id, saleAmount: _net);
+          app.sms.notifyCreditSale(customerId: _customer!.id, saleAmount: _net);
         }
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -115,9 +114,9 @@ class _SaleSheetState extends State<SaleSheet> {
         final (title, canConfirm) = switch (e.code) {
           ErrorCodes.creditLimitExceeded => ('تجاوز حد الائتمان', true),
           ErrorCodes.insufficientStock => (
-              'المخزون لا يكفي',
-              !app.db.settings.blockOversell,
-            ),
+            'المخزون لا يكفي',
+            !app.db.settings.blockOversell,
+          ),
           ErrorCodes.belowCost => ('بيع بأقل من التكلفة', true),
           _ => ('', false),
         };
@@ -186,7 +185,10 @@ class _SaleSheetState extends State<SaleSheet> {
           const SizedBox(height: 12),
           SegmentedButton<DocMode>(
             segments: const [
-              ButtonSegment(value: DocMode.totalOnly, label: Text('مبلغ إجمالي')),
+              ButtonSegment(
+                value: DocMode.totalOnly,
+                label: Text('مبلغ إجمالي'),
+              ),
               ButtonSegment(
                 value: DocMode.detailedItems,
                 label: Text('أصناف مفصّلة'),
@@ -269,7 +271,9 @@ class _SaleSheetState extends State<SaleSheet> {
                 MoneyText(
                   _net,
                   size: 22,
-                  color: _net.isNegative ? context.c.danger : context.c.primaryDark,
+                  color: _net.isNegative
+                      ? context.c.danger
+                      : context.c.primaryDark,
                   currency: db.settings.currency,
                 ),
               ],
@@ -279,7 +283,9 @@ class _SaleSheetState extends State<SaleSheet> {
           FilledButton.icon(
             onPressed: _busy ? null : _save,
             icon: const Icon(Icons.check),
-            label: Text(_pay == PaymentType.cash ? 'تسجيل البيع' : 'تسجيل الدين'),
+            label: Text(
+              _pay == PaymentType.cash ? 'تسجيل البيع' : 'تسجيل الدين',
+            ),
           ),
         ],
       ),

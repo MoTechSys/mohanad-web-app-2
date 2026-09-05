@@ -32,27 +32,24 @@ class _CustomersScreenState extends State<CustomersScreen> {
       list = list
           .where(
             (c) =>
-                c.name.toLowerCase().contains(q) ||
-                (c.phone ?? '').contains(q),
+                c.name.toLowerCase().contains(q) || (c.phone ?? '').contains(q),
           )
           .toList();
     }
     list = switch (_filter) {
       _Filter.all => list,
-      _Filter.debtors => list
-          .where((c) => db.customerBalance(c.id).isPositive)
-          .toList(),
-      _Filter.settled => list
-          .where((c) => !db.customerBalance(c.id).isPositive)
-          .toList(),
-      _Filter.frozen => list
-          .where((c) => c.status != CustomerStatus.active)
-          .toList(),
+      _Filter.debtors =>
+        list.where((c) => db.customerBalance(c.id).isPositive).toList(),
+      _Filter.settled =>
+        list.where((c) => !db.customerBalance(c.id).isPositive).toList(),
+      _Filter.frozen =>
+        list.where((c) => c.status != CustomerStatus.active).toList(),
     };
     list.sort(
-      (a, b) => db.customerBalance(b.id).minor.compareTo(
-        db.customerBalance(a.id).minor,
-      ),
+      (a, b) => db
+          .customerBalance(b.id)
+          .minor
+          .compareTo(db.customerBalance(a.id).minor),
     );
     final total = list.fold(Money.zero, (p, c) {
       final b = db.customerBalance(c.id);
@@ -148,7 +145,9 @@ class _CustomerTile extends StatelessWidget {
     final db = context.read<LedgerDb>();
     final bal = db.customerBalance(c.id);
     final over =
-        c.creditLimit != null && c.creditLimit!.isPositive && bal > c.creditLimit!;
+        c.creditLimit != null &&
+        c.creditLimit!.isPositive &&
+        bal > c.creditLimit!;
     return Card(
       child: ListTile(
         onTap: () => Navigator.push(

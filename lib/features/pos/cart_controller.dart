@@ -62,7 +62,11 @@ enum ScanOutcome { added, incremented, unknown, ignoredDuplicate, invalid }
 /// * Unknown barcodes are reported to the UI which may create the product
 ///   and call [addProduct].
 class CartController extends ChangeNotifier {
-  CartController(this.db, this.documents, {this.duplicateWindow = const Duration(milliseconds: 1200)});
+  CartController(
+    this.db,
+    this.documents, {
+    this.duplicateWindow = const Duration(milliseconds: 1200),
+  });
 
   final LedgerDb db;
   final DocumentService documents;
@@ -86,7 +90,8 @@ class CartController extends ChangeNotifier {
   Qty get totalQty => _lines.fold(Qty.zero, (p, l) => p + l.qty);
   Money get gross => _lines.fold(Money.zero, (p, l) => p + l.total);
   Money get net => gross - _discount;
-  Money get estimatedCost => _lines.fold(Money.zero, (p, l) => p + l.unitCost.timesQty(l.qty));
+  Money get estimatedCost =>
+      _lines.fold(Money.zero, (p, l) => p + l.unitCost.timesQty(l.qty));
 
   // ───────────────────────── scanning ─────────────────────────
 
@@ -95,7 +100,9 @@ class CartController extends ChangeNotifier {
     final code = LedgerDb.normalizeBarcode(raw);
     if (code.length < 3) return ScanOutcome.invalid;
     final t = now ?? DateTime.now();
-    if (_lastCode == code && _lastAt != null && t.difference(_lastAt!) < duplicateWindow) {
+    if (_lastCode == code &&
+        _lastAt != null &&
+        t.difference(_lastAt!) < duplicateWindow) {
       return ScanOutcome.ignoredDuplicate;
     }
     _lastCode = code;
@@ -137,16 +144,27 @@ class CartController extends ChangeNotifier {
   }
 
   /// Ad-hoc line for items without a product record (e.g. loose goods).
-  void addAdHoc({required String name, required Money unitPrice, Qty qty = Qty.one, String unit = 'حبة'}) {
+  void addAdHoc({
+    required String name,
+    required Money unitPrice,
+    Qty qty = Qty.one,
+    String unit = 'حبة',
+  }) {
     final n = name.trim();
     if (n.isEmpty) {
       throw const DomainException(ErrorCodes.invalidAmount, 'اسم الصنف مطلوب');
     }
     if (unitPrice.isNegative) {
-      throw const DomainException(ErrorCodes.invalidAmount, 'السعر لا يمكن أن يكون سالباً');
+      throw const DomainException(
+        ErrorCodes.invalidAmount,
+        'السعر لا يمكن أن يكون سالباً',
+      );
     }
     if (!qty.isPositive) {
-      throw const DomainException(ErrorCodes.invalidQuantity, 'الكمية يجب أن تكون أكبر من الصفر');
+      throw const DomainException(
+        ErrorCodes.invalidQuantity,
+        'الكمية يجب أن تكون أكبر من الصفر',
+      );
     }
     final line = CartLine(
       key: 'adhoc:${DateTime.now().microsecondsSinceEpoch}:${_lines.length}',
@@ -179,7 +197,10 @@ class CartController extends ChangeNotifier {
 
   void setUnitPrice(String key, Money price) {
     if (price.isNegative) {
-      throw const DomainException(ErrorCodes.invalidAmount, 'السعر لا يمكن أن يكون سالباً');
+      throw const DomainException(
+        ErrorCodes.invalidAmount,
+        'السعر لا يمكن أن يكون سالباً',
+      );
     }
     _byKey(key).unitPrice = price;
     notifyListeners();
@@ -193,10 +214,16 @@ class CartController extends ChangeNotifier {
 
   void setDiscount(Money d) {
     if (d.isNegative) {
-      throw const DomainException(ErrorCodes.invalidAmount, 'الخصم لا يمكن أن يكون سالباً');
+      throw const DomainException(
+        ErrorCodes.invalidAmount,
+        'الخصم لا يمكن أن يكون سالباً',
+      );
     }
     if (d > gross) {
-      throw const DomainException(ErrorCodes.invalidAmount, 'الخصم أكبر من الإجمالي');
+      throw const DomainException(
+        ErrorCodes.invalidAmount,
+        'الخصم أكبر من الإجمالي',
+      );
     }
     _discount = d;
     notifyListeners();
@@ -247,6 +274,7 @@ class CartController extends ChangeNotifier {
 
   CartLine _byKey(String key) => _lines.firstWhere(
     (l) => l.key == key,
-    orElse: () => throw const DomainException(ErrorCodes.notFound, 'السطر غير موجود'),
+    orElse: () =>
+        throw const DomainException(ErrorCodes.notFound, 'السطر غير موجود'),
   );
 }

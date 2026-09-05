@@ -183,10 +183,9 @@ class AppTheme {
       canvasColor: p.surface,
       visualDensity: VisualDensity.standard,
       splashFactory: InkSparkle.splashFactory,
-      textTheme: ThemeData(brightness: brightness).textTheme.apply(
-        bodyColor: p.text,
-        displayColor: p.text,
-      ),
+      textTheme: ThemeData(
+        brightness: brightness,
+      ).textTheme.apply(bodyColor: p.text, displayColor: p.text),
       iconTheme: IconThemeData(color: p.textMuted),
       appBarTheme: AppBarTheme(
         backgroundColor: p.surface,
@@ -272,9 +271,7 @@ class AppTheme {
       dialogTheme: DialogThemeData(
         backgroundColor: p.card,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: p.card,
@@ -292,13 +289,17 @@ class AppTheme {
         height: 68,
         iconTheme: WidgetStateProperty.resolveWith(
           (s) => IconThemeData(
-            color: s.contains(WidgetState.selected) ? p.primaryStrong : p.textMuted,
+            color: s.contains(WidgetState.selected)
+                ? p.primaryStrong
+                : p.textMuted,
           ),
         ),
         labelTextStyle: WidgetStateProperty.resolveWith(
           (s) => TextStyle(
             fontSize: 12,
-            color: s.contains(WidgetState.selected) ? p.primaryStrong : p.textMuted,
+            color: s.contains(WidgetState.selected)
+                ? p.primaryStrong
+                : p.textMuted,
             fontWeight: s.contains(WidgetState.selected)
                 ? FontWeight.w700
                 : FontWeight.w500,

@@ -97,10 +97,8 @@ class _BarcodeScannerViewState extends State<BarcodeScannerView>
             MobileScanner(
               controller: _ctrl,
               onDetect: _onDetect,
-              errorBuilder: (context, error) => _ErrorState(
-                error: error,
-                onRetry: () => _ctrl.start(),
-              ),
+              errorBuilder: (context, error) =>
+                  _ErrorState(error: error, onRetry: () => _ctrl.start()),
               placeholderBuilder: (context) => Container(
                 color: Colors.black,
                 alignment: Alignment.center,
@@ -203,7 +201,9 @@ class _ErrorState extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            denied ? Icons.no_photography_outlined : Icons.videocam_off_outlined,
+            denied
+                ? Icons.no_photography_outlined
+                : Icons.videocam_off_outlined,
             size: 36,
             color: c.textMuted,
           ),
@@ -228,7 +228,10 @@ class _ErrorState extends StatelessWidget {
 }
 
 /// Full-screen single-shot scanner. Returns the code or null.
-Future<String?> scanBarcodeOnce(BuildContext context, {String title = 'مسح الباركود'}) {
+Future<String?> scanBarcodeOnce(
+  BuildContext context, {
+  String title = 'مسح الباركود',
+}) {
   return Navigator.push<String>(
     context,
     MaterialPageRoute(
@@ -288,7 +291,9 @@ class _SingleScanPageState extends State<_SingleScanPage> {
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.check),
                     onPressed: () {
-                      if (_manual.text.trim().isNotEmpty) _finish(_manual.text.trim());
+                      if (_manual.text.trim().isNotEmpty) {
+                        _finish(_manual.text.trim());
+                      }
                     },
                   ),
                 ),

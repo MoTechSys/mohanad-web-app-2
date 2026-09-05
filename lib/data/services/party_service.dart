@@ -276,7 +276,10 @@ class PartyService {
       );
     }
     if (reason.trim().isEmpty) {
-      throw const DomainException(ErrorCodes.invalidAmount, 'سبب التسوية مطلوب');
+      throw const DomainException(
+        ErrorCodes.invalidAmount,
+        'سبب التسوية مطلوب',
+      );
     }
     final before = db.customerBalance(customerId);
     return db.run(() {
@@ -540,7 +543,10 @@ class PartyService {
       );
     }
     if (reason.trim().isEmpty) {
-      throw const DomainException(ErrorCodes.invalidAmount, 'سبب التسوية مطلوب');
+      throw const DomainException(
+        ErrorCodes.invalidAmount,
+        'سبب التسوية مطلوب',
+      );
     }
     final before = db.supplierBalance(supplierId);
     return db.run(() {
@@ -586,7 +592,8 @@ class PartyService {
         action: AuditAction.cancel,
         entityType: 'supplier_tx',
         entityId: txId,
-        summary: 'إلغاء ${t.type.label} (${t.amount.format()}) للمورد ${s.name}',
+        summary:
+            'إلغاء ${t.type.label} (${t.amount.format()}) للمورد ${s.name}',
         oldValues: t.toMap(),
       );
     });
@@ -633,7 +640,10 @@ class PartyService {
       );
     }
     if (reason.trim().isEmpty) {
-      throw const DomainException(ErrorCodes.invalidAmount, 'سبب الإلغاء مطلوب');
+      throw const DomainException(
+        ErrorCodes.invalidAmount,
+        'سبب الإلغاء مطلوب',
+      );
     }
   }
 

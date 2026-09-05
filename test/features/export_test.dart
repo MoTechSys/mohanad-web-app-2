@@ -81,12 +81,16 @@ Future<AppServices> boot() async {
     paymentType: PaymentType.credit,
     totalAmount: Money.units(8000),
   );
-  await app.documents.createExpense(amount: Money.units(300), details: 'كهرباء');
+  await app.documents.createExpense(
+    amount: Money.units(300),
+    details: 'كهرباء',
+  );
   return app;
 }
 
 bool isPdf(Uint8List b) =>
-    b.length > 100 && utf8.decode(b.sublist(0, 4), allowMalformed: true) == '%PDF';
+    b.length > 100 &&
+    utf8.decode(b.sublist(0, 4), allowMalformed: true) == '%PDF';
 
 bool isXlsx(Uint8List b) => b.length > 100 && b[0] == 0x50 && b[1] == 0x4B;
 
@@ -156,25 +160,34 @@ void main() {
       expect(isPdf(await app.pdf.inventoryReport()), isTrue);
     });
 
-    test('barcode labels: all sizes, copies, and products without barcode',
-        () async {
-      final app = await boot();
-      final products = app.db.activeProducts.toList();
-      expect(products.any((p) => p.barcode == null || p.barcode!.isEmpty),
-          isTrue);
-      for (final size in LabelSize.values) {
-        final bytes =
-            await app.pdf.barcodeLabels(products, copies: 3, size: size);
-        expect(isPdf(bytes), isTrue, reason: size.name);
-      }
-    });
+    test(
+      'barcode labels: all sizes, copies, and products without barcode',
+      () async {
+        final app = await boot();
+        final products = app.db.activeProducts.toList();
+        expect(
+          products.any((p) => p.barcode == null || p.barcode!.isEmpty),
+          isTrue,
+        );
+        for (final size in LabelSize.values) {
+          final bytes = await app.pdf.barcodeLabels(
+            products,
+            copies: 3,
+            size: size,
+          );
+          expect(isPdf(bytes), isTrue, reason: size.name);
+        }
+      },
+    );
   });
 
   group('ExcelExporter', () {
     test('period, customers and inventory workbooks are xlsx', () async {
       final app = await boot();
-      expect(isXlsx(await app.excel.periodWorkbook(DateRange.thisMonth())),
-          isTrue);
+      expect(
+        isXlsx(await app.excel.periodWorkbook(DateRange.thisMonth())),
+        isTrue,
+      );
       expect(isXlsx(await app.excel.customersWorkbook()), isTrue);
       expect(isXlsx(await app.excel.inventoryWorkbook()), isTrue);
     });
@@ -192,7 +205,8 @@ void main() {
 
     test('spy intercepts share/print/save', () async {
       final calls = <String>[];
-      ShareService.spy = (op, name, bytes) => calls.add('$op:$name:${bytes.length}');
+      ShareService.spy = (op, name, bytes) =>
+          calls.add('$op:$name:${bytes.length}');
       const svc = ShareService();
       final bytes = Uint8List.fromList([1, 2, 3]);
       await svc.sharePdf(bytes, 'a.pdf');

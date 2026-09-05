@@ -48,7 +48,10 @@ void main() {
     });
 
     test('searchProducts prefix-first ordering', () async {
-      await app.inventory.createProduct(name: 'شاي حليب', salePrice: Money.units(1));
+      await app.inventory.createProduct(
+        name: 'شاي حليب',
+        salePrice: Money.units(1),
+      );
       final r = app.db.searchProducts('حليب');
       expect(r.first.name, 'حليب');
       expect(r.map((p) => p.name), containsAll(['حليب', 'شاي حليب']));
@@ -60,7 +63,10 @@ void main() {
     test('first scan adds, deliberate second scan increments', () {
       final t0 = DateTime(2025, 1, 1, 10);
       expect(cart.scan('6281000000011', now: t0), ScanOutcome.added);
-      expect(cart.scan('6281000000011', now: t0.add(const Duration(seconds: 2))), ScanOutcome.incremented);
+      expect(
+        cart.scan('6281000000011', now: t0.add(const Duration(seconds: 2))),
+        ScanOutcome.incremented,
+      );
       expect(cart.lines.single.qty, Qty.units(2));
       expect(cart.gross, Money.units(1000));
     });
@@ -68,7 +74,13 @@ void main() {
     test('rapid duplicate frames are ignored', () {
       final t0 = DateTime(2025, 1, 1, 10);
       cart.scan('6281000000011', now: t0);
-      expect(cart.scan('6281000000011', now: t0.add(const Duration(milliseconds: 300))), ScanOutcome.ignoredDuplicate);
+      expect(
+        cart.scan(
+          '6281000000011',
+          now: t0.add(const Duration(milliseconds: 300)),
+        ),
+        ScanOutcome.ignoredDuplicate,
+      );
       expect(cart.lines.single.qty, Qty.one);
     });
 
@@ -76,7 +88,10 @@ void main() {
       expect(cart.scan('1234567890'), ScanOutcome.unknown);
       expect(cart.scan('12'), ScanOutcome.invalid);
       await app.inventory.updateProduct(milk.id, status: ProductStatus.paused);
-      expect(cart.scan('6281000000011', now: DateTime(2030)), ScanOutcome.unknown);
+      expect(
+        cart.scan('6281000000011', now: DateTime(2030)),
+        ScanOutcome.unknown,
+      );
       expect(cart.isEmpty, isTrue);
     });
 
@@ -101,8 +116,14 @@ void main() {
       cart.remove(milk.id);
       expect(cart.itemCount, 1);
       // Discount larger than gross is rejected.
-      expect(() => cart.setDiscount(Money.units(10000)), throwsA(isA<DomainException>()));
-      expect(() => cart.setUnitPrice(bread.id, Money.units(-1)), throwsA(isA<DomainException>()));
+      expect(
+        () => cart.setDiscount(Money.units(10000)),
+        throwsA(isA<DomainException>()),
+      );
+      expect(
+        () => cart.setUnitPrice(bread.id, Money.units(-1)),
+        throwsA(isA<DomainException>()),
+      );
     });
 
     test('decrement to zero removes the line', () {
@@ -114,8 +135,15 @@ void main() {
     test('ad-hoc lines validate input', () {
       cart.addAdHoc(name: 'خضار', unitPrice: Money.units(250));
       expect(cart.gross, Money.units(250));
-      expect(() => cart.addAdHoc(name: ' ', unitPrice: Money.units(1)), throwsA(isA<DomainException>()));
-      expect(() => cart.addAdHoc(name: 'x', unitPrice: Money.units(1), qty: Qty.zero), throwsA(isA<DomainException>()));
+      expect(
+        () => cart.addAdHoc(name: ' ', unitPrice: Money.units(1)),
+        throwsA(isA<DomainException>()),
+      );
+      expect(
+        () =>
+            cart.addAdHoc(name: 'x', unitPrice: Money.units(1), qty: Qty.zero),
+        throwsA(isA<DomainException>()),
+      );
     });
 
     test('change calculation', () {
@@ -126,20 +154,23 @@ void main() {
   });
 
   group('checkout', () {
-    test('cash checkout writes invoice, stock move, COGS, and empties cart', () async {
-      cart.scan('6281000000011');
-      cart.addProduct(bread, qty: Qty.units(2));
-      cart.setDiscount(Money.units(50));
-      final sale = await cart.checkout(paymentType: PaymentType.cash);
+    test(
+      'cash checkout writes invoice, stock move, COGS, and empties cart',
+      () async {
+        cart.scan('6281000000011');
+        cart.addProduct(bread, qty: Qty.units(2));
+        cart.setDiscount(Money.units(50));
+        final sale = await cart.checkout(paymentType: PaymentType.cash);
 
-      expect(cart.isEmpty, isTrue);
-      expect(sale.netAmount, Money.units(500 + 200 - 50));
-      expect(sale.lines.length, 2);
-      expect(app.db.stockOf(milk.id), Qty.units(19));
-      // bread does not track inventory → no stock move
-      expect(app.db.productMoves(bread.id), isEmpty);
-      expect(sale.profit, Money.units(650 - 400 - 100));
-    });
+        expect(cart.isEmpty, isTrue);
+        expect(sale.netAmount, Money.units(500 + 200 - 50));
+        expect(sale.lines.length, 2);
+        expect(app.db.stockOf(milk.id), Qty.units(19));
+        // bread does not track inventory → no stock move
+        expect(app.db.productMoves(bread.id), isEmpty);
+        expect(sale.profit, Money.units(650 - 400 - 100));
+      },
+    );
 
     test('credit checkout requires customer and respects limit', () async {
       cart.addProduct(milk);
@@ -150,24 +181,43 @@ void main() {
       // cart intact after failure
       expect(cart.itemCount, 1);
 
-      final c = await app.parties.createCustomer(name: 'سعيد', creditLimit: Money.units(300));
+      final c = await app.parties.createCustomer(
+        name: 'سعيد',
+        creditLimit: Money.units(300),
+      );
       expect(
         () => cart.checkout(paymentType: PaymentType.credit, customerId: c.id),
-        throwsA(predicate((e) => e is DomainException && e.code == ErrorCodes.creditLimitExceeded)),
+        throwsA(
+          predicate(
+            (e) =>
+                e is DomainException &&
+                e.code == ErrorCodes.creditLimitExceeded,
+          ),
+        ),
       );
-      await cart.checkout(paymentType: PaymentType.credit, customerId: c.id, approveOverLimit: true);
+      await cart.checkout(
+        paymentType: PaymentType.credit,
+        customerId: c.id,
+        approveOverLimit: true,
+      );
       expect(app.db.customerBalance(c.id), Money.units(500));
     });
 
     test('empty cart cannot checkout', () {
-      expect(() => cart.checkout(paymentType: PaymentType.cash), throwsA(isA<DomainException>()));
+      expect(
+        () => cart.checkout(paymentType: PaymentType.cash),
+        throwsA(isA<DomainException>()),
+      );
     });
 
     test('cancelling the sale restores stock and balance exactly', () async {
       final c = await app.parties.createCustomer(name: 'نور');
       cart.addProduct(milk, qty: Qty.units(5));
       final before = app.db.stockOf(milk.id);
-      final sale = await cart.checkout(paymentType: PaymentType.credit, customerId: c.id);
+      final sale = await cart.checkout(
+        paymentType: PaymentType.credit,
+        customerId: c.id,
+      );
       expect(app.db.stockOf(milk.id), before - Qty.units(5));
       await app.documents.cancelSale(sale.id, 'خطأ');
       expect(app.db.stockOf(milk.id), before);
@@ -190,7 +240,11 @@ void main() {
         salePrice: Money.units(150),
         openingQty: Qty.units(48), // = كرتونان
         packUnits: [
-          PackUnit(name: 'كرتون', factor: Qty.units(24), salePrice: Money.units(3300)),
+          PackUnit(
+            name: 'كرتون',
+            factor: Qty.units(24),
+            salePrice: Money.units(3300),
+          ),
         ],
       );
     });
@@ -219,7 +273,12 @@ void main() {
       cart.addProduct(soda, packUnit: carton, qty: Qty.units(3)); // 72 > 48
       expect(
         () => cart.checkout(paymentType: PaymentType.cash),
-        throwsA(predicate((e) => e is DomainException && e.code == ErrorCodes.insufficientStock)),
+        throwsA(
+          predicate(
+            (e) =>
+                e is DomainException && e.code == ErrorCodes.insufficientStock,
+          ),
+        ),
       );
       // Stock untouched after the rejected attempt.
       expect(app.db.stockOf(soda.id), Qty.units(48));

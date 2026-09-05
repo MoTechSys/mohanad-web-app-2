@@ -207,7 +207,10 @@ class _PartyTxSheetState extends State<PartyTxSheet> {
           MoneyField(controller: _amount, label: 'المبلغ *', autofocus: true),
           if (!isAdjust) ...[
             const SizedBox(height: 12),
-            DateField(value: _date, onChanged: (d) => setState(() => _date = d)),
+            DateField(
+              value: _date,
+              onChanged: (d) => setState(() => _date = d),
+            ),
           ],
           const SizedBox(height: 12),
           TextFormField(

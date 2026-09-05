@@ -28,7 +28,10 @@ class PurchasesScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: list.isEmpty
-            ? const EmptyState(icon: Icons.inventory_2_outlined, title: 'لا توجد مشتريات')
+            ? const EmptyState(
+                icon: Icons.inventory_2_outlined,
+                title: 'لا توجد مشتريات',
+              )
             : ListView.separated(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 90),
                 itemCount: list.length,
@@ -41,18 +44,33 @@ class PurchasesScreen extends StatelessWidget {
                       : (p.supplierNameManual ?? 'شراء نقدي');
                   final color = p.isCancelled
                       ? context.c.textMuted
-                      : credit ? context.c.info : context.c.warning;
+                      : credit
+                      ? context.c.info
+                      : context.c.warning;
                   return Card(
                     child: ListTile(
-                      leading: Icon(credit ? Icons.schedule : Icons.payments_outlined, color: color),
-                      title: Text(name, style: TextStyle(fontWeight: FontWeight.w700,
-                          decoration: p.isCancelled ? TextDecoration.lineThrough : null)),
-                      subtitle: Text([
-                        Fmt.relative(p.purchaseDate),
-                        if (p.lines.isNotEmpty) '${p.lines.length} صنف',
-                        if ((p.invoiceNo ?? '').isNotEmpty) '#${p.invoiceNo}',
-                        if (p.isCancelled) 'ملغاة',
-                      ].join(' • '), style: const TextStyle(fontSize: 11)),
+                      leading: Icon(
+                        credit ? Icons.schedule : Icons.payments_outlined,
+                        color: color,
+                      ),
+                      title: Text(
+                        name,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          decoration: p.isCancelled
+                              ? TextDecoration.lineThrough
+                              : null,
+                        ),
+                      ),
+                      subtitle: Text(
+                        [
+                          Fmt.relative(p.purchaseDate),
+                          if (p.lines.isNotEmpty) '${p.lines.length} صنف',
+                          if ((p.invoiceNo ?? '').isNotEmpty) '#${p.invoiceNo}',
+                          if (p.isCancelled) 'ملغاة',
+                        ].join(' • '),
+                        style: const TextStyle(fontSize: 11),
+                      ),
                       trailing: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.end,
@@ -61,15 +79,24 @@ class PurchasesScreen extends StatelessWidget {
                           Tag(credit ? 'آجل' : 'نقدي', color: color),
                         ],
                       ),
-                      onTap: p.isCancelled ? null : () async {
-                        final reason = await confirmWithReason(context,
-                            title: 'إلغاء فاتورة الشراء',
-                            message: 'سيتم عكس أثرها على المورد/المصروف والمخزون.',
-                            confirmLabel: 'إلغاء الفاتورة');
-                        if (reason == null || !context.mounted) return;
-                        await guarded(context, () => app.documents.cancelPurchase(p.id, reason),
-                            successMessage: 'تم إلغاء الفاتورة');
-                      },
+                      onTap: p.isCancelled
+                          ? null
+                          : () async {
+                              final reason = await confirmWithReason(
+                                context,
+                                title: 'إلغاء فاتورة الشراء',
+                                message:
+                                    'سيتم عكس أثرها على المورد/المصروف والمخزون.',
+                                confirmLabel: 'إلغاء الفاتورة',
+                              );
+                              if (reason == null || !context.mounted) return;
+                              await guarded(
+                                context,
+                                () =>
+                                    app.documents.cancelPurchase(p.id, reason),
+                                successMessage: 'تم إلغاء الفاتورة',
+                              );
+                            },
                     ),
                   );
                 },

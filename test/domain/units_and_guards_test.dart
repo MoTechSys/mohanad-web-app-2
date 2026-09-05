@@ -149,7 +149,12 @@ void main() {
           paymentType: PaymentType.cash,
           mode: DocMode.detailedItems,
           lines: [
-            DocLine(productId: p.id, name: p.name, qty: Qty.units(10), unitPrice: m(250)),
+            DocLine(
+              productId: p.id,
+              name: p.name,
+              qty: Qty.units(10),
+              unitPrice: m(250),
+            ),
           ],
         ),
         throwsCode(ErrorCodes.insufficientStock),
@@ -166,8 +171,18 @@ void main() {
           paymentType: PaymentType.cash,
           mode: DocMode.detailedItems,
           lines: [
-            DocLine(productId: p.id, name: p.name, qty: Qty.units(3), unitPrice: m(250)),
-            DocLine(productId: p.id, name: p.name, qty: Qty.units(3), unitPrice: m(250)),
+            DocLine(
+              productId: p.id,
+              name: p.name,
+              qty: Qty.units(3),
+              unitPrice: m(250),
+            ),
+            DocLine(
+              productId: p.id,
+              name: p.name,
+              qty: Qty.units(3),
+              unitPrice: m(250),
+            ),
           ],
         ),
         throwsCode(ErrorCodes.insufficientStock),
@@ -208,7 +223,12 @@ void main() {
         paymentType: PaymentType.cash,
         mode: DocMode.detailedItems,
         lines: [
-          DocLine(productId: p.id, name: p.name, qty: Qty.units(5), unitPrice: m(250)),
+          DocLine(
+            productId: p.id,
+            name: p.name,
+            qty: Qty.units(5),
+            unitPrice: m(250),
+          ),
         ],
       );
       expect(app.db.stockOf(p.id), Qty.zero);
@@ -218,7 +238,12 @@ void main() {
         mode: DocMode.detailedItems,
         approveOversell: true,
         lines: [
-          DocLine(productId: p.id, name: p.name, qty: Qty.one, unitPrice: m(250)),
+          DocLine(
+            productId: p.id,
+            name: p.name,
+            qty: Qty.one,
+            unitPrice: m(250),
+          ),
         ],
       );
       expect(app.db.stockOf(p.id), -Qty.one);
@@ -234,7 +259,12 @@ void main() {
         paymentType: PaymentType.cash,
         mode: DocMode.detailedItems,
         lines: [
-          DocLine(productId: p.id, name: p.name, qty: Qty.units(50), unitPrice: m(100)),
+          DocLine(
+            productId: p.id,
+            name: p.name,
+            qty: Qty.units(50),
+            unitPrice: m(100),
+          ),
         ],
       );
       expect(app.db.sales.length, 1);
@@ -254,7 +284,12 @@ void main() {
           paymentType: PaymentType.cash,
           mode: DocMode.detailedItems,
           lines: [
-            DocLine(productId: p.id, name: p.name, qty: Qty.one, unitPrice: m(400)),
+            DocLine(
+              productId: p.id,
+              name: p.name,
+              qty: Qty.one,
+              unitPrice: m(400),
+            ),
           ],
         ),
         throwsCode(ErrorCodes.belowCost),
@@ -265,16 +300,19 @@ void main() {
         mode: DocMode.detailedItems,
         approveBelowCost: true,
         lines: [
-          DocLine(productId: p.id, name: p.name, qty: Qty.one, unitPrice: m(400)),
+          DocLine(
+            productId: p.id,
+            name: p.name,
+            qty: Qty.one,
+            unitPrice: m(400),
+          ),
         ],
       );
       expect(s.netAmount, m(400));
     });
 
     test('warning can be disabled in settings', () async {
-      await app.settings.update(
-        app.db.settings.copyWith(warnBelowCost: false),
-      );
+      await app.settings.update(app.db.settings.copyWith(warnBelowCost: false));
       final p = await app.inventory.createProduct(
         name: 'زيت',
         purchasePrice: m(300),
@@ -285,7 +323,12 @@ void main() {
         paymentType: PaymentType.cash,
         mode: DocMode.detailedItems,
         lines: [
-          DocLine(productId: p.id, name: p.name, qty: Qty.one, unitPrice: m(200)),
+          DocLine(
+            productId: p.id,
+            name: p.name,
+            qty: Qty.one,
+            unitPrice: m(200),
+          ),
         ],
       );
       expect(s.netAmount, m(200));
@@ -303,7 +346,12 @@ void main() {
         paymentType: PaymentType.cash,
         mode: DocMode.detailedItems,
         lines: [
-          DocLine(productId: p.id, name: p.name, qty: Qty.units(10), unitPrice: m(1100)),
+          DocLine(
+            productId: p.id,
+            name: p.name,
+            qty: Qty.units(10),
+            unitPrice: m(1100),
+          ),
         ],
       );
       expect(app.db.products[p.id]!.purchasePrice, m(1100));
@@ -350,7 +398,12 @@ void main() {
         paymentType: PaymentType.cash,
         mode: DocMode.detailedItems,
         lines: [
-          DocLine(productId: p.id, name: p.name, qty: Qty.one, unitPrice: m(750)),
+          DocLine(
+            productId: p.id,
+            name: p.name,
+            qty: Qty.one,
+            unitPrice: m(750),
+          ),
         ],
       );
       expect(app.db.products[p.id]!.purchasePrice, m(700));
@@ -373,8 +426,14 @@ void main() {
     });
 
     test('search finds items despite 1-2 letter typos', () async {
-      await app.inventory.createProduct(name: 'حليب المراعي', salePrice: m(120));
-      await app.inventory.createProduct(name: 'بسكويت أبو ولد', salePrice: m(50));
+      await app.inventory.createProduct(
+        name: 'حليب المراعي',
+        salePrice: m(120),
+      );
+      await app.inventory.createProduct(
+        name: 'بسكويت أبو ولد',
+        salePrice: m(50),
+      );
       await app.inventory.createProduct(name: 'شاي الكبوس', salePrice: m(200));
 
       // Prefix works.

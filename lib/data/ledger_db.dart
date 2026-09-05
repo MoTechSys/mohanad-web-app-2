@@ -336,7 +336,8 @@ class LedgerDb extends ChangeNotifier {
     Money? amount,
   }) {
     final threshold = settings.largeTxThreshold;
-    final large = threshold != null && amount != null && amount.abs >= threshold;
+    final large =
+        threshold != null && amount != null && amount.abs >= threshold;
     final e = AuditEntry(
       id: IdGen.next(),
       action: action,

@@ -63,7 +63,10 @@ class _ExpenseSheetState extends State<ExpenseSheet> {
           decoration: const InputDecoration(labelText: 'اسم الفئة'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('إلغاء'),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, ctrl.text),
             child: const Text('إضافة'),

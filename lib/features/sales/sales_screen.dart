@@ -39,16 +39,18 @@ class _SalesScreenState extends State<SalesScreen> {
   Widget build(BuildContext context) {
     final db = context.watch<LedgerDb>();
     final dr = _dr;
-    var sales = db.sales.values
-        .where((s) => dr == null || dr.contains(s.saleDate))
-        .where((s) => _showCancelled || s.isActive)
-        .toList()
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    var incomes = db.dailyIncomes.values
-        .where((d) => dr == null || dr.contains(d.incomeDate))
-        .where((d) => _showCancelled || d.cancelledAt == null)
-        .toList()
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    var sales =
+        db.sales.values
+            .where((s) => dr == null || dr.contains(s.saleDate))
+            .where((s) => _showCancelled || s.isActive)
+            .toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    var incomes =
+        db.dailyIncomes.values
+            .where((d) => dr == null || dr.contains(d.incomeDate))
+            .where((d) => _showCancelled || d.cancelledAt == null)
+            .toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
     final activeSales = sales.where((s) => s.isActive);
     final cash = activeSales
@@ -61,11 +63,12 @@ class _SalesScreenState extends State<SalesScreen> {
         .where((d) => d.cancelledAt == null)
         .fold(Money.zero, (p, d) => p + d.amount);
 
-    final items = <Object>[...sales, ...incomes]..sort((a, b) {
-      final da = a is Sale ? a.createdAt : (a as DailyIncome).createdAt;
-      final dbb = b is Sale ? b.createdAt : (b as DailyIncome).createdAt;
-      return dbb.compareTo(da);
-    });
+    final items = <Object>[...sales, ...incomes]
+      ..sort((a, b) {
+        final da = a is Sale ? a.createdAt : (a as DailyIncome).createdAt;
+        final dbb = b is Sale ? b.createdAt : (b as DailyIncome).createdAt;
+        return dbb.compareTo(da);
+      });
 
     return Scaffold(
       appBar: AppBar(
@@ -74,7 +77,9 @@ class _SalesScreenState extends State<SalesScreen> {
           IconButton(
             tooltip: _showCancelled ? 'إخفاء الملغاة' : 'إظهار الملغاة',
             icon: Icon(
-              _showCancelled ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+              _showCancelled
+                  ? Icons.visibility_off_outlined
+                  : Icons.visibility_outlined,
             ),
             onPressed: () => setState(() => _showCancelled = !_showCancelled),
           ),
@@ -152,7 +157,8 @@ class _SalesScreenState extends State<SalesScreen> {
                   ? const EmptyState(
                       icon: Icons.point_of_sale_outlined,
                       title: 'لا توجد مبيعات في هذه الفترة',
-                      subtitle: 'اضغط "بيع جديد" لتسجيل فاتورة أو أدخل الدخل اليومي',
+                      subtitle:
+                          'اضغط "بيع جديد" لتسجيل فاتورة أو أدخل الدخل اليومي',
                     )
                   : ListView.separated(
                       padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
@@ -231,7 +237,8 @@ class SaleTile extends StatelessWidget {
                             Fmt.relative(s.saleDate),
                             if (s.mode == DocMode.detailedItems)
                               '${s.lines.length} صنف',
-                            if ((s.invoiceNo ?? '').isNotEmpty) '#${s.invoiceNo}',
+                            if ((s.invoiceNo ?? '').isNotEmpty)
+                              '#${s.invoiceNo}',
                           ].join(' • '),
                           style: TextStyle(
                             fontSize: 11,
@@ -276,7 +283,8 @@ class SaleTile extends StatelessWidget {
           _kv(context, 'التاريخ', Fmt.dateTime(s.saleDate)),
           if (s.customerId != null)
             _kv(context, 'العميل', db.customers[s.customerId!]?.name ?? '—'),
-          if ((s.invoiceNo ?? '').isNotEmpty) _kv(context, 'رقم الفاتورة', s.invoiceNo!),
+          if ((s.invoiceNo ?? '').isNotEmpty)
+            _kv(context, 'رقم الفاتورة', s.invoiceNo!),
           if (s.lines.isNotEmpty) ...[
             const Divider(height: 20),
             for (final l in s.lines)
@@ -297,73 +305,88 @@ class SaleTile extends StatelessWidget {
           ],
           const Divider(height: 20),
           _kv(context, 'الإجمالي', s.grossAmount.format()),
-          if (s.discount.isPositive) _kv(context, 'الخصم', '- ${s.discount.format()}'),
+          if (s.discount.isPositive)
+            _kv(context, 'الخصم', '- ${s.discount.format()}'),
           _kv(context, 'الصافي', s.netAmount.format(), bold: true),
           if (s.profit != null) ...[
             _kv(context, 'تكلفة البضاعة', s.costAmount.format()),
-            _kv(context, 
+            _kv(
+              context,
               'ربح الفاتورة',
               s.profit!.format(),
-              color: s.profit!.isNegative ? context.c.danger : context.c.primaryDark,
+              color: s.profit!.isNegative
+                  ? context.c.danger
+                  : context.c.primaryDark,
             ),
           ],
           if ((s.details ?? '').isNotEmpty) _kv(context, 'ملاحظات', s.details!),
           const SizedBox(height: 12),
-          Row(children: [
-            Expanded(
-              child: FilledButton.tonalIcon(
-                icon: const Icon(Icons.picture_as_pdf_rounded),
-                label: const Text('فاتورة PDF'),
-                onPressed: () => showExportSheet(context, title: 'تصدير الفاتورة', options: [
-                  ExportOption(
-                    title: 'فاتورة A4',
-                    subtitle: 'فاتورة رسمية بشعار المحل وبياناته',
-                    icon: Icons.description_rounded,
-                    fileBase: 'فاتورة-${s.invoiceNo ?? s.id.substring(0, 6)}',
-                    build: () => app.pdf.saleInvoice(s),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.tonalIcon(
+                  icon: const Icon(Icons.picture_as_pdf_rounded),
+                  label: const Text('فاتورة PDF'),
+                  onPressed: () => showExportSheet(
+                    context,
+                    title: 'تصدير الفاتورة',
+                    options: [
+                      ExportOption(
+                        title: 'فاتورة A4',
+                        subtitle: 'فاتورة رسمية بشعار المحل وبياناته',
+                        icon: Icons.description_rounded,
+                        fileBase:
+                            'فاتورة-${s.invoiceNo ?? s.id.substring(0, 6)}',
+                        build: () => app.pdf.saleInvoice(s),
+                      ),
+                      ExportOption(
+                        title: 'إيصال 80mm',
+                        subtitle: 'مناسب لطابعات الإيصالات الحرارية',
+                        icon: Icons.receipt_rounded,
+                        fileBase:
+                            'إيصال-${s.invoiceNo ?? s.id.substring(0, 6)}',
+                        build: () => app.pdf.saleReceipt(s),
+                      ),
+                    ],
                   ),
-                  ExportOption(
-                    title: 'إيصال 80mm',
-                    subtitle: 'مناسب لطابعات الإيصالات الحرارية',
-                    icon: Icons.receipt_rounded,
-                    fileBase: 'إيصال-${s.invoiceNo ?? s.id.substring(0, 6)}',
-                    build: () => app.pdf.saleReceipt(s),
-                  ),
-                ]),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: FilledButton.tonalIcon(
-                icon: const Icon(Icons.print_rounded),
-                label: const Text('طباعة'),
-                onPressed: () => runExport(
-                  context,
-                  ExportOption(
-                    title: 'فاتورة',
-                    subtitle: '',
-                    icon: Icons.print,
-                    fileBase: 'فاتورة',
-                    build: () => app.pdf.saleInvoice(s),
-                  ),
-                  ExportAction.print,
                 ),
               ),
-            ),
-          ]),
+              const SizedBox(width: 8),
+              Expanded(
+                child: FilledButton.tonalIcon(
+                  icon: const Icon(Icons.print_rounded),
+                  label: const Text('طباعة'),
+                  onPressed: () => runExport(
+                    context,
+                    ExportOption(
+                      title: 'فاتورة',
+                      subtitle: '',
+                      icon: Icons.print,
+                      fileBase: 'فاتورة',
+                      build: () => app.pdf.saleInvoice(s),
+                    ),
+                    ExportAction.print,
+                  ),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 10),
           if (s.isCancelled)
             CancelledBanner(reason: s.cancelReason)
           else
             OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(foregroundColor: context.c.danger),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: context.c.danger,
+              ),
               icon: const Icon(Icons.block),
               label: const Text('إلغاء الفاتورة'),
               onPressed: () async {
                 final reason = await confirmWithReason(
                   context,
                   title: 'إلغاء الفاتورة',
-                  message: 'سيتم عكس أثرها على الدين والمخزون. تبقى في السجل كملغاة.',
+                  message:
+                      'سيتم عكس أثرها على الدين والمخزون. تبقى في السجل كملغاة.',
                   confirmLabel: 'إلغاء الفاتورة',
                 );
                 if (reason == null || !context.mounted) return;
@@ -428,8 +451,9 @@ class _IncomeTile extends StatelessWidget {
                           'دخل يومي إجمالي',
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
-                            decoration:
-                                cancelled ? TextDecoration.lineThrough : null,
+                            decoration: cancelled
+                                ? TextDecoration.lineThrough
+                                : null,
                           ),
                         ),
                         Text(
@@ -463,7 +487,13 @@ class _IncomeTile extends StatelessWidget {
   }
 }
 
-Widget _kv(BuildContext context, String k, String v, {bool bold = false, Color? color}) => Padding(
+Widget _kv(
+  BuildContext context,
+  String k,
+  String v, {
+  bool bold = false,
+  Color? color,
+}) => Padding(
   padding: const EdgeInsets.symmetric(vertical: 4),
   child: Row(
     children: [

@@ -44,7 +44,10 @@ void main() {
     expect(find.text('لا يوجد عملاء بعد'), findsOneWidget);
     await tester.tap(find.text('عميل جديد'));
     await settle(tester);
-    await tester.enterText(find.widgetWithText(TextFormField, 'الاسم *'), 'أحمد');
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'الاسم *'),
+      'أحمد',
+    );
     await tester.enterText(
       find.widgetWithText(TextFormField, 'رصيد افتتاحي (دين سابق)'),
       '150',
@@ -64,7 +67,10 @@ void main() {
     await settle(tester);
     await tester.tap(find.text('بيع جديد'));
     await settle(tester);
-    await tester.enterText(find.widgetWithText(TextFormField, 'المبلغ الإجمالي *'), '0');
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'المبلغ الإجمالي *'),
+      '0',
+    );
     await tester.ensureVisible(find.text('تسجيل البيع'));
     await settle(tester);
     await tester.tap(find.text('تسجيل البيع'));

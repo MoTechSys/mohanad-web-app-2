@@ -10,9 +10,8 @@ import 'package:grocery_ledger/domain/models/settings.dart';
 
 Money m(int units) => Money.units(units);
 
-Matcher throwsCode(String code) => throwsA(
-  isA<DomainException>().having((e) => e.code, 'code', code),
-);
+Matcher throwsCode(String code) =>
+    throwsA(isA<DomainException>().having((e) => e.code, 'code', code));
 
 void main() {
   late AppServices app;
@@ -163,7 +162,10 @@ void main() {
     });
 
     test('cancel supplier payment reverses ledger', () async {
-      final s = await app.parties.createSupplier(name: 'م', openingBalance: m(1000));
+      final s = await app.parties.createSupplier(
+        name: 'م',
+        openingBalance: m(1000),
+      );
       final e = await app.parties.paySupplier(s.id, m(400));
       expect(app.db.supplierBalance(s.id), m(600));
       await app.documents.cancelExpense(e.id, 'خطأ');
@@ -254,7 +256,12 @@ void main() {
         paymentType: PaymentType.cash,
         mode: DocMode.detailedItems,
         lines: [
-          DocLine(productId: p.id, name: 'سكر', qty: Qty.units(3), unitPrice: m(5)),
+          DocLine(
+            productId: p.id,
+            name: 'سكر',
+            qty: Qty.units(3),
+            unitPrice: m(5),
+          ),
           const DocLine(name: 'كيس', qty: Qty(2000), unitPrice: Money(50)),
         ],
       );
@@ -302,12 +309,20 @@ void main() {
     });
 
     test('detailed purchase raises stock and updates cost', () async {
-      final p = await app.inventory.createProduct(name: 'أرز', purchasePrice: m(10));
+      final p = await app.inventory.createProduct(
+        name: 'أرز',
+        purchasePrice: m(10),
+      );
       final pur = await app.documents.createPurchase(
         paymentType: PaymentType.cash,
         mode: DocMode.detailedItems,
         lines: [
-          DocLine(productId: p.id, name: 'أرز', qty: Qty.units(10), unitPrice: m(12)),
+          DocLine(
+            productId: p.id,
+            name: 'أرز',
+            qty: Qty.units(10),
+            unitPrice: m(12),
+          ),
         ],
       );
       expect(pur.totalAmount, m(120));
@@ -330,12 +345,19 @@ void main() {
 
   group('Inventory', () {
     test('manual moves and adjustment semantics', () async {
-      final p = await app.inventory.createProduct(name: 'x', openingQty: Qty.units(5));
+      final p = await app.inventory.createProduct(
+        name: 'x',
+        openingQty: Qty.units(5),
+      );
       await app.inventory.manualMove(p.id, StockMoveType.inbound, Qty.units(5));
       await app.inventory.manualMove(p.id, StockMoveType.loss, Qty.units(2));
       expect(app.db.stockOf(p.id), Qty.units(8));
       // adjustment = set absolute
-      await app.inventory.manualMove(p.id, StockMoveType.adjustment, Qty.units(20));
+      await app.inventory.manualMove(
+        p.id,
+        StockMoveType.adjustment,
+        Qty.units(20),
+      );
       expect(app.db.stockOf(p.id), Qty.units(20));
       final last = app.db.productMoves(p.id).first;
       expect(last.delta, Qty.units(12));
@@ -377,7 +399,14 @@ void main() {
       await app.documents.createSale(
         paymentType: PaymentType.cash,
         mode: DocMode.detailedItems,
-        lines: [DocLine(productId: p.id, name: 'p', qty: Qty.units(10), unitPrice: m(10))],
+        lines: [
+          DocLine(
+            productId: p.id,
+            name: 'p',
+            qty: Qty.units(10),
+            unitPrice: m(10),
+          ),
+        ],
       ); // 100 cash, cogs 60
       await app.documents.createSale(
         customerId: c.id,
@@ -420,10 +449,7 @@ void main() {
       expect(r.profit(ProfitMode.accurate), m(105));
       // estimated = 180 − (40+200) − 15 = −75
       expect(r.profit(ProfitMode.estimated), m(-75));
-      expect(
-        r.profit(ProfitMode.estimated, cashPurchaseAsCogs: false),
-        m(165),
-      );
+      expect(r.profit(ProfitMode.estimated, cashPurchaseAsCogs: false), m(165));
 
       expect(app.reports.customersDebt().total, m(30));
       expect(app.reports.suppliersDebt().total, m(130));
@@ -462,9 +488,15 @@ void main() {
     });
 
     test('export → wipe → import restores balances exactly', () async {
-      final c = await app.parties.createCustomer(name: 'c', openingBalance: m(10));
+      final c = await app.parties.createCustomer(
+        name: 'c',
+        openingBalance: m(10),
+      );
       await app.parties.addCustomerDebt(c.id, m(5));
-      final p = await app.inventory.createProduct(name: 'p', openingQty: Qty.units(7));
+      final p = await app.inventory.createProduct(
+        name: 'p',
+        openingQty: Qty.units(7),
+      );
       final json = app.settings.exportJson();
 
       await app.db.wipeAll();
@@ -493,12 +525,22 @@ void main() {
       await a1.init();
       final c = await a1.parties.createCustomer(name: 'c');
       await a1.parties.addCustomerDebt(c.id, m(120));
-      final p = await a1.inventory.createProduct(name: 'p', openingQty: const Qty(1500));
+      final p = await a1.inventory.createProduct(
+        name: 'p',
+        openingQty: const Qty(1500),
+      );
       await a1.documents.createSale(
         customerId: c.id,
         paymentType: PaymentType.credit,
         mode: DocMode.detailedItems,
-        lines: [DocLine(productId: p.id, name: 'p', qty: const Qty(500), unitPrice: m(8))],
+        lines: [
+          DocLine(
+            productId: p.id,
+            name: 'p',
+            qty: const Qty(500),
+            unitPrice: m(8),
+          ),
+        ],
       );
 
       final a2 = AppServices.withBackend(backend);

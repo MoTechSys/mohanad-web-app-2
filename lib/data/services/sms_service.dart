@@ -33,7 +33,10 @@ class SmsService {
   // ── القوالب ────────────────────────────────────────────────────────────
 
   /// بيع آجل: «تم تسجيل مبلغ X عليكم. إجمالي الدين: Y»
-  String creditSaleMessage({required Money saleAmount, required Money totalDebt}) =>
+  String creditSaleMessage({
+    required Money saleAmount,
+    required Money totalDebt,
+  }) =>
       '$_store: تم تسجيل مبلغ ${Fmt.money(saleAmount)} عليكم. '
       'إجمالي الدين: ${Fmt.money(totalDebt)}. شكرًا لتعاملكم معنا.';
 
@@ -60,8 +63,10 @@ class SmsService {
     final c = db.customers[customerId];
     if (c == null) return Future.value(false);
     final debt = db.customerBalance(customerId);
-    return _send(c.phone,
-        creditSaleMessage(saleAmount: saleAmount, totalDebt: debt));
+    return _send(
+      c.phone,
+      creditSaleMessage(saleAmount: saleAmount, totalDebt: debt),
+    );
   }
 
   /// إشعار سند قبض (يُستدعى بعد إنشاء السند — الرصيد الحالي هو «المتبقي»).
@@ -72,8 +77,7 @@ class SmsService {
     final c = db.customers[v.customerId!];
     if (c == null) return Future.value(false);
     final remaining = db.customerBalance(v.customerId!);
-    return _send(c.phone,
-        receiptMessage(paid: v.amount, remaining: remaining));
+    return _send(c.phone, receiptMessage(paid: v.amount, remaining: remaining));
   }
 
   /// تذكير يدوي بالدين.

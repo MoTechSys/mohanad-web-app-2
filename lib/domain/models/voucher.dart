@@ -100,7 +100,11 @@ class Voucher {
     partyNameManual: Serde.str(m['partyNameManual']),
     partyTxId: Serde.str(m['partyTxId']),
     expenseId: Serde.str(m['expenseId']),
-    method: Serde.enumFrom(VoucherMethod.values, m['method'], VoucherMethod.cash),
+    method: Serde.enumFrom(
+      VoucherMethod.values,
+      m['method'],
+      VoucherMethod.cash,
+    ),
     details: Serde.str(m['details']),
     voucherDate: Serde.dtReq(m['voucherDate']),
     createdAt: Serde.dtReq(m['createdAt']),

@@ -53,14 +53,16 @@ void main() {
     expect(find.text('السلة فارغة'), findsOneWidget);
   });
 
-  testWidgets('typing a barcode + Enter adds the product to the cart',
-      (tester) async {
+  testWidgets('typing a barcode + Enter adds the product to the cart', (
+    tester,
+  ) async {
     final app = await boot();
     await tester.pumpWidget(host(app));
     await tester.pumpAndSettle();
     await tester.enterText(
-        find.widgetWithText(TextField, 'ابحث بالاسم أو الباركود…'),
-        '6281000000011');
+      find.widgetWithText(TextField, 'ابحث بالاسم أو الباركود…'),
+      '6281000000011',
+    );
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
     expect(find.text('السلة فارغة'), findsNothing);
@@ -75,8 +77,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('shell shows cashier FAB and About screen shows developer',
-      (tester) async {
+  testWidgets('shell shows cashier FAB and About screen shows developer', (
+    tester,
+  ) async {
     final app = await boot();
     await tester.pumpWidget(GroceryLedgerApp(services: app));
     await tester.pumpAndSettle();
@@ -84,8 +87,11 @@ void main() {
     await tester.tap(find.text('المزيد'));
     await tester.pumpAndSettle();
     // م6: «المزيد» شبكة أيقونات — عنوان البلاطة على سطرين
-    await tester.scrollUntilVisible(find.text('حول\nالتطبيق'), 200,
-        scrollable: find.byType(Scrollable).last);
+    await tester.scrollUntilVisible(
+      find.text('حول\nالتطبيق'),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('حول\nالتطبيق'));
     await tester.pumpAndSettle();
@@ -96,8 +102,9 @@ void main() {
 
   testWidgets('theme mode persists through settings', (tester) async {
     final app = await boot();
-    await app.settings
-        .update(app.db.settings.copyWith(themeMode: AppThemeMode.dark));
+    await app.settings.update(
+      app.db.settings.copyWith(themeMode: AppThemeMode.dark),
+    );
     await tester.pumpWidget(GroceryLedgerApp(services: app));
     await tester.pumpAndSettle();
     final ctx = tester.element(find.text('الرئيسية'));

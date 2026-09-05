@@ -33,15 +33,15 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
       list = list
           .where(
             (s) =>
-                s.name.toLowerCase().contains(q) ||
-                (s.phone ?? '').contains(q),
+                s.name.toLowerCase().contains(q) || (s.phone ?? '').contains(q),
           )
           .toList();
     }
     list.sort(
-      (a, b) => db.supplierBalance(b.id).minor.compareTo(
-        db.supplierBalance(a.id).minor,
-      ),
+      (a, b) => db
+          .supplierBalance(b.id)
+          .minor
+          .compareTo(db.supplierBalance(a.id).minor),
     );
     final total = list.fold(Money.zero, (p, s) {
       final b = db.supplierBalance(s.id);
@@ -147,7 +147,9 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                             ),
                             title: Text(
                               s.name,
-                              style: const TextStyle(fontWeight: FontWeight.w700),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                             subtitle: Text(
                               s.phone ?? 'بدون هاتف',
@@ -168,7 +170,9 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                                 Text(
                                   bal.isZero
                                       ? 'مسدد'
-                                      : (bal.isPositive ? 'له علينا' : 'لنا عنده'),
+                                      : (bal.isPositive
+                                            ? 'له علينا'
+                                            : 'لنا عنده'),
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: context.c.textMuted,
@@ -365,7 +369,10 @@ class SupplierDetailScreen extends StatelessWidget {
               PopupMenuDivider(),
               PopupMenuItem(
                 value: 'delete',
-                child: Text('حذف المورد', style: TextStyle(color: context.c.danger)),
+                child: Text(
+                  'حذف المورد',
+                  style: TextStyle(color: context.c.danger),
+                ),
               ),
             ],
           ),
@@ -476,7 +483,8 @@ class SupplierDetailScreen extends StatelessWidget {
                           await guarded(
                             context,
                             () => app.parties.cancelSupplierTx(t.id, reason),
-                            successMessage: 'تم إلغاء الحركة (${Fmt.date(DateTime.now())})',
+                            successMessage:
+                                'تم إلغاء الحركة (${Fmt.date(DateTime.now())})',
                           );
                         },
                       ),

@@ -44,7 +44,8 @@ class ShiftsScreen extends StatelessWidget {
                 icon: Icons.point_of_sale_outlined,
                 title: 'لا توجد ورديات',
                 subtitle:
-                    'افتح وردية عند بداية الدوام برصيد الدرج الافتتاحي، وأغلقها بجرد النقد الفعلي')
+                    'افتح وردية عند بداية الدوام برصيد الدرج الافتتاحي، وأغلقها بجرد النقد الفعلي',
+              )
             : ListView.separated(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
                 itemCount: list.length,
@@ -67,19 +68,22 @@ class _ShiftTile extends StatelessWidget {
     final diffColor = diff == null || diff.isZero
         ? c.primaryStrong
         : diff.isPositive
-            ? c.info
-            : c.danger;
+        ? c.info
+        : c.danger;
     return Card(
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor:
-              (s.isOpen ? c.primaryStrong : c.textMuted).withValues(alpha: 0.12),
+          backgroundColor: (s.isOpen ? c.primaryStrong : c.textMuted)
+              .withValues(alpha: 0.12),
           child: Icon(
-              s.isOpen ? Icons.play_arrow_rounded : Icons.check_rounded,
-              color: s.isOpen ? c.primaryStrong : c.textMuted),
+            s.isOpen ? Icons.play_arrow_rounded : Icons.check_rounded,
+            color: s.isOpen ? c.primaryStrong : c.textMuted,
+          ),
         ),
-        title: Text('${s.sessionNo} • ${s.workerName}',
-            style: const TextStyle(fontWeight: FontWeight.w700)),
+        title: Text(
+          '${s.sessionNo} • ${s.workerName}',
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
         subtitle: Text(
           [
             'فتح: ${Fmt.dateTime(s.openedAt)}',
@@ -109,82 +113,113 @@ class _ShiftTile extends StatelessWidget {
       builder: (ctx) => SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            SheetTitle('تقرير الوردية ${s.sessionNo}'),
-            _row(ctx, 'العامل', s.workerName),
-            _row(ctx, 'الرصيد الافتتاحي', s.openingCash.format()),
-            const Divider(),
-            _row(ctx, 'مبيعات نقدية (${r.cashSalesCount})', r.cashSales.format()),
-            _row(ctx, 'سدادات عملاء', r.customerPayments.format()),
-            if (r.otherReceipts.isPositive)
-              _row(ctx, 'مقبوضات أخرى', r.otherReceipts.format()),
-            if (r.dailyIncome.isPositive)
-              _row(ctx, 'دخل يومي إجمالي', r.dailyIncome.format()),
-            _row(ctx, 'إجمالي الداخل', r.cashIn.format(), bold: true),
-            _row(ctx, 'مصروفات ومدفوعات (${r.expensesCount})', r.expenses.format()),
-            const Divider(),
-            _row(ctx, 'النقد المتوقع بالدرج', r.expectedCash.format(), bold: true),
-            if (s.countedCash != null) ...[
-              _row(ctx, 'النقد المعدود', s.countedCash!.format(), bold: true),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SheetTitle('تقرير الوردية ${s.sessionNo}'),
+              _row(ctx, 'العامل', s.workerName),
+              _row(ctx, 'الرصيد الافتتاحي', s.openingCash.format()),
+              const Divider(),
               _row(
                 ctx,
-                s.difference!.isZero
-                    ? 'الفرق (مطابق)'
-                    : s.difference!.isPositive
-                        ? 'الفرق (زيادة)'
-                        : 'الفرق (عجز)',
-                s.difference!.format(),
+                'مبيعات نقدية (${r.cashSalesCount})',
+                r.cashSales.format(),
+              ),
+              _row(ctx, 'سدادات عملاء', r.customerPayments.format()),
+              if (r.otherReceipts.isPositive)
+                _row(ctx, 'مقبوضات أخرى', r.otherReceipts.format()),
+              if (r.dailyIncome.isPositive)
+                _row(ctx, 'دخل يومي إجمالي', r.dailyIncome.format()),
+              _row(ctx, 'إجمالي الداخل', r.cashIn.format(), bold: true),
+              _row(
+                ctx,
+                'مصروفات ومدفوعات (${r.expensesCount})',
+                r.expenses.format(),
+              ),
+              const Divider(),
+              _row(
+                ctx,
+                'النقد المتوقع بالدرج',
+                r.expectedCash.format(),
                 bold: true,
               ),
+              if (s.countedCash != null) ...[
+                _row(ctx, 'النقد المعدود', s.countedCash!.format(), bold: true),
+                _row(
+                  ctx,
+                  s.difference!.isZero
+                      ? 'الفرق (مطابق)'
+                      : s.difference!.isPositive
+                      ? 'الفرق (زيادة)'
+                      : 'الفرق (عجز)',
+                  s.difference!.format(),
+                  bold: true,
+                ),
+              ],
+              _row(
+                ctx,
+                'مبيعات آجلة (لا تدخل الدرج)',
+                '${r.creditSales.format()} (${r.creditSalesCount})',
+              ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  await guarded(context, () async {
+                    final bytes = await app.pdf.zReport80(r);
+                    await app.share.printPdf(bytes, 'تقرير-${s.sessionNo}');
+                  });
+                },
+                icon: const Icon(Icons.print_outlined),
+                label: const Text('طباعة تقرير Z (80mm)'),
+              ),
+              const SizedBox(height: 6),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  await guarded(context, () async {
+                    final bytes = await app.pdf.zReport80(r);
+                    await app.share.sharePdf(bytes, 'تقرير-${s.sessionNo}.pdf');
+                  });
+                },
+                icon: const Icon(Icons.share_outlined),
+                label: const Text('مشاركة PDF'),
+              ),
             ],
-            _row(ctx, 'مبيعات آجلة (لا تدخل الدرج)',
-                '${r.creditSales.format()} (${r.creditSalesCount})'),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              onPressed: () async {
-                Navigator.pop(ctx);
-                await guarded(context, () async {
-                  final bytes = await app.pdf.zReport80(r);
-                  await app.share.printPdf(bytes, 'تقرير-${s.sessionNo}');
-                });
-              },
-              icon: const Icon(Icons.print_outlined),
-              label: const Text('طباعة تقرير Z (80mm)'),
-            ),
-            const SizedBox(height: 6),
-            OutlinedButton.icon(
-              onPressed: () async {
-                Navigator.pop(ctx);
-                await guarded(context, () async {
-                  final bytes = await app.pdf.zReport80(r);
-                  await app.share
-                      .sharePdf(bytes, 'تقرير-${s.sessionNo}.pdf');
-                });
-              },
-              icon: const Icon(Icons.share_outlined),
-              label: const Text('مشاركة PDF'),
-            ),
-          ]),
+          ),
         ),
       ),
     );
   }
 
-  Widget _row(BuildContext context, String label, String value,
-          {bool bold = false}) =>
-      Padding(
-        padding: const EdgeInsets.symmetric(vertical: 3),
-        child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text(label,
-              style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: bold ? FontWeight.w800 : FontWeight.w500)),
-          Text(value,
-              textDirection: TextDirection.ltr,
-              style: TextStyle(
-                  fontSize: bold ? 15 : 13, fontWeight: FontWeight.w700)),
-        ]),
-      );
+  Widget _row(
+    BuildContext context,
+    String label,
+    String value, {
+    bool bold = false,
+  }) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 3),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: bold ? FontWeight.w800 : FontWeight.w500,
+          ),
+        ),
+        Text(
+          value,
+          textDirection: TextDirection.ltr,
+          style: TextStyle(
+            fontSize: bold ? 15 : 13,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 /// نموذج فتح وردية.
@@ -221,13 +256,15 @@ class _OpenShiftSheetState extends State<OpenShiftSheet> {
             controller: _worker,
             autofocus: true,
             decoration: const InputDecoration(labelText: 'اسم العامل *'),
-            validator: (v) => (v ?? '').trim().isEmpty ? 'اسم العامل مطلوب' : null,
+            validator: (v) =>
+                (v ?? '').trim().isEmpty ? 'اسم العامل مطلوب' : null,
           ),
           const SizedBox(height: 12),
           MoneyField(
-              controller: _opening,
-              label: 'الرصيد الافتتاحي بالدرج',
-              allowZero: true),
+            controller: _opening,
+            label: 'الرصيد الافتتاحي بالدرج',
+            allowZero: true,
+          ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _notes,
@@ -303,12 +340,18 @@ class _CloseShiftSheetState extends State<CloseShiftSheet> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('النقد المتوقع بالدرج',
-                      style: TextStyle(fontWeight: FontWeight.w700)),
-                  Text(expected.format(),
-                      textDirection: TextDirection.ltr,
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w800)),
+                  const Text(
+                    'النقد المتوقع بالدرج',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  Text(
+                    expected.format(),
+                    textDirection: TextDirection.ltr,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -329,15 +372,17 @@ class _CloseShiftSheetState extends State<CloseShiftSheet> {
                     ? 'زيادة بالدرج: ${diff.format()}'
                     : 'عجز بالدرج: ${diff.abs.format()}',
                 style: TextStyle(
-                    color: diff.isPositive ? c.info : c.danger,
-                    fontWeight: FontWeight.w700),
+                  color: diff.isPositive ? c.info : c.danger,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _notes,
-            decoration:
-                const InputDecoration(labelText: 'ملاحظات الإغلاق (اختياري)'),
+            decoration: const InputDecoration(
+              labelText: 'ملاحظات الإغلاق (اختياري)',
+            ),
           ),
           const SizedBox(height: 16),
           FilledButton.icon(
@@ -345,22 +390,23 @@ class _CloseShiftSheetState extends State<CloseShiftSheet> {
             onPressed: () async {
               if (!_form.currentState!.validate()) return;
               final counted = Money.tryParse(_counted.text) ?? Money.zero;
-              final sure = await confirm(context,
-                  title: 'تأكيد إغلاق الوردية',
-                  message:
-                      'المعدود: ${counted.format()} — المتوقع: ${expected.format()}. الإغلاق نهائي ولا يمكن التراجع.',
-                  confirmLabel: 'إغلاق نهائي',
-                  destructive: true);
+              final sure = await confirm(
+                context,
+                title: 'تأكيد إغلاق الوردية',
+                message:
+                    'المعدود: ${counted.format()} — المتوقع: ${expected.format()}. الإغلاق نهائي ولا يمكن التراجع.',
+                confirmLabel: 'إغلاق نهائي',
+                destructive: true,
+              );
               if (!sure || !context.mounted) return;
               CashSession? closed;
-              final ok = await guarded(
-                context,
-                () async {
-                  closed = await app.shifts.closeShift(widget.session.id,
-                      countedCash: counted, notes: _notes.text);
-                },
-                successMessage: 'تم إغلاق الوردية',
-              );
+              final ok = await guarded(context, () async {
+                closed = await app.shifts.closeShift(
+                  widget.session.id,
+                  countedCash: counted,
+                  notes: _notes.text,
+                );
+              }, successMessage: 'تم إغلاق الوردية');
               if (ok && context.mounted) {
                 Navigator.pop(context);
                 if (closed != null) _offerPrint(closed!);
@@ -377,15 +423,19 @@ class _CloseShiftSheetState extends State<CloseShiftSheet> {
 
   void _offerPrint(CashSession s) {
     final app = context.read<AppServices>();
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('أُغلقت ${s.sessionNo} — معدود ${s.countedCash!.format()}'),
-      action: SnackBarAction(
-        label: 'طباعة Z',
-        onPressed: () async {
-          final bytes = await app.pdf.zReport80(app.shifts.zReport(s));
-          await app.share.printPdf(bytes, 'تقرير-${s.sessionNo}');
-        },
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'أُغلقت ${s.sessionNo} — معدود ${s.countedCash!.format()}',
+        ),
+        action: SnackBarAction(
+          label: 'طباعة Z',
+          onPressed: () async {
+            final bytes = await app.pdf.zReport80(app.shifts.zReport(s));
+            await app.share.printPdf(bytes, 'تقرير-${s.sessionNo}');
+          },
+        ),
       ),
-    ));
+    );
   }
 }

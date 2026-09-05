@@ -16,7 +16,11 @@ class ShareService {
 
   static String safeName(String base, String ext) {
     final clean = base.replaceAll(RegExp(r'[\\/:*?"<>|]+'), '-').trim();
-    final stamp = DateTime.now().toIso8601String().substring(0, 16).replaceAll(':', '').replaceAll('T', '_');
+    final stamp = DateTime.now()
+        .toIso8601String()
+        .substring(0, 16)
+        .replaceAll(':', '')
+        .replaceAll('T', '_');
     return '$clean-$stamp.$ext';
   }
 
@@ -27,32 +31,47 @@ class ShareService {
     return f.writeAsBytes(bytes, flush: true);
   }
 
-  Future<void> sharePdf(Uint8List bytes, String fileName, {String? text}) async {
+  Future<void> sharePdf(
+    Uint8List bytes,
+    String fileName, {
+    String? text,
+  }) async {
     if (spy != null) return spy!('sharePdf', fileName, bytes);
     final f = await _write(fileName, bytes);
-    await Share.shareXFiles([XFile(f.path, mimeType: 'application/pdf')], text: text);
+    await Share.shareXFiles([
+      XFile(f.path, mimeType: 'application/pdf'),
+    ], text: text);
   }
 
-  Future<void> shareExcel(Uint8List bytes, String fileName, {String? text}) async {
+  Future<void> shareExcel(
+    Uint8List bytes,
+    String fileName, {
+    String? text,
+  }) async {
     if (spy != null) return spy!('shareExcel', fileName, bytes);
     final f = await _write(fileName, bytes);
-    await Share.shareXFiles(
-      [XFile(f.path, mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')],
-      text: text,
-    );
+    await Share.shareXFiles([
+      XFile(
+        f.path,
+        mimeType:
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      ),
+    ], text: text);
   }
 
   /// Shares an existing file (e.g. a daily auto-backup JSON) via the OS
   /// share sheet — WhatsApp / Drive / email…
   Future<void> shareFile(File file, {String? text, String? mimeType}) async {
     if (spy != null) {
-      return spy!('shareFile', file.uri.pathSegments.last,
-          Uint8List.fromList(await file.readAsBytes()));
+      return spy!(
+        'shareFile',
+        file.uri.pathSegments.last,
+        Uint8List.fromList(await file.readAsBytes()),
+      );
     }
-    await Share.shareXFiles(
-      [XFile(file.path, mimeType: mimeType ?? 'application/json')],
-      text: text,
-    );
+    await Share.shareXFiles([
+      XFile(file.path, mimeType: mimeType ?? 'application/json'),
+    ], text: text);
   }
 
   /// Opens the Android print dialog (system PDF preview → any printer,

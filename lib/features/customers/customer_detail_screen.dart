@@ -39,17 +39,22 @@ class CustomerDetailScreen extends StatelessWidget {
             options: [
               ExportOption(
                 title: 'كشف حساب كامل PDF',
-                subtitle: 'كل حركات الدين والسداد مع الرصيد الجاري — للمشاركة عبر واتساب أو الطباعة',
+                subtitle:
+                    'كل حركات الدين والسداد مع الرصيد الجاري — للمشاركة عبر واتساب أو الطباعة',
                 icon: Icons.picture_as_pdf_rounded,
                 fileBase: 'كشف-حساب-${c.name}',
-                build: () => context.read<AppServices>().pdf.customerStatement(c),
+                build: () =>
+                    context.read<AppServices>().pdf.customerStatement(c),
               ),
               ExportOption(
                 title: 'كشف حساب هذا الشهر PDF',
                 subtitle: 'حركات الشهر الحالي فقط',
                 icon: Icons.calendar_month_rounded,
                 fileBase: 'كشف-شهري-${c.name}',
-                build: () => context.read<AppServices>().pdf.customerStatement(c, range: DateRange.thisMonth()),
+                build: () => context.read<AppServices>().pdf.customerStatement(
+                  c,
+                  range: DateRange.thisMonth(),
+                ),
               ),
             ],
           ),
@@ -63,20 +68,38 @@ class CustomerDetailScreen extends StatelessWidget {
             onSelected: (v) => _menu(context, v, c, bal),
             itemBuilder: (_) => [
               if (c.status != CustomerStatus.active)
-                const PopupMenuItem(value: 'activate', child: Text('تفعيل الحساب')),
+                const PopupMenuItem(
+                  value: 'activate',
+                  child: Text('تفعيل الحساب'),
+                ),
               if (c.status != CustomerStatus.frozen)
-                const PopupMenuItem(value: 'freeze', child: Text('تجميد الحساب')),
+                const PopupMenuItem(
+                  value: 'freeze',
+                  child: Text('تجميد الحساب'),
+                ),
               if (c.status != CustomerStatus.gracePeriod)
-                const PopupMenuItem(value: 'grace', child: Text('منح مهلة سداد')),
+                const PopupMenuItem(
+                  value: 'grace',
+                  child: Text('منح مهلة سداد'),
+                ),
               if (bal.isPositive && (c.phone ?? '').isNotEmpty)
-                const PopupMenuItem(value: 'sms_reminder', child: Text('تذكير بالدين (SMS مباشر)')),
+                const PopupMenuItem(
+                  value: 'sms_reminder',
+                  child: Text('تذكير بالدين (SMS مباشر)'),
+                ),
               const PopupMenuItem(value: 'adjust', child: Text('تسوية يدوية')),
               if (!bal.isZero)
-                const PopupMenuItem(value: 'clear', child: Text('تصفير الرصيد')),
+                const PopupMenuItem(
+                  value: 'clear',
+                  child: Text('تصفير الرصيد'),
+                ),
               const PopupMenuDivider(),
               PopupMenuItem(
                 value: 'delete',
-                child: Text('حذف العميل', style: TextStyle(color: context.c.danger)),
+                child: Text(
+                  'حذف العميل',
+                  style: TextStyle(color: context.c.danger),
+                ),
               ),
             ],
           ),
@@ -146,8 +169,7 @@ class CustomerDetailScreen extends StatelessWidget {
     final reason = await confirmWithReason(
       context,
       title: 'إلغاء الحركة',
-      message:
-          'سيتم عكس أثر هذه الحركة على الرصيد مع الاحتفاظ بها في السجل.',
+      message: 'سيتم عكس أثر هذه الحركة على الرصيد مع الاحتفاظ بها في السجل.',
       confirmLabel: 'إلغاء الحركة',
     );
     if (reason == null || !context.mounted) return;
@@ -170,13 +192,17 @@ class CustomerDetailScreen extends StatelessWidget {
       case 'sms_reminder':
         final ok = await app.sms.sendReminder(c.id);
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(ok
-              ? 'تم إرسال تذكير بالدين لـ ${c.name}'
-              : 'تعذّر الإرسال — تأكد من الرقم وصلاحية الرسائل'),
-          backgroundColor: ok ? context.c.primaryStrong : context.c.danger,
-          behavior: SnackBarBehavior.floating,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              ok
+                  ? 'تم إرسال تذكير بالدين لـ ${c.name}'
+                  : 'تعذّر الإرسال — تأكد من الرقم وصلاحية الرسائل',
+            ),
+            backgroundColor: ok ? context.c.primaryStrong : context.c.danger,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       case 'activate':
         await guarded(
           context,
@@ -284,12 +310,18 @@ class _Header extends StatelessWidget {
                   children: [
                     Text(
                       'الرصيد الحالي',
-                      style: TextStyle(color: context.c.textMuted, fontSize: 12),
+                      style: TextStyle(
+                        color: context.c.textMuted,
+                        fontSize: 12,
+                      ),
                     ),
                     MoneyText(bal, size: 28, color: color, currency: currency),
                     Text(
                       Fmt.balanceLabel(bal),
-                      style: TextStyle(color: color, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        color: color,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -406,7 +438,9 @@ class PartyTxTile extends StatelessWidget {
         ? Icons.flag_outlined
         : Icons.tune;
     final canCancel =
-        !cancelled && t.type != PartyTxType.opening && t.refType == RefType.manual;
+        !cancelled &&
+        t.type != PartyTxType.opening &&
+        t.refType == RefType.manual;
     return Card(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
@@ -425,8 +459,9 @@ class PartyTxTile extends StatelessWidget {
                         _typeLabel(t),
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
-                          decoration:
-                              cancelled ? TextDecoration.lineThrough : null,
+                          decoration: cancelled
+                              ? TextDecoration.lineThrough
+                              : null,
                         ),
                       ),
                       Text(

@@ -39,8 +39,7 @@ void main() {
     });
 
     test('official phrasing', () {
-      expect(tafqit(350, currency: 'ريال'),
-          'فقط ثلاثمائة وخمسون ريال لا غير');
+      expect(tafqit(350, currency: 'ريال'), 'فقط ثلاثمائة وخمسون ريال لا غير');
     });
   });
 }

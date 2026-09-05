@@ -9,9 +9,8 @@ import 'package:grocery_ledger/domain/models/voucher.dart';
 
 Money m(int units) => Money.units(units);
 
-Matcher throwsCode(String code) => throwsA(
-      predicate((e) => e is DomainException && e.code == code),
-    );
+Matcher throwsCode(String code) =>
+    throwsA(predicate((e) => e is DomainException && e.code == code));
 
 void main() {
   late AppServices app;
@@ -28,22 +27,31 @@ void main() {
   group('سند قبض (receipt voucher)', () {
     test('sequential numbering RV-0001, RV-0002 … never reused', () async {
       final v1 = await app.vouchers.createReceipt(
-          customerId: ali.id, amount: m(100));
+        customerId: ali.id,
+        amount: m(100),
+      );
       final v2 = await app.vouchers.createReceipt(
-          customerId: ali.id, amount: m(50));
+        customerId: ali.id,
+        amount: m(50),
+      );
       expect(v1.voucherNo, 'RV-0001');
       expect(v2.voucherNo, 'RV-0002');
       // Cancel v2 then create a new one — number 0002 is NOT reused.
       await app.vouchers.cancelVoucher(v2.id, 'خطأ إدخال');
       final v3 = await app.vouchers.createReceipt(
-          customerId: ali.id, amount: m(70));
+        customerId: ali.id,
+        amount: m(70),
+      );
       expect(v3.voucherNo, 'RV-0003');
     });
 
     test('receipt from customer reduces his debt via ledger row', () async {
       await app.parties.addCustomerDebt(ali.id, m(500), notes: 'بضاعة');
       final v = await app.vouchers.createReceipt(
-          customerId: ali.id, amount: m(200), details: 'دفعة أولى');
+        customerId: ali.id,
+        amount: m(200),
+        details: 'دفعة أولى',
+      );
       expect(app.db.customerBalance(ali.id), m(300));
       // The ledger row is linked to the voucher.
       final tx = app.db.customerTx[v.partyTxId]!;
@@ -57,7 +65,9 @@ void main() {
     test('cancel receipt restores the customer balance exactly', () async {
       await app.parties.addCustomerDebt(ali.id, m(500));
       final v = await app.vouchers.createReceipt(
-          customerId: ali.id, amount: m(200));
+        customerId: ali.id,
+        amount: m(200),
+      );
       expect(app.db.customerBalance(ali.id), m(300));
       await app.vouchers.cancelVoucher(v.id, 'مبلغ خاطئ');
       expect(app.db.customerBalance(ali.id), m(500));
@@ -71,16 +81,23 @@ void main() {
         throwsCode(ErrorCodes.invalidAmount),
       );
       final v = await app.vouchers.createReceipt(
-          partyNameManual: 'مكتب العقارات', amount: m(10));
+        partyNameManual: 'مكتب العقارات',
+        amount: m(10),
+      );
       expect(v.partyTxId, isNull);
       expect(app.vouchers.partyName(v), 'مكتب العقارات');
     });
 
     test('rejects zero/negative amounts and unknown customers', () async {
-      expect(() => app.vouchers.createReceipt(customerId: ali.id, amount: Money.zero),
-          throwsCode(ErrorCodes.invalidAmount));
-      expect(() => app.vouchers.createReceipt(customerId: 'ghost', amount: m(5)),
-          throwsCode(ErrorCodes.notFound));
+      expect(
+        () =>
+            app.vouchers.createReceipt(customerId: ali.id, amount: Money.zero),
+        throwsCode(ErrorCodes.invalidAmount),
+      );
+      expect(
+        () => app.vouchers.createReceipt(customerId: 'ghost', amount: m(5)),
+        throwsCode(ErrorCodes.notFound),
+      );
     });
   });
 
@@ -88,14 +105,18 @@ void main() {
     test('numbering PV- is independent from RV-', () async {
       await app.vouchers.createReceipt(customerId: ali.id, amount: m(10));
       final p1 = await app.vouchers.createPayment(
-          supplierId: wholesale.id, amount: m(30));
+        supplierId: wholesale.id,
+        amount: m(30),
+      );
       expect(p1.voucherNo, 'PV-0001');
     });
 
     test('payment to supplier settles debt + records expense', () async {
       await app.parties.addSupplierDebt(wholesale.id, m(1000), notes: 'فاتورة');
       final v = await app.vouchers.createPayment(
-          supplierId: wholesale.id, amount: m(400));
+        supplierId: wholesale.id,
+        amount: m(400),
+      );
       expect(app.db.supplierBalance(wholesale.id), m(600));
       final e = app.db.expenses[v.expenseId]!;
       expect(e.type, ExpenseType.supplierPayment);
@@ -103,18 +124,26 @@ void main() {
       expect(e.isActive, isTrue);
     });
 
-    test('cancel payment reverses BOTH the ledger row and the expense', () async {
-      await app.parties.addSupplierDebt(wholesale.id, m(1000));
-      final v = await app.vouchers.createPayment(
-          supplierId: wholesale.id, amount: m(400));
-      await app.vouchers.cancelVoucher(v.id, 'صرف مكرر');
-      expect(app.db.supplierBalance(wholesale.id), m(1000));
-      expect(app.db.expenses[v.expenseId]!.isCancelled, isTrue);
-    });
+    test(
+      'cancel payment reverses BOTH the ledger row and the expense',
+      () async {
+        await app.parties.addSupplierDebt(wholesale.id, m(1000));
+        final v = await app.vouchers.createPayment(
+          supplierId: wholesale.id,
+          amount: m(400),
+        );
+        await app.vouchers.cancelVoucher(v.id, 'صرف مكرر');
+        expect(app.db.supplierBalance(wholesale.id), m(1000));
+        expect(app.db.expenses[v.expenseId]!.isCancelled, isTrue);
+      },
+    );
 
     test('payment to one-off party records a general expense', () async {
       final v = await app.vouchers.createPayment(
-          partyNameManual: 'ورشة الكهرباء', amount: m(150), details: 'صيانة ثلاجة');
+        partyNameManual: 'ورشة الكهرباء',
+        amount: m(150),
+        details: 'صيانة ثلاجة',
+      );
       final e = app.db.expenses[v.expenseId]!;
       expect(e.type, ExpenseType.other);
       expect(v.partyTxId, isNull);
@@ -123,12 +152,18 @@ void main() {
 
     test('cancel requires a reason; double cancel rejected', () async {
       final v = await app.vouchers.createPayment(
-          partyNameManual: 'جهة', amount: m(10));
-      expect(() => app.vouchers.cancelVoucher(v.id, '  '),
-          throwsCode(ErrorCodes.invalidAmount));
+        partyNameManual: 'جهة',
+        amount: m(10),
+      );
+      expect(
+        () => app.vouchers.cancelVoucher(v.id, '  '),
+        throwsCode(ErrorCodes.invalidAmount),
+      );
       await app.vouchers.cancelVoucher(v.id, 'سبب');
-      expect(() => app.vouchers.cancelVoucher(v.id, 'سبب آخر'),
-          throwsCode(ErrorCodes.alreadyCancelled));
+      expect(
+        () => app.vouchers.cancelVoucher(v.id, 'سبب آخر'),
+        throwsCode(ErrorCodes.alreadyCancelled),
+      );
     });
   });
 
@@ -139,7 +174,10 @@ void main() {
       await a.init();
       final c = await a.parties.createCustomer(name: 'سالم');
       await a.parties.addCustomerDebt(c.id, m(300));
-      final v = await a.vouchers.createReceipt(customerId: c.id, amount: m(100));
+      final v = await a.vouchers.createReceipt(
+        customerId: c.id,
+        amount: m(100),
+      );
 
       // Fresh services over the same storage.
       a = AppServices.withBackend(backend);

@@ -99,7 +99,10 @@ class _PurchaseSheetState extends State<PurchaseSheet> {
           SegmentedButton<PaymentType>(
             segments: const [
               ButtonSegment(value: PaymentType.cash, label: Text('نقدي')),
-              ButtonSegment(value: PaymentType.credit, label: Text('آجل (على المورد)')),
+              ButtonSegment(
+                value: PaymentType.credit,
+                label: Text('آجل (على المورد)'),
+              ),
             ],
             selected: {_pay},
             onSelectionChanged: (s) => setState(() => _pay = s.first),
@@ -107,8 +110,14 @@ class _PurchaseSheetState extends State<PurchaseSheet> {
           const SizedBox(height: 12),
           SegmentedButton<DocMode>(
             segments: const [
-              ButtonSegment(value: DocMode.totalOnly, label: Text('مبلغ إجمالي')),
-              ButtonSegment(value: DocMode.detailedItems, label: Text('أصناف (يرفع المخزون)')),
+              ButtonSegment(
+                value: DocMode.totalOnly,
+                label: Text('مبلغ إجمالي'),
+              ),
+              ButtonSegment(
+                value: DocMode.detailedItems,
+                label: Text('أصناف (يرفع المخزون)'),
+              ),
             ],
             selected: {_mode},
             onSelectionChanged: (s) => setState(() => _mode = s.first),
@@ -129,7 +138,9 @@ class _PurchaseSheetState extends State<PurchaseSheet> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _manualName,
-              decoration: const InputDecoration(labelText: 'اسم المورد (نص حر)'),
+              decoration: const InputDecoration(
+                labelText: 'اسم المورد (نص حر)',
+              ),
             ),
           ],
           const SizedBox(height: 12),
@@ -181,9 +192,17 @@ class _PurchaseSheetState extends State<PurchaseSheet> {
             child: Row(
               children: [
                 const Expanded(
-                  child: Text('إجمالي الفاتورة', style: TextStyle(fontWeight: FontWeight.w700)),
+                  child: Text(
+                    'إجمالي الفاتورة',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
                 ),
-                MoneyText(_sum, size: 22, color: context.c.warning, currency: db.settings.currency),
+                MoneyText(
+                  _sum,
+                  size: 22,
+                  color: context.c.warning,
+                  currency: db.settings.currency,
+                ),
               ],
             ),
           ),
