@@ -46,6 +46,7 @@ class _PosScreenState extends State<PosScreen> {
   final _hidBuffer = StringBuffer();
   Timer? _hidTimer;
   bool _cameraOn = true;
+  bool _scannerAllowed = true;
   String? _flashKey;
   Timer? _flashTimer;
 
@@ -54,7 +55,9 @@ class _PosScreenState extends State<PosScreen> {
     super.initState();
     final app = context.read<AppServices>();
     _cart = CartController(app.db, app.documents);
-    _cameraOn = widget.showCamera;
+    // م6: إعداد «إخفاء الماسح» يعطّل الكاميرا للمحلات التي لا تستخدم باركود.
+    _scannerAllowed = widget.showCamera && !app.db.settings.hideScanner;
+    _cameraOn = _scannerAllowed;
   }
 
   @override
@@ -351,7 +354,7 @@ class _PosScreenState extends State<PosScreen> {
         appBar: AppBar(
           title: const Text('الكاشير'),
           actions: [
-            if (widget.showCamera)
+            if (_scannerAllowed)
               IconButton(
                 tooltip: _cameraOn ? 'إيقاف الكاميرا' : 'تشغيل الكاميرا',
                 icon: Icon(_cameraOn ? Icons.videocam : Icons.videocam_off_outlined),
@@ -381,7 +384,7 @@ class _PosScreenState extends State<PosScreen> {
         body: SafeArea(
           child: Column(
             children: [
-              if (_cameraOn && widget.showCamera)
+              if (_cameraOn && _scannerAllowed)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                   child: BarcodeScannerView(height: 190, onCode: _onCode),

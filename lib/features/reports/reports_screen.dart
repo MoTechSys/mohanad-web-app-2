@@ -50,6 +50,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 build: () => app.pdf.periodReport(_r, title: 'تقرير $_label'),
               ),
               ExportOption(
+                title: 'تقرير الأرباح PDF',
+                subtitle: 'إيرادات، تكلفة، مجمل وصافي الربح، أعلى الأصناف ربحاً، المصروفات',
+                icon: Icons.trending_up_rounded,
+                fileBase: 'أرباح-$_label',
+                build: () => app.pdf.monthlyProfitReport(_r, title: 'تقرير أرباح $_label'),
+              ),
+              ExportOption(
                 title: 'ملف Excel كامل',
                 subtitle: 'أوراق: ملخص، مبيعات، أصناف، مشتريات، مصروفات، دخل يومي، عملاء، موردون، مخزون',
                 icon: Icons.table_chart_rounded,

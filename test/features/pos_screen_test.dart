@@ -83,10 +83,11 @@ void main() {
     expect(find.text('الكاشير'), findsWidgets);
     await tester.tap(find.text('المزيد'));
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('حول التطبيق والمطور'), 200,
+    // م6: «المزيد» شبكة أيقونات — عنوان البلاطة على سطرين
+    await tester.scrollUntilVisible(find.text('حول\nالتطبيق'), 200,
         scrollable: find.byType(Scrollable).last);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('حول التطبيق والمطور'));
+    await tester.tap(find.text('حول\nالتطبيق'));
     await tester.pumpAndSettle();
     expect(find.text('معين العباسي'), findsOneWidget);
     expect(find.text('alabbasi.uk'), findsOneWidget);

@@ -353,6 +353,85 @@ class PdfExporter {
     return doc.save();
   }
 
+  // ─────────────────────── Monthly profit report (م6) ───────────────────────
+
+  /// تقرير أرباح مركّز للفترة (شهري عادة): إيرادات، تكلفة، مجمل الربح،
+  /// مصروفات، صافي الربح بالوضعين، أرباح الأصناف، والإيراد اليومي.
+  Future<Uint8List> monthlyProfitReport(DateRange r, {String? title}) async {
+    final b = await _brand();
+    final doc = b.document();
+    final s = reports.summary(r);
+    final st = db.settings;
+    final accurate = s.profit(ProfitMode.accurate, cashPurchaseAsCogs: st.cashPurchaseAsCogs);
+    final estimated = s.profit(ProfitMode.estimated, cashPurchaseAsCogs: st.cashPurchaseAsCogs);
+    final cogs = s.cogs + s.manualCogs;
+    final gross = s.revenue - cogs;
+    final byCat = reports.expensesByCategory(r);
+    final top = reports.topProducts(r, limit: 15)
+      ..sort((a, b) => b.profit.minor.compareTo(a.profit.minor));
+    final daily = reports.dailyRevenue(r);
+
+    doc.addPage(
+      b.page(
+        title: title ?? 'تقرير الأرباح الشهري',
+        subtitle: '${Fmt.date(r.start)} — ${Fmt.date(r.end)}',
+        build: (ctx) => [
+          pw.Text('ملخص الأرباح', style: b.h2),
+          pw.SizedBox(height: 6),
+          b.kpis([
+            ('إجمالي الإيرادات', b.money(s.revenue)),
+            ('تكلفة البضاعة المباعة', b.money(cogs)),
+            ('مجمل الربح', b.money(gross)),
+            ('المصروفات التشغيلية', b.money(s.operatingExpenses)),
+            ('صافي الربح (دقيق)', b.money(accurate)),
+            ('صافي الربح (تقديري)', b.money(estimated)),
+          ]),
+          pw.SizedBox(height: 10),
+          pw.Text('مؤشرات إضافية', style: b.h2),
+          pw.SizedBox(height: 6),
+          b.kpis([
+            ('عدد الفواتير', '${s.salesCount}'),
+            ('مبيعات نقدية', b.money(s.cashSales)),
+            ('مبيعات آجلة', b.money(s.creditSales)),
+            ('مقبوضات العملاء', b.money(s.customerPayments)),
+            ('صافي الكاش', b.money(s.netCash)),
+            ('دخل يومي مجمّع', b.money(s.dailyIncome)),
+          ]),
+          pw.SizedBox(height: 12),
+          if (daily.isNotEmpty) ...[
+            pw.Text('الإيراد اليومي', style: b.h2),
+            pw.SizedBox(height: 6),
+            _barChart(b, daily),
+            pw.SizedBox(height: 12),
+          ],
+          if (top.isNotEmpty) ...[
+            pw.Text('أعلى الأصناف ربحاً', style: b.h2),
+            pw.SizedBox(height: 6),
+            b.table(
+              headers: const ['الصنف', 'الكمية', 'الإيراد', 'الربح'],
+              aligns: [pw.Alignment.centerRight, pw.Alignment.center, pw.Alignment.center, pw.Alignment.center],
+              widths: {0: const pw.FlexColumnWidth(2.5)},
+              rows: [for (final t in top) [t.name, t.qty.format(), t.revenue.format(), t.profit.format()]],
+            ),
+            pw.SizedBox(height: 12),
+          ],
+          if (byCat.isNotEmpty) ...[
+            pw.Text('المصروفات حسب الفئة', style: b.h2),
+            pw.SizedBox(height: 6),
+            b.table(
+              headers: const ['الفئة', 'عدد', 'الإجمالي'],
+              aligns: [pw.Alignment.centerRight, pw.Alignment.center, pw.Alignment.center],
+              widths: {0: const pw.FlexColumnWidth(3)},
+              rows: [for (final e in byCat) [e.name, '${e.count}', e.total.format()]],
+              totals: ['الإجمالي', '${byCat.fold(0, (p, e) => p + e.count)}', s.operatingExpenses.format()],
+            ),
+          ],
+        ],
+      ),
+    );
+    return doc.save();
+  }
+
   // ───────────────────────────── Inventory ─────────────────────────────
 
   Future<Uint8List> inventoryReport() async {

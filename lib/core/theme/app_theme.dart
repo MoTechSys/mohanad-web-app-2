@@ -5,9 +5,9 @@ import 'package:flutter/material.dart';
 /// theme lives in [AppPalette] and is read through `context.c`.
 class AppColors {
   AppColors._();
-  static const primary = Color(0xFF10B981);
-  static const primaryDark = Color(0xFF059669);
-  static const primaryLight = Color(0xFFD1FAE5);
+  static const primary = Color(0xFF1D6FE0);
+  static const primaryDark = Color(0xFF1656B8);
+  static const primaryLight = Color(0xFFDBEAFE);
   static const danger = Color(0xFFDC2626);
   static const dangerLight = Color(0xFFFEE2E2);
   static const warning = Color(0xFFD97706);
@@ -75,15 +75,15 @@ class AppPalette extends ThemeExtension<AppPalette> {
   Color get infoLight => infoSoft;
 
   static const light = AppPalette(
-    primary: Color(0xFF10B981),
-    primaryStrong: Color(0xFF059669),
-    primarySoft: Color(0xFFD1FAE5),
+    primary: Color(0xFF1D6FE0),
+    primaryStrong: Color(0xFF1656B8),
+    primarySoft: Color(0xFFDBEAFE),
     danger: Color(0xFFDC2626),
     dangerSoft: Color(0xFFFEE2E2),
     warning: Color(0xFFD97706),
     warningSoft: Color(0xFFFEF3C7),
-    info: Color(0xFF2563EB),
-    infoSoft: Color(0xFFDBEAFE),
+    info: Color(0xFF0D9488),
+    infoSoft: Color(0xFFCCFBF1),
     surface: Color(0xFFF8FAFC),
     card: Colors.white,
     cardAlt: Color(0xFFF1F5F9),
@@ -95,22 +95,22 @@ class AppPalette extends ThemeExtension<AppPalette> {
   );
 
   static const dark = AppPalette(
-    primary: Color(0xFF10B981),
-    primaryStrong: Color(0xFF34D399),
-    primarySoft: Color(0xFF064E3B),
+    primary: Color(0xFF3B82F6),
+    primaryStrong: Color(0xFF60A5FA),
+    primarySoft: Color(0xFF172554),
     danger: Color(0xFFF87171),
     dangerSoft: Color(0xFF450A0A),
     warning: Color(0xFFFBBF24),
     warningSoft: Color(0xFF451A03),
-    info: Color(0xFF60A5FA),
-    infoSoft: Color(0xFF172554),
+    info: Color(0xFF2DD4BF),
+    infoSoft: Color(0xFF042F2E),
     surface: Color(0xFF0B1220),
     card: Color(0xFF111A2E),
     cardAlt: Color(0xFF18233B),
     text: Color(0xFFF1F5F9),
     textMuted: Color(0xFF94A3B8),
     border: Color(0xFF243049),
-    onPrimary: Color(0xFF052E16),
+    onPrimary: Color(0xFF0B1220),
     isDark: true,
   );
 

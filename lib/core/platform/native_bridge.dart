@@ -44,6 +44,32 @@ class NativeBridge {
   static Future<bool> sendSms(String number, String text) async =>
       (await _call<bool>('sendSms', {'number': number, 'text': text})) ?? false;
 
+  /// إشعار محلي في شريط الإشعارات (تنبيهات انتهاء الصلاحية).
+  /// يطلب إذن POST_NOTIFICATIONS تلقائيًا على أندرويد 13+.
+  static Future<bool> showNotification({
+    required int id,
+    required String title,
+    required String body,
+  }) async =>
+      (await _call<bool>(
+        'showNotification',
+        {'id': id, 'title': title, 'body': body},
+      )) ??
+      false;
+
+  /// حفظ ملف في مجلد التنزيلات العام `Download/دفتر البقالة/` (مرئي للمستخدم).
+  /// يعيد المسار المعروض أو null عند الفشل/خارج أندرويد.
+  static Future<String?> saveToDownloads({
+    required String name,
+    required Uint8List bytes,
+    String mime = 'application/octet-stream',
+  }) =>
+      _call<String>('saveToDownloads', {
+        'name': name,
+        'bytes': bytes,
+        'mime': mime,
+      });
+
   /// Combined scan feedback: sound + haptic.
   static Future<void> scanOk() async {
     await beep('ok');

@@ -1,10 +1,14 @@
+import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 
 import '../../app/app_services.dart';
 import '../../data/export/share_service.dart';
+import '../platform/native_bridge.dart';
 import '../theme/app_theme.dart';
 import 'common.dart';
 
@@ -73,6 +77,12 @@ class _ExportTile extends StatelessWidget {
               Text(o.subtitle, style: TextStyle(fontSize: 11.5, color: c.textMuted)),
             ]),
           ),
+          if (!o.isExcel)
+            IconButton.filledTonal(
+              tooltip: 'معاينة',
+              icon: const Icon(Icons.visibility_rounded, size: 20),
+              onPressed: () => runExport(context, o, ExportAction.preview),
+            ),
           IconButton.filledTonal(
             tooltip: 'مشاركة',
             icon: const Icon(Icons.share_rounded, size: 20),
@@ -95,7 +105,7 @@ class _ExportTile extends StatelessWidget {
   }
 }
 
-enum ExportAction { share, print, save }
+enum ExportAction { preview, share, print, save }
 
 Future<void> runExport(BuildContext context, ExportOption o, ExportAction action) async {
   final app = context.read<AppServices>();
@@ -113,6 +123,12 @@ Future<void> runExport(BuildContext context, ExportOption o, ExportAction action
     final bytes = await o.build();
     final name = ShareService.safeName(o.fileBase, o.isExcel ? 'xlsx' : 'pdf');
     switch (action) {
+      case ExportAction.preview:
+        if (nav.canPop()) nav.pop(); // أغلق مؤشر التحميل قبل فتح المعاينة
+        await nav.push(MaterialPageRoute(
+          builder: (_) => PdfPreviewScreen(title: o.title, fileName: name, bytes: bytes),
+        ));
+        return;
       case ExportAction.share:
         if (o.isExcel) {
           await app.share.shareExcel(bytes, name, text: o.title);
@@ -122,13 +138,65 @@ Future<void> runExport(BuildContext context, ExportOption o, ExportAction action
       case ExportAction.print:
         await app.share.printPdf(bytes, o.title);
       case ExportAction.save:
-        final path = await app.share.saveToDocuments(bytes, name);
+        final path = await savePublic(app, bytes, name, isExcel: o.isExcel);
         messenger.showSnackBar(SnackBar(content: Text('تم الحفظ: $path'), duration: const Duration(seconds: 4)));
     }
   } catch (e) {
     messenger.showSnackBar(SnackBar(content: Text('تعذّر التصدير: $e'), backgroundColor: Colors.red));
   } finally {
     if (nav.canPop()) nav.pop();
+  }
+}
+
+/// م6: يحفظ في مجلد التنزيلات المرئي `Download/دفتر البقالة/` على أندرويد،
+/// ويعود لمستندات التطبيق على بقية المنصات أو عند الفشل.
+Future<String> savePublic(AppServices app, Uint8List bytes, String name, {bool isExcel = false}) async {
+  final mime = isExcel
+      ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      : 'application/pdf';
+  if (!kIsWeb && Platform.isAndroid && ShareService.spy == null) {
+    final path = await NativeBridge.saveToDownloads(name: name, bytes: bytes, mime: mime);
+    if (path != null) return path;
+  }
+  return app.share.saveToDocuments(bytes, name);
+}
+
+/// م6 — شاشة معاينة PDF كاملة مع أزرار طباعة/مشاركة مدمجة.
+class PdfPreviewScreen extends StatelessWidget {
+  const PdfPreviewScreen({super.key, required this.title, required this.fileName, required this.bytes});
+  final String title;
+  final String fileName;
+  final Uint8List bytes;
+
+  @override
+  Widget build(BuildContext context) {
+    final app = context.read<AppServices>();
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title, style: const TextStyle(fontSize: 16)),
+        actions: [
+          IconButton(
+            tooltip: 'حفظ في الجهاز',
+            icon: const Icon(Icons.save_alt_rounded),
+            onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              final path = await savePublic(app, bytes, fileName);
+              messenger.showSnackBar(SnackBar(content: Text('تم الحفظ: $path')));
+            },
+          ),
+        ],
+      ),
+      body: PdfPreview(
+        build: (_) async => bytes,
+        pdfFileName: fileName,
+        canChangeOrientation: false,
+        canChangePageFormat: false,
+        canDebug: false,
+        allowSharing: true,
+        allowPrinting: true,
+        loadingWidget: const Center(child: CircularProgressIndicator()),
+      ),
+    );
   }
 }
 

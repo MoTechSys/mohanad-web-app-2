@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -21,8 +22,8 @@ void main() {
     if (await tmp.exists()) await tmp.delete(recursive: true);
   });
 
-  group('النسخ اليومي التلقائي (م5)', () {
-    test('ينشئ نسخة اليوم مرة واحدة فقط (idempotent)', () async {
+  group('النسخ اليومي التلقائي بنمط واتساب (م5+م6)', () {
+    test('ينشئ نسخة اليوم المضغوطة مرة واحدة فقط (idempotent)', () async {
       final app = await boot();
       await app.inventory.createProduct(name: 'سكر');
       final f1 = await app.backup.runDailyBackup(dir: tmp);
@@ -30,14 +31,20 @@ void main() {
       expect(await f1!.exists(), isTrue);
       expect(f1.uri.pathSegments.last,
           BackupService.fileNameFor(DateTime.now()));
-      final content1 = await f1.readAsString();
+      expect(f1.path, endsWith('.glbak'));
+
+      // المحتوى مضغوط gzip (البايتات السحرية 1f 8b) ويحتوي البيانات
+      final bytes1 = await f1.readAsBytes();
+      expect(bytes1[0], 0x1f);
+      expect(bytes1[1], 0x8b);
+      final content1 = await app.backup.readBackup(f1);
       expect(content1, contains('سكر'));
 
       // تشغيل ثانٍ في نفس اليوم — لا يعيد الكتابة
       await app.inventory.createProduct(name: 'ملح');
       final f2 = await app.backup.runDailyBackup(dir: tmp);
       expect(f2!.path, f1.path);
-      expect(await f2.readAsString(), content1); // بقيت نسخة الصباح
+      expect(await app.backup.readBackup(f2), content1); // بقيت نسخة الصباح
 
       final files = await app.backup.listBackups(tmp);
       expect(files.length, 1);
@@ -61,17 +68,45 @@ void main() {
               DateTime.now().subtract(const Duration(days: 6))));
     });
 
-    test('النسخة التلقائية قابلة للاستعادة الكاملة', () async {
+    test('النسخة المضغوطة قابلة للاستعادة الكاملة', () async {
       final app = await boot();
       await app.inventory.createProduct(name: 'أرز بسمتي');
       final f = await app.backup.runDailyBackup(dir: tmp);
 
       final app2 = await boot();
-      await app2.settings.importJson(await f!.readAsString());
+      await app2.settings.importJson(await app2.backup.readBackup(f!));
       expect(app2.db.activeProducts.map((p) => p.name), contains('أرز بسمتي'));
     });
 
-    test('مشاركة النسخة التلقائية عبر ShareService (spy)', () async {
+    test('يقرأ نسخ JSON القديمة (م5) بلا مشاكل — توافق خلفي', () async {
+      final app = await boot();
+      await app.inventory.createProduct(name: 'زيت طبخ');
+      // ملف قديم غير مضغوط بصيغة م5
+      final legacy = File('${tmp.path}/backup-2026-01-01.json');
+      await legacy.writeAsString(app.settings.exportJson(), flush: true);
+
+      // يُكتشف كنسخة ويُقرأ نصًا مباشرة
+      expect(BackupService.isBackupName('backup-2026-01-01.json'), isTrue);
+      final files = await app.backup.listBackups(tmp);
+      expect(files.length, 1);
+
+      final app2 = await boot();
+      await app2.settings.importJson(await app2.backup.readBackup(legacy));
+      expect(app2.db.activeProducts.map((p) => p.name), contains('زيت طبخ'));
+    });
+
+    test('backupNow يعيد كتابة نسخة اليوم بأحدث البيانات', () async {
+      final app = await boot();
+      await app.inventory.createProduct(name: 'سكر');
+      final f1 = await app.backup.runDailyBackup(dir: tmp);
+      await app.inventory.createProduct(name: 'دقيق');
+      final f2 = await app.backup.backupNow(dir: tmp);
+      expect(f2!.path, f1!.path); // نفس ملف اليوم
+      final content = await app.backup.readBackup(f2);
+      expect(content, contains('دقيق')); // أُعيدت الكتابة بالمحتوى الأحدث
+    });
+
+    test('مشاركة النسخة المضغوطة عبر ShareService (spy)', () async {
       final app = await boot();
       await app.inventory.createProduct(name: 'شاي');
       final f = await app.backup.runDailyBackup(dir: tmp);
@@ -88,7 +123,18 @@ void main() {
       await app.share.shareFile(f!, text: 'نسخة احتياطية');
       expect(op, 'shareFile');
       expect(name, BackupService.fileNameFor(DateTime.now()));
-      expect(String.fromCharCodes(bytes!), contains('cashSessions'));
+      // المحتوى المضغوط يُفك ويحتوي البيانات
+      final json = utf8.decode(gzip.decode(bytes!));
+      expect(json, contains('cashSessions'));
+      expect(json, contains('شاي'));
+    });
+
+    test('dateOf و sizeLabel يعملان لكل الصيغ', () {
+      expect(BackupService.dateOf('دفتر-البقالة-2026-03-15.glbak'), '2026-03-15');
+      expect(BackupService.dateOf('backup-2026-01-02.json'), '2026-01-02');
+      expect(BackupService.sizeLabel(500), '500 ب');
+      expect(BackupService.sizeLabel(2048), '2.0 ك.ب');
+      expect(BackupService.sizeLabel(3 * 1024 * 1024), '3.0 م.ب');
     });
   });
 }

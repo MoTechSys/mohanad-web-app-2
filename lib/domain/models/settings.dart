@@ -22,6 +22,8 @@ class AppSettings {
     this.blockOversell = true,
     this.warnBelowCost = true,
     this.updatePricesFromPurchase = true,
+    this.hideScanner = false,
+    this.largeFont = false,
   });
 
   final String storeName;
@@ -64,6 +66,12 @@ class AppSettings {
   /// from the invoice lines.
   final bool updatePricesFromPurchase;
 
+  /// م6: إخفاء ماسح الباركود (لمحلات بلا باركود) — يخفي الكاشير/الكاميرا.
+  final bool hideScanner;
+
+  /// م6: خط أكبر لكبار السن وضعاف القراءة (يكبّر كل نصوص التطبيق 15%).
+  final bool largeFont;
+
   bool get hasLogo => logoBase64 != null && logoBase64!.isNotEmpty;
 
   AppSettings copyWith({
@@ -89,6 +97,8 @@ class AppSettings {
     bool? blockOversell,
     bool? warnBelowCost,
     bool? updatePricesFromPurchase,
+    bool? hideScanner,
+    bool? largeFont,
   }) => AppSettings(
     storeName: storeName ?? this.storeName,
     ownerName: ownerName ?? this.ownerName,
@@ -111,6 +121,8 @@ class AppSettings {
     warnBelowCost: warnBelowCost ?? this.warnBelowCost,
     updatePricesFromPurchase:
         updatePricesFromPurchase ?? this.updatePricesFromPurchase,
+    hideScanner: hideScanner ?? this.hideScanner,
+    largeFont: largeFont ?? this.largeFont,
   );
 
   Map<String, dynamic> toMap() => {
@@ -132,6 +144,8 @@ class AppSettings {
     'blockOversell': blockOversell,
     'warnBelowCost': warnBelowCost,
     'updatePricesFromPurchase': updatePricesFromPurchase,
+    'hideScanner': hideScanner,
+    'largeFont': largeFont,
   };
 
   factory AppSettings.fromMap(Map<String, dynamic> m) => AppSettings(
@@ -162,6 +176,8 @@ class AppSettings {
     warnBelowCost: (m['warnBelowCost'] as bool?) ?? true,
     updatePricesFromPurchase:
         (m['updatePricesFromPurchase'] as bool?) ?? true,
+    hideScanner: (m['hideScanner'] as bool?) ?? false,
+    largeFont: (m['largeFont'] as bool?) ?? false,
   );
 }
 

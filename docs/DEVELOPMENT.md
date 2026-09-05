@@ -74,7 +74,7 @@ lib/
 │  └─ shell.dart              التبويبات السفلية
 ├─ core/
 │  ├─ money/                  Money + Qty (صحيحة)
-│  ├─ platform/native_bridge.dart  MethodChannel 'grocery_ledger/native' (صوت/اهتزاز/sendSms)
+│  ├─ platform/native_bridge.dart  MethodChannel 'grocery_ledger/native' (صوت/اهتزاز/sendSms / showNotification (قناة grocery_alerts + إذن POST_NOTIFICATIONS على 33+) / saveToDownloads (MediaStore → Download/دفتر البقالة))
 │  ├─ utils/formatters.dart   Fmt.date/dateTime/money/relative
 │  └─ widgets/common.dart     guarded() / confirm() / confirmWithReason() / MoneyField /
 │                             QtyField / DateField(⚠ lastDate=غدًا) / PickerField / showFormSheet
@@ -155,6 +155,7 @@ flutter build apk --release --split-per-abi   # موقّع تلقائيًا via 
 | م3 | ورديات صندوق + تقرير Z مجمّد + طباعة 80mm | ✅ | 59cee53 |
 | م4 | تواريخ صلاحية + تنبيهات لوحة التحكم + وسوم | ✅ | aea5e2e |
 | م5 | نسخ يومي تلقائي (backup-YYYY-MM-DD.json، آخر 7) | ✅ | 8dc8f90 |
+| م6 | نسخ .glbak مضغوط بمجلد مرئي (Android/media) + استعادة فورية بقائمة + إشعار صلاحية محلي + تقرير أرباح PDF + معاينة لكل التقارير + شبكة أيقونات للمزيد + hideScanner/largeFont + ثيم أزرق + أيقونة جديدة + حفظ في Download/دفتر البقالة | (هذا الكوميت) | 152/152 |
 
 ## 9. أفكار مستقبلية (لم يطلبها المالك بعد — اقترحها قبل التنفيذ)
 

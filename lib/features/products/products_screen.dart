@@ -329,16 +329,19 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
                 labelText: 'الباركود',
-                suffixIcon: IconButton(
-                  tooltip: 'مسح بالكاميرا',
-                  icon: const Icon(Icons.qr_code_scanner_rounded),
-                  onPressed: () async {
-                    final code = await scanBarcodeOnce(context, title: 'مسح باركود المنتج');
-                    if (code != null && mounted) {
-                      setState(() => _barcode.text = LedgerDb.normalizeBarcode(code));
-                    }
-                  },
-                ),
+                // م6: زر الكاميرا يختفي عند تفعيل «إخفاء الماسح».
+                suffixIcon: context.read<LedgerDb>().settings.hideScanner
+                    ? null
+                    : IconButton(
+                        tooltip: 'مسح بالكاميرا',
+                        icon: const Icon(Icons.qr_code_scanner_rounded),
+                        onPressed: () async {
+                          final code = await scanBarcodeOnce(context, title: 'مسح باركود المنتج');
+                          if (code != null && mounted) {
+                            setState(() => _barcode.text = LedgerDb.normalizeBarcode(code));
+                          }
+                        },
+                      ),
               ),
               validator: (v) {
                 final code = LedgerDb.normalizeBarcode(v ?? '');

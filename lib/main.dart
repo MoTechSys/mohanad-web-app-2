@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import 'app/app_services.dart';
 import 'app/shell.dart';
+import 'core/platform/native_bridge.dart';
 import 'core/theme/app_theme.dart';
 import 'data/kv_backend.dart';
 import 'data/ledger_db.dart';
@@ -20,7 +21,30 @@ Future<void> main() async {
   await services.init();
   // م5: نسخة احتياطية يومية تلقائية (آخر 7) — لا تعطل الإقلاع أبدًا.
   unawaited(services.backup.runDailyBackup());
+  // م6: إشعار محلي إذا وُجدت منتجات منتهية/قريبة الانتهاء — لا يعطل الإقلاع.
+  unawaited(notifyExpiringProducts(services));
   runApp(GroceryLedgerApp(services: services));
+}
+
+/// م6 — إشعار في شريط الإشعارات عند وجود منتجات منتهية أو قريبة الانتهاء.
+/// يعمل مرة واحدة عند كل إقلاع، وأي خطأ يُبتلع بصمت.
+Future<void> notifyExpiringProducts(AppServices services) async {
+  try {
+    final list = services.reports.expiringSoon();
+    if (list.isEmpty) return;
+    final expired = list.where((p) => p.isExpired).length;
+    final soon = list.length - expired;
+    final parts = <String>[
+      if (expired > 0) '$expired منتج منتهي الصلاحية',
+      if (soon > 0) '$soon منتج تنتهي صلاحيته خلال 30 يومًا',
+    ];
+    final names = list.take(3).map((p) => p.name).join('، ');
+    await NativeBridge.showNotification(
+      id: 1001,
+      title: 'تنبيه صلاحية — دفتر البقالة',
+      body: '${parts.join(' و')}: $names${list.length > 3 ? '…' : ''}',
+    );
+  } catch (_) {/* لا يعطل الإقلاع */}
 }
 
 class GroceryLedgerApp extends StatelessWidget {
@@ -52,9 +76,17 @@ class GroceryLedgerApp extends StatelessWidget {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          builder: (context, child) => Directionality(
-            textDirection: TextDirection.rtl,
-            child: child ?? const SizedBox.shrink(),
+          builder: (context, child) => MediaQuery(
+            // م6: خط أكبر لكبار السن وضعاف القراءة (اختياري من الإعدادات).
+            data: MediaQuery.of(context).copyWith(
+              textScaler: db.settings.largeFont
+                  ? const TextScaler.linear(1.15)
+                  : TextScaler.noScaling,
+            ),
+            child: Directionality(
+              textDirection: TextDirection.rtl,
+              child: child ?? const SizedBox.shrink(),
+            ),
           ),
           home: const PinGate(child: AppShell()),
         ),

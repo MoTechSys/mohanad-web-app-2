@@ -7,11 +7,11 @@
 
 | | |
 |---|---|
-| **الإصدار** | **2.1.0 (build 3)** — كل المراحل م1–م5 مكتملة |
+| **الإصدار** | **2.2.0 (build 3)** — كل المراحل م1–م5 مكتملة |
 | **الحزمة** | `com.groceryledger.accounts` |
 | **المنصة** | Android 5.0+ (armv7 / arm64 / x86_64) |
 | **الحجم** | ~13.9MB (arm64) |
-| **الحالة** | `flutter analyze` 0 مشاكل · **144 اختبار ناجح** |
+| **الحالة** | `flutter analyze` 0 مشاكل · **152 اختبار ناجح** |
 | **المطوّر** | **معين العباسي** · [alabbasi.uk](https://alabbasi.uk) · +967770941666 |
 
 ---
@@ -111,7 +111,7 @@ lib/
 ```bash
 flutter pub get
 flutter analyze
-flutter test                       # 144 اختبار
+flutter test                       # 152 اختبار
 flutter build apk --release --split-per-abi --obfuscate --split-debug-info=build/debug-info
 ```
 

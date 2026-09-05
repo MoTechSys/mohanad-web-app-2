@@ -22,73 +22,95 @@ import '../reports/reports_screen.dart';
 import '../shifts/shifts_screen.dart';
 import '../vouchers/vouchers_screen.dart';
 
+/// م6 — «المزيد» كشبكة أيقونات كبيرة ملوّنة: أوضح لأصحاب المحلات الذين
+/// لا يقرؤون جيدًا (الأيقونة واللون هما الدليل، والنص مساعد فقط).
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final db = context.watch<LedgerDb>();
+    final c = context.c;
     void go(Widget w) => Navigator.push(context, MaterialPageRoute(builder: (_) => w));
+
+    final tiles = <_GridItem>[
+      if (!db.settings.hideScanner)
+        _GridItem('الكاشير', Icons.qr_code_scanner_rounded, c.primaryStrong,
+            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosScreen(), fullscreenDialog: true))),
+      _GridItem('التقارير', Icons.bar_chart_rounded, c.info, () => go(const ReportsScreen())),
+      if (db.settings.inventoryEnabled)
+        _GridItem('المنتجات\nوالمخزون', Icons.inventory_2_rounded, c.primaryDark, () => go(const ProductsScreen())),
+      _GridItem('فواتير\nالمشتريات', Icons.shopping_cart_rounded, c.warning, () => go(const PurchasesScreen())),
+      _GridItem('المصروفات', Icons.payments_rounded, c.danger, () => go(const ExpensesScreen())),
+      _GridItem('السندات', Icons.receipt_rounded, c.primaryStrong, () => go(const VouchersScreen())),
+      _GridItem('الورديات\n(تقرير Z)', Icons.point_of_sale_rounded, c.info, () => go(const ShiftsScreen())),
+      _GridItem('النسخ\nالاحتياطي', Icons.backup_rounded, c.primaryDark, () => go(const BackupScreen())),
+      _GridItem('الإعدادات', Icons.settings_rounded, c.textMuted, () => go(const SettingsScreen())),
+      _GridItem('هوية المحل\nوالطباعة', Icons.storefront_rounded, c.warning, () => go(const BrandingScreen())),
+      _GridItem('سجل\nالتدقيق', Icons.history_rounded, c.info, () => go(const AuditScreen())),
+      _GridItem('حول\nالتطبيق', Icons.info_rounded, c.primaryStrong, () => go(const AboutScreen())),
+    ];
+
     return Scaffold(
       appBar: AppBar(title: const Text('المزيد')),
       body: SafeArea(
         child: ListView(padding: const EdgeInsets.all(16), children: [
-          Card(child: Column(children: [
-            ListTile(leading: Icon(Icons.qr_code_scanner_rounded, color: context.c.primaryStrong), title: const Text('الكاشير (مسح بالباركود)'),
-                subtitle: const Text('بيع سريع بالكاميرا أو الماسح', style: TextStyle(fontSize: 12)),
-                trailing: const Icon(Icons.chevron_left),
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosScreen(), fullscreenDialog: true))),
-            const Divider(),
-            ListTile(leading: Icon(Icons.receipt_outlined, color: context.c.primaryStrong), title: const Text('سندات القبض والصرف'),
-                trailing: const Icon(Icons.chevron_left), onTap: () => go(const VouchersScreen())),
-            const Divider(),
-            ListTile(leading: Icon(Icons.point_of_sale_outlined, color: context.c.info), title: const Text('ورديات الصندوق (تقرير Z)'),
-                trailing: const Icon(Icons.chevron_left), onTap: () => go(const ShiftsScreen())),
-            const Divider(),
-            ListTile(leading: Icon(Icons.receipt_long_outlined, color: context.c.danger), title: Text('المصروفات'),
-                trailing: const Icon(Icons.chevron_left), onTap: () => go(const ExpensesScreen())),
-            const Divider(),
-            ListTile(leading: Icon(Icons.inventory_2_outlined, color: context.c.warning), title: Text('فواتير المشتريات'),
-                trailing: const Icon(Icons.chevron_left), onTap: () => go(const PurchasesScreen())),
-            if (db.settings.inventoryEnabled) ...[
-              const Divider(),
-              ListTile(leading: Icon(Icons.inventory_outlined, color: context.c.primaryDark), title: Text('المنتجات والمخزون'),
-                  trailing: const Icon(Icons.chevron_left), onTap: () => go(const ProductsScreen())),
-            ],
-            const Divider(),
-            ListTile(leading: Icon(Icons.bar_chart, color: context.c.info), title: Text('التقارير'),
-                trailing: const Icon(Icons.chevron_left), onTap: () => go(const ReportsScreen())),
-          ])),
+          GridView.count(
+            crossAxisCount: 3,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 0.95,
+            children: [for (final t in tiles) _GridTile(t)],
+          ),
           const SizedBox(height: 12),
-          Card(child: Column(children: [
-            ListTile(leading: const Icon(Icons.settings_outlined), title: const Text('الإعدادات'),
-                trailing: const Icon(Icons.chevron_left), onTap: () => go(const SettingsScreen())),
-            const Divider(),
-            ListTile(leading: Icon(Icons.branding_watermark_outlined, color: context.c.primaryStrong), title: const Text('هوية المحل والطباعة'),
-                subtitle: const Text('الشعار، البيان العلوي والسفلي للفواتير والتقارير', style: TextStyle(fontSize: 12)),
-                trailing: const Icon(Icons.chevron_left), onTap: () => go(const BrandingScreen())),
-            const Divider(),
-            ListTile(leading: const Icon(Icons.history), title: const Text('سجل التدقيق'),
-                subtitle: Text('${db.audit.length} حركة مسجلة'),
-                trailing: const Icon(Icons.chevron_left), onTap: () => go(const AuditScreen())),
-            const Divider(),
-            ListTile(leading: const Icon(Icons.backup_outlined), title: const Text('النسخ الاحتياطي والاستعادة'),
-                trailing: const Icon(Icons.chevron_left), onTap: () => go(const BackupScreen())),
-          ])),
-          const SizedBox(height: 12),
-          Card(child: Column(children: [
-            _ThemeModeTile(current: db.settings.themeMode),
-            const Divider(),
-            ListTile(leading: Icon(Icons.info_outline_rounded, color: context.c.info), title: const Text('حول التطبيق والمطور'),
-                subtitle: const Text('معين العباسي • alabbasi.uk', style: TextStyle(fontSize: 12)),
-                trailing: const Icon(Icons.chevron_left), onTap: () => go(const AboutScreen())),
-          ])),
+          Card(child: _ThemeModeTile(current: db.settings.themeMode)),
           const SizedBox(height: 24),
           Center(child: Text('دفتر البقالة • نسخة ${AboutScreen.version} • يعمل محلياً بدون إنترنت',
               style: TextStyle(fontSize: 12, color: context.c.textMuted))),
           const SizedBox(height: 4),
           Center(child: Text('تطوير: معين العباسي',
               style: TextStyle(fontSize: 12, color: context.c.textMuted, fontWeight: FontWeight.w600))),
+        ]),
+      ),
+    );
+  }
+}
+
+class _GridItem {
+  const _GridItem(this.label, this.icon, this.color, this.onTap);
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+}
+
+class _GridTile extends StatelessWidget {
+  const _GridTile(this.item);
+  final _GridItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: item.onTap,
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Container(
+            width: 54,
+            height: 54,
+            decoration: BoxDecoration(
+              color: item.color.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(item.icon, color: item.color, size: 30),
+          ),
+          const SizedBox(height: 8),
+          Text(item.label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, height: 1.25)),
         ]),
       ),
     );
@@ -194,6 +216,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late bool _blockOversell = s0.blockOversell;
   late bool _warnBelowCost = s0.warnBelowCost;
   late bool _updatePrices = s0.updatePricesFromPurchase;
+  late bool _hideScanner = s0.hideScanner;
+  late bool _largeFont = s0.largeFont;
   late ProfitMode _mode = s0.profitMode;
   late AppThemeMode _theme = s0.themeMode;
 
@@ -228,6 +252,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
           selected: {_theme},
           onSelectionChanged: (v) => setState(() => _theme = v.first),
         ),
+        const SectionTitle('تبسيط الواجهة'),
+        SwitchListTile(contentPadding: EdgeInsets.zero,
+            title: const Text('إخفاء ماسح الباركود (الكاميرا)'),
+            subtitle: const Text('للمحلات التي لا تستخدم باركود — يختفي الماسح من الكاشير والمنتجات', style: TextStyle(fontSize: 12)),
+            value: _hideScanner, onChanged: (v) => setState(() => _hideScanner = v)),
+        SwitchListTile(contentPadding: EdgeInsets.zero,
+            title: const Text('خط أكبر'),
+            subtitle: const Text('يكبّر كل نصوص التطبيق — مفيد لكبار السن وضعاف القراءة', style: TextStyle(fontSize: 12)),
+            value: _largeFont, onChanged: (v) => setState(() => _largeFont = v)),
         const SectionTitle('المحاسبة'),
         SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('تفعيل المخزون والمنتجات'),
             value: _inv, onChanged: (v) => setState(() => _inv = v)),
@@ -277,6 +310,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       storeName: _store.text.trim(), ownerName: _owner.text.trim(), phone: _phone.text.trim(),
       currency: _cur.text.trim(), inventoryEnabled: _inv, profitMode: _mode, cashPurchaseAsCogs: _cashCogs,
       blockOversell: _blockOversell, warnBelowCost: _warnBelowCost, updatePricesFromPurchase: _updatePrices,
+      hideScanner: _hideScanner, largeFont: _largeFont,
       themeMode: _theme,
       largeTxThreshold: th.isEmpty ? null : Money.tryParse(th), clearLargeTx: th.isEmpty,
       dailyTarget: tg.isEmpty ? null : Money.tryParse(tg), clearDailyTarget: tg.isEmpty,
@@ -294,124 +328,255 @@ class BackupScreen extends StatefulWidget {
 }
 
 class _BackupScreenState extends State<BackupScreen> {
-  List<File> _autoBackups = const [];
+  List<File> _backups = const [];
+  String? _folder;
+  bool _busy = false;
 
   @override
   void initState() {
     super.initState();
-    _loadAuto();
+    _load();
   }
 
-  Future<void> _loadAuto() async {
+  Future<void> _load() async {
     try {
       final app = context.read<AppServices>();
-      final dir = await app.backup.defaultDir();
-      final files = await app.backup.listBackups(dir);
-      if (mounted) setState(() => _autoBackups = files);
+      final dir = await app.backup.backupDir();
+      final files = await app.backup.allBackups();
+      if (mounted) {
+        setState(() {
+          _backups = files;
+          _folder = dir.path;
+        });
+      }
     } catch (_) {/* غير متاح على هذه المنصة */}
+  }
+
+  Future<void> _backupNow() async {
+    final app = context.read<AppServices>();
+    setState(() => _busy = true);
+    final f = await app.backup.backupNow();
+    if (!mounted) return;
+    setState(() => _busy = false);
+    await _load();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(f == null ? 'تعذّر إنشاء النسخة' : 'تم حفظ نسخة اليوم بنجاح'),
+        backgroundColor: f == null ? context.c.danger : context.c.primaryDark));
+  }
+
+  /// م6 — نافذة الاستعادة الفورية: تفتح مباشرة بقائمة كل النسخ المتاحة
+  /// (بالتاريخ والحجم) والمستخدم يختار أيها يستعيد.
+  Future<void> _openRestorePicker() async {
+    final app = context.read<AppServices>();
+    final files = await app.backup.allBackups();
+    if (!mounted) return;
+    if (files.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('لا توجد نسخ على الجهاز — يمكنك اللصق من الحافظة بالأسفل')));
+      return;
+    }
+    final picked = await showModalBottomSheet<File>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            const SheetTitle('اختر النسخة التي تريد استعادتها'),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.55),
+              child: ListView(shrinkWrap: true, children: [
+                for (final f in files) _backupTilePick(ctx, f),
+              ]),
+            ),
+          ]),
+        ),
+      ),
+    );
+    if (picked == null || !mounted) return;
+    await _restoreFrom(picked);
+  }
+
+  Widget _backupTilePick(BuildContext ctx, File f) {
+    final name = f.uri.pathSegments.last;
+    final date = BackupService.dateOf(name) ?? '';
+    int size = 0;
+    try {
+      size = f.lengthSync();
+    } catch (_) {}
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: Icon(Icons.history_rounded, color: ctx.c.primaryStrong, size: 28),
+        title: Text('نسخة $date', style: const TextStyle(fontWeight: FontWeight.w700)),
+        subtitle: Text('${BackupService.sizeLabel(size)} • $name',
+            textDirection: TextDirection.ltr, style: const TextStyle(fontSize: 11)),
+        trailing: const Icon(Icons.restore_rounded),
+        onTap: () => Navigator.pop(ctx, f),
+      ),
+    );
+  }
+
+  Future<void> _restoreFrom(File f) async {
+    final app = context.read<AppServices>();
+    final name = f.uri.pathSegments.last;
+    final ok = await confirm(context,
+        title: 'استعادة نسخة احتياطية',
+        message: 'سيُستبدل كل بياناتك الحالية بمحتوى:\n$name\nهل أنت متأكد؟',
+        destructive: true);
+    if (!ok || !mounted) return;
+    try {
+      final txt = await app.backup.readBackup(f);
+      if (!mounted) return;
+      await guarded(context, () => app.settings.importJson(txt),
+          successMessage: 'تمت الاستعادة بنجاح');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('تعذّرت قراءة النسخة: $e'), backgroundColor: context.c.danger));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final app = context.read<AppServices>();
+    final c = context.c;
     return Scaffold(
-      appBar: AppBar(title: const Text('النسخ الاحتياطي')),
+      appBar: AppBar(title: const Text('النسخ الاحتياطي والاستعادة')),
       body: SafeArea(child: ListView(padding: const EdgeInsets.all(16), children: [
-        Text('البيانات محفوظة محلياً على هاتفك فقط. انسخ النسخة الاحتياطية واحفظها في مكان آمن (مثل رسالة لنفسك أو ملاحظات).',
-            style: TextStyle(color: context.c.textMuted)),
-        const SizedBox(height: 16),
-        FilledButton.icon(icon: const Icon(Icons.copy), label: const Text('نسخ النسخة الاحتياطية (JSON)'),
-            onPressed: () async {
-              final json = app.settings.exportJson();
-              await Clipboard.setData(ClipboardData(text: json));
-              if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text('تم نسخ ${(json.length / 1024).toStringAsFixed(1)} كيلوبايت إلى الحافظة'),
-                  backgroundColor: context.c.primaryDark));
-            }),
-        const SizedBox(height: 12),
-        OutlinedButton.icon(icon: const Icon(Icons.share_outlined), label: const Text('عرض النسخة كنص'),
-            onPressed: () => showFormSheet(context, SelectableText(app.settings.exportJson(),
-                textDirection: TextDirection.ltr, style: const TextStyle(fontSize: 10, fontFamily: 'monospace')))),
-        const SizedBox(height: 32),
-        OutlinedButton.icon(
-          style: OutlinedButton.styleFrom(foregroundColor: context.c.danger),
-          icon: const Icon(Icons.restore), label: const Text('استعادة من نسخة (يستبدل كل البيانات)'),
-          onPressed: () async {
-            final ctrl = TextEditingController();
-            final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
-              title: const Text('استعادة نسخة احتياطية'),
-              content: TextField(controller: ctrl, maxLines: 6, textDirection: TextDirection.ltr,
-                  decoration: const InputDecoration(hintText: 'الصق محتوى النسخة هنا')),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
-                FilledButton(style: FilledButton.styleFrom(backgroundColor: context.c.danger),
-                    onPressed: () => Navigator.pop(ctx, true), child: const Text('استعادة')),
-              ],
-            ));
-            if (ok != true || !context.mounted) return;
-            final text = ctrl.text.trim().isEmpty
-                ? (await Clipboard.getData('text/plain'))?.text ?? ''
-                : ctrl.text;
-            if (!context.mounted) return;
-            await guarded(context, () => app.settings.importJson(text), successMessage: 'تمت الاستعادة بنجاح');
-          },
-        ),
-        const SizedBox(height: 24),
-        const SectionTitle('النسخ اليومية التلقائية'),
-        Text('يحفظ التطبيق نسخة تلقائية عند أول تشغيل كل يوم ويحتفظ بآخر ${BackupService.keepLast} نسخ.',
-            style: TextStyle(fontSize: 12, color: context.c.textMuted)),
-        const SizedBox(height: 8),
-        if (_autoBackups.isEmpty)
-          Text('لا توجد نسخ تلقائية بعد — ستُنشأ أول نسخة مع التشغيل القادم.',
-              style: TextStyle(color: context.c.textMuted))
-        else
-          for (final f in _autoBackups)
-            Card(
-              margin: const EdgeInsets.only(bottom: 6),
-              child: ListTile(
-                dense: true,
-                leading: const Icon(Icons.history),
-                title: Text(f.uri.pathSegments.last,
-                    textDirection: TextDirection.ltr,
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                  IconButton(
-                    tooltip: 'مشاركة (واتساب/درايف)',
-                    icon: const Icon(Icons.share_outlined, size: 20),
-                    onPressed: () => app.share.shareFile(f,
-                        text: 'نسخة احتياطية — دفتر البقالة'),
-                  ),
-                  IconButton(
-                    tooltip: 'نسخ للحافظة',
-                    icon: const Icon(Icons.copy, size: 20),
-                    onPressed: () async {
-                      final txt = await f.readAsString();
-                      await Clipboard.setData(ClipboardData(text: txt));
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('تم نسخ النسخة إلى الحافظة')));
-                    },
-                  ),
-                  IconButton(
-                    tooltip: 'استعادة من هذه النسخة',
-                    icon: Icon(Icons.restore, size: 20, color: context.c.danger),
-                    onPressed: () async {
-                      final ok = await confirm(context,
-                          title: 'استعادة نسخة تلقائية',
-                          message: 'سيُستبدل كل بياناتك الحالية بمحتوى ${f.uri.pathSegments.last}. متأكد؟',
-                          destructive: true);
-                      if (!ok || !context.mounted) return;
-                      final txt = await f.readAsString();
-                      if (!context.mounted) return;
-                      await guarded(context, () => app.settings.importJson(txt),
-                          successMessage: 'تمت الاستعادة بنجاح');
-                    },
-                  ),
-                ]),
+        // بطاقة تعريفية بنمط واتساب
+        Card(
+          color: c.primarySoft,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Icon(Icons.cloud_done_rounded, color: c.primaryStrong),
+                const SizedBox(width: 8),
+                const Expanded(child: Text('نسخ تلقائي يومي — مثل واتساب',
+                    style: TextStyle(fontWeight: FontWeight.w800))),
+              ]),
+              const SizedBox(height: 8),
+              Text(
+                'يحفظ التطبيق نسخة مضغوطة كل يوم تلقائياً ويحتفظ بآخر ${BackupService.keepLast} نسخ '
+                'في مجلد ظاهر يمكنك الوصول إليه من مدير الملفات:',
+                style: TextStyle(fontSize: 12.5, color: c.text, height: 1.5),
               ),
+              const SizedBox(height: 6),
+              if (_folder != null)
+                Text(_folder!, textDirection: TextDirection.ltr,
+                    style: TextStyle(fontSize: 10.5, fontFamily: 'monospace', color: c.textMuted)),
+            ]),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(children: [
+          Expanded(child: FilledButton.icon(
+            icon: _busy
+                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : const Icon(Icons.backup_rounded),
+            label: const Text('نسخ احتياطي الآن'),
+            onPressed: _busy ? null : _backupNow,
+          )),
+          const SizedBox(width: 10),
+          Expanded(child: OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(foregroundColor: c.danger),
+            icon: const Icon(Icons.restore_rounded),
+            label: const Text('استعادة نسخة'),
+            onPressed: _openRestorePicker,
+          )),
+        ]),
+        const SizedBox(height: 24),
+        const SectionTitle('النسخ المتاحة على الجهاز'),
+        if (_backups.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text('لا توجد نسخ بعد — اضغط «نسخ احتياطي الآن» لإنشاء أول نسخة.',
+                style: TextStyle(color: c.textMuted)),
+          )
+        else
+          for (final f in _backups) _backupCard(f),
+        const SizedBox(height: 24),
+        // خيارات متقدمة (JSON) — تبقى للحالات الخاصة والنسخ القديمة
+        ExpansionTile(
+          tilePadding: EdgeInsets.zero,
+          title: Text('خيارات متقدمة (نص JSON)', style: TextStyle(fontSize: 14, color: c.textMuted)),
+          children: [
+            OutlinedButton.icon(icon: const Icon(Icons.copy), label: const Text('نسخ البيانات كنص إلى الحافظة'),
+                onPressed: () async {
+                  final json = app.settings.exportJson();
+                  await Clipboard.setData(ClipboardData(text: json));
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('تم نسخ ${(json.length / 1024).toStringAsFixed(1)} كيلوبايت إلى الحافظة'),
+                      backgroundColor: c.primaryDark));
+                }),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(foregroundColor: c.danger),
+              icon: const Icon(Icons.paste_rounded), label: const Text('استعادة من نص ملصوق'),
+              onPressed: () async {
+                final ctrl = TextEditingController();
+                final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
+                  title: const Text('استعادة من نص'),
+                  content: TextField(controller: ctrl, maxLines: 6, textDirection: TextDirection.ltr,
+                      decoration: const InputDecoration(hintText: 'الصق محتوى النسخة هنا (أو اتركه فارغاً لأخذه من الحافظة)')),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+                    FilledButton(style: FilledButton.styleFrom(backgroundColor: c.danger),
+                        onPressed: () => Navigator.pop(ctx, true), child: const Text('استعادة')),
+                  ],
+                ));
+                if (ok != true || !context.mounted) return;
+                final text = ctrl.text.trim().isEmpty
+                    ? (await Clipboard.getData('text/plain'))?.text ?? ''
+                    : ctrl.text;
+                if (!context.mounted) return;
+                await guarded(context, () => app.settings.importJson(text), successMessage: 'تمت الاستعادة بنجاح');
+              },
             ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ])),
+    );
+  }
+
+  Widget _backupCard(File f) {
+    final app = context.read<AppServices>();
+    final name = f.uri.pathSegments.last;
+    final date = BackupService.dateOf(name) ?? '';
+    final isLegacy = name.endsWith('.json');
+    int size = 0;
+    try {
+      size = f.lengthSync();
+    } catch (_) {}
+    return Card(
+      margin: const EdgeInsets.only(bottom: 6),
+      child: ListTile(
+        dense: true,
+        leading: Icon(isLegacy ? Icons.description_outlined : Icons.archive_rounded,
+            color: isLegacy ? context.c.textMuted : context.c.primaryStrong),
+        title: Text('نسخة $date', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+        subtitle: Text('${BackupService.sizeLabel(size)}${isLegacy ? ' • صيغة قديمة' : ' • مضغوطة'}',
+            style: const TextStyle(fontSize: 11)),
+        trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+          IconButton(
+            tooltip: 'مشاركة (واتساب/درايف)',
+            icon: const Icon(Icons.share_outlined, size: 20),
+            onPressed: () => app.share.shareFile(f,
+                text: 'نسخة احتياطية — دفتر البقالة ($date)',
+                mimeType: isLegacy ? 'application/json' : 'application/gzip'),
+          ),
+          IconButton(
+            tooltip: 'استعادة من هذه النسخة',
+            icon: Icon(Icons.restore, size: 20, color: context.c.danger),
+            onPressed: () => _restoreFrom(f),
+          ),
+        ]),
+      ),
     );
   }
 }
@@ -453,7 +618,7 @@ class _ThemeModeTile extends StatelessWidget {
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
-  static const version = '2.0.0';
+  static const version = '2.2.0';
   static const developer = 'معين العباسي';
   static const website = 'alabbasi.uk';
   static const websiteUrl = 'https://alabbasi.uk';
