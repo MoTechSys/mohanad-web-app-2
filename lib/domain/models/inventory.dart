@@ -21,7 +21,9 @@ const kCommonUnits = <String>[
   'لتر',
 ];
 
-/// Sentinel for copyWith so `expiryDate: null` can *clear* the date.
+/// Sentinel for copyWith so `expiryDate: null` / `barcode: null` can *clear*
+/// the value (a plain `?? this.x` pattern cannot distinguish "unchanged" from
+/// "clear").
 const Object _unset = Object();
 
 /// A packaging unit for a product (e.g. كرتون = 24 حبة).
@@ -128,7 +130,7 @@ class Product {
 
   Product copyWith({
     String? name,
-    String? barcode,
+    Object? barcode = _unset,
     String? unit,
     Money? purchasePrice,
     Money? salePrice,
@@ -142,7 +144,7 @@ class Product {
   }) => Product(
     id: id,
     name: name ?? this.name,
-    barcode: barcode ?? this.barcode,
+    barcode: identical(barcode, _unset) ? this.barcode : barcode as String?,
     unit: unit ?? this.unit,
     purchasePrice: purchasePrice ?? this.purchasePrice,
     salePrice: salePrice ?? this.salePrice,

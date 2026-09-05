@@ -29,10 +29,10 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // Must stay in sync with: AndroidManifest (namespace), MainActivity.kt
+        // package path, and BackupService.packageName (Android/media/<pkg>).
         applicationId = "com.groceryledger.accounts"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        // Flutter 3.35 default (API 24 / Android 7.0). mobile_scanner needs >= 23.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

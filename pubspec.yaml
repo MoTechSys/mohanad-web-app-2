@@ -1,7 +1,7 @@
 name: grocery_ledger
 description: "دفتر البقالة — نظام حسابات بقالة محلي بالكامل: عملاء وديون، موردون ومشتريات، مبيعات، مصاريف، مخزون وتقارير."
 publish_to: 'none'
-version: 2.2.0+4
+version: 2.2.1+5
 
 environment:
   sdk: ^3.9.2

@@ -3,6 +3,7 @@ import 'package:grocery_ledger/app/app_services.dart';
 import 'package:grocery_ledger/core/errors/domain_exception.dart';
 import 'package:grocery_ledger/core/money/money.dart';
 import 'package:grocery_ledger/data/kv_backend.dart';
+import 'package:grocery_ledger/data/services/report_service.dart';
 import 'package:grocery_ledger/domain/enums/enums.dart';
 import 'package:grocery_ledger/domain/models/party.dart';
 import 'package:grocery_ledger/domain/models/voucher.dart';
@@ -223,6 +224,39 @@ void main() {
       expect(back.partyTxId, 't1');
       expect(back.expenseId, 'e1');
       expect(back.isActive, isTrue);
+    });
+  });
+
+  group('اتساق التقارير (v2.2.1)', () {
+    test('سند قبض خارجي يدخل «إجمالي الداخل» للفترة مثل تقرير Z', () async {
+      final shift = await app.shifts.openShift(
+        workerName: 'عامل',
+        openingCash: m(0),
+      );
+      // سند لعميل → سداد (لا يُحسب مرتين)؛ سند لجهة خارجية → مقبوضات أخرى.
+      await app.parties.addCustomerDebt(ali.id, m(300));
+      await app.vouchers.createReceipt(customerId: ali.id, amount: m(100));
+      await app.vouchers.createReceipt(
+        partyNameManual: 'إيجار محل مجاور',
+        amount: m(250),
+      );
+      final cancelled = await app.vouchers.createReceipt(
+        partyNameManual: 'ملغى',
+        amount: m(999),
+      );
+      await app.vouchers.cancelVoucher(cancelled.id, 'خطأ');
+
+      final s = app.reports.summary(DateRange.today());
+      expect(s.customerPayments, m(100));
+      expect(s.otherReceipts, m(250), reason: 'الملغى مستثنى');
+      expect(s.cashIn, m(350));
+      // لا تُحسب إيرادًا — لا تمس الربح.
+      expect(s.revenue, Money.zero);
+
+      final z = app.shifts.zReport(shift);
+      expect(z.customerPayments, s.customerPayments);
+      expect(z.otherReceipts, s.otherReceipts);
+      expect(z.cashIn, s.cashIn);
     });
   });
 }

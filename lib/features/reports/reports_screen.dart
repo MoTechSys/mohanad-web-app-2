@@ -207,6 +207,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     _row('مبيعات نقدية', sum.cashSales),
                     _row('دخل يومي', sum.dailyIncome),
                     _row('دفعات من العملاء', sum.customerPayments),
+                    if (!sum.otherReceipts.isZero)
+                      _row('مقبوضات أخرى (سندات)', sum.otherReceipts),
                     _row(
                       'إجمالي الداخل',
                       sum.cashIn,

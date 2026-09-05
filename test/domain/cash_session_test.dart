@@ -162,5 +162,49 @@ void main() {
         expect(app2.db.cashSessions.values.first.workerName, 'دائم');
       },
     );
+
+    test(
+      'regression v2.2.1: الاستعادة أثناء وردية مفتوحة لا تُبقي وردية شبح',
+      () async {
+        final backend = MemoryBackend();
+        var app = AppServices.withBackend(backend);
+        await app.init();
+
+        // نسخة نظيفة قبل أي وردية.
+        final clean = app.settings.exportJson();
+
+        // افتح وردية ثم استعد النسخة النظيفة (لا تحتوي ورديات).
+        await app.shifts.openShift(workerName: 'أحمد', openingCash: m(100));
+        expect(app.shifts.openSession, isNotNull);
+        await app.settings.importJson(clean);
+
+        // الذاكرة: لا ورديات، ويمكن فتح وردية جديدة برقم Z-0001.
+        expect(app.db.cashSessions, isEmpty);
+        expect(app.shifts.openSession, isNull);
+        final fresh = await app.shifts.openShift(
+          workerName: 'سارة',
+          openingCash: m(50),
+        );
+        expect(fresh.sessionNo, 'Z-0001');
+
+        // القرص: إعادة التحميل تُظهر وردية واحدة فقط (الجديدة) — لا شبح.
+        app = AppServices.withBackend(backend);
+        await app.init();
+        expect(app.db.cashSessions.length, 1);
+        expect(app.db.cashSessions.values.single.workerName, 'سارة');
+      },
+    );
+
+    test('wipeAll يمسح كل المجموعات بما فيها الورديات', () async {
+      final app = await boot();
+      await app.shifts.openShift(workerName: 'x', openingCash: m(1));
+      await app.vouchers.createReceipt(partyNameManual: 'جهة', amount: m(10));
+      await app.db.wipeAll();
+      expect(app.db.cashSessions, isEmpty);
+      expect(app.db.vouchers, isEmpty);
+      expect(app.db.expenses, isEmpty);
+      // التصنيفات الافتراضية تُعاد زراعتها.
+      expect(app.db.categories, isNotEmpty);
+    });
   });
 }

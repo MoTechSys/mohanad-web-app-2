@@ -47,6 +47,7 @@ class PeriodSummary {
     required this.salesCount,
     required this.dailyIncome,
     required this.customerPayments,
+    this.otherReceipts = Money.zero,
     required this.operatingExpenses,
     required this.cashPurchases,
     required this.creditPurchases,
@@ -62,6 +63,10 @@ class PeriodSummary {
   final int salesCount;
   final Money dailyIncome;
   final Money customerPayments;
+
+  /// سندات قبض لجهات خارجية (بدون عميل) — نقد داخل ليس إيرادًا ولا سدادًا.
+  /// v2.2.1: أُدرجت هنا لتتطابق «إجمالي الداخل» مع تقرير Z للوردية.
+  final Money otherReceipts;
   final Money operatingExpenses;
   final Money cashPurchases;
   final Money creditPurchases;
@@ -80,7 +85,8 @@ class PeriodSummary {
   Money get revenue => totalSales + dailyIncome;
 
   // ── Cash flow ──
-  Money get cashIn => cashSales + dailyIncome + customerPayments;
+  Money get cashIn =>
+      cashSales + dailyIncome + customerPayments + otherReceipts;
   Money get cashOut => operatingExpenses + cashPurchases + supplierPayments;
   Money get netCash => cashIn - cashOut;
 
@@ -170,6 +176,14 @@ class ReportService {
         creditPur = creditPur + p.totalAmount;
       }
     }
+    // سندات قبض من جهات خارجية: سندات العملاء تُعد ضمن customerPayments
+    // (لأنها تكتب سطر سداد في الدفتر) فلا تُحسب مرتين.
+    var otherRec = Money.zero;
+    for (final v in db.vouchers.values) {
+      if (!v.isActive || v.type != VoucherType.receipt) continue;
+      if (v.customerId != null || !r.contains(v.voucherDate)) continue;
+      otherRec = otherRec + v.amount;
+    }
     return PeriodSummary(
       range: r,
       cashSales: cashSales,
@@ -177,6 +191,7 @@ class ReportService {
       salesCount: salesCount,
       dailyIncome: income,
       customerPayments: payments,
+      otherReceipts: otherRec,
       operatingExpenses: opex,
       cashPurchases: cashPur,
       creditPurchases: creditPur,

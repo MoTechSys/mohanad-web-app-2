@@ -738,13 +738,24 @@ class _BackupScreenState extends State<BackupScreen> {
     );
   }
 
+  /// v2.2.1 — تنبيه إضافي عند الاستعادة أثناء وردية مفتوحة: الوردية الحالية
+  /// وكل حركاتها ستُستبدل بمحتوى النسخة — يُفضل إغلاقها (تقرير Z) أولًا.
+  String _openShiftWarning(AppServices app) {
+    final s = app.shifts.openSession;
+    if (s == null) return '';
+    return '\n\n⚠️ توجد وردية مفتوحة (${s.sessionNo} — ${s.workerName}). '
+        'ستُفقد مع حركاتها إن لم تكن ضمن النسخة. يُنصح بإغلاقها أولًا.';
+  }
+
   Future<void> _restoreFrom(File f) async {
     final app = context.read<AppServices>();
     final name = f.uri.pathSegments.last;
     final ok = await confirm(
       context,
       title: 'استعادة نسخة احتياطية',
-      message: 'سيُستبدل كل بياناتك الحالية بمحتوى:\n$name\nهل أنت متأكد؟',
+      message:
+          'سيُستبدل كل بياناتك الحالية بمحتوى:\n$name\nهل أنت متأكد؟'
+          '${_openShiftWarning(app)}',
       destructive: true,
     );
     if (!ok || !mounted) return;
@@ -897,18 +908,35 @@ class _BackupScreenState extends State<BackupScreen> {
                   label: const Text('استعادة من نص ملصوق'),
                   onPressed: () async {
                     final ctrl = TextEditingController();
+                    final warn = _openShiftWarning(app).trim();
                     final ok = await showDialog<bool>(
                       context: context,
                       builder: (ctx) => AlertDialog(
                         title: const Text('استعادة من نص'),
-                        content: TextField(
-                          controller: ctrl,
-                          maxLines: 6,
-                          textDirection: TextDirection.ltr,
-                          decoration: const InputDecoration(
-                            hintText:
-                                'الصق محتوى النسخة هنا (أو اتركه فارغاً لأخذه من الحافظة)',
-                          ),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (warn.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Text(
+                                  warn,
+                                  style: TextStyle(
+                                    color: c.danger,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            TextField(
+                              controller: ctrl,
+                              maxLines: 6,
+                              textDirection: TextDirection.ltr,
+                              decoration: const InputDecoration(
+                                hintText:
+                                    'الصق محتوى النسخة هنا (أو اتركه فارغاً لأخذه من الحافظة)',
+                              ),
+                            ),
+                          ],
                         ),
                         actions: [
                           TextButton(
@@ -1054,7 +1082,7 @@ class _ThemeModeTile extends StatelessWidget {
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
-  static const version = '2.2.0';
+  static const version = '2.2.1';
   static const developer = 'معين العباسي';
   static const website = 'alabbasi.uk';
   static const websiteUrl = 'https://alabbasi.uk';

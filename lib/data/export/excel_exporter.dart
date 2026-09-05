@@ -90,6 +90,10 @@ class ExcelExporter {
           DoubleCellValue(_n(s.customerPayments)),
         ],
         [
+          TextCellValue('مقبوضات أخرى (سندات قبض)'),
+          DoubleCellValue(_n(s.otherReceipts)),
+        ],
+        [
           TextCellValue('مصروفات تشغيلية'),
           DoubleCellValue(_n(s.operatingExpenses)),
         ],

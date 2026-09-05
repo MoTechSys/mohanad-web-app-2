@@ -474,4 +474,54 @@ void main() {
       expect(const Qty(333).times(Qty.units(3)), const Qty(999));
     });
   });
+
+  group('Barcode lifecycle (v2.2.1)', () {
+    test(
+      'update: null keeps, empty clears, value sets — and index follows',
+      () async {
+        final p = await app.inventory.createProduct(
+          name: 'شاي',
+          barcode: ' ٦٢٩١٠٠١ ', // Arabic digits + spaces → normalised
+          salePrice: m(5),
+        );
+        expect(p.barcode, '6291001');
+        expect(app.db.productByBarcode('6291001')?.id, p.id);
+
+        // null → unchanged
+        var u = await app.inventory.updateProduct(p.id, name: 'شاي أخضر');
+        expect(u.barcode, '6291001');
+
+        // '' → cleared (previously stored '' and left a stale index)
+        u = await app.inventory.updateProduct(p.id, barcode: '');
+        expect(u.barcode, isNull);
+        expect(app.db.productByBarcode('6291001'), isNull);
+
+        // freed barcode can be reused by another product
+        final q = await app.inventory.createProduct(
+          name: 'قهوة',
+          barcode: '6291001',
+        );
+        expect(app.db.productByBarcode('6291001')?.id, q.id);
+
+        // set to a new value
+        u = await app.inventory.updateProduct(p.id, barcode: '7000');
+        expect(u.barcode, '7000');
+        expect(app.db.productByBarcode('7000')?.id, p.id);
+      },
+    );
+
+    test('Product.copyWith distinguishes unchanged from clear', () {
+      final now = DateTime.now();
+      final p = Product(
+        id: 'x',
+        name: 'n',
+        barcode: 'b',
+        createdAt: now,
+        updatedAt: now,
+      );
+      expect(p.copyWith(name: 'm').barcode, 'b');
+      expect(p.copyWith(barcode: null).barcode, isNull);
+      expect(p.copyWith(barcode: 'c').barcode, 'c');
+    });
+  });
 }

@@ -33,7 +33,8 @@ class InventoryService {
       );
     }
     _validatePackUnits(packUnits, unit);
-    final bc = barcode?.trim();
+    // Normalised (trimmed, ASCII digits) so scanner/keyboard input matches.
+    final bc = barcode == null ? null : LedgerDb.normalizeBarcode(barcode);
     if (bc != null && bc.isNotEmpty) {
       final dup = db.activeProducts.any((p) => p.barcode == bc);
       if (dup) {
@@ -79,6 +80,8 @@ class InventoryService {
     });
   }
 
+  /// [barcode]: `null` = unchanged, `''` (or whitespace) = **clear** the
+  /// barcode, anything else = set (must be unique among active products).
   Future<Product> updateProduct(
     String id, {
     String? name,
@@ -100,7 +103,7 @@ class InventoryService {
     if (name != null && name.trim().isEmpty) {
       throw const DomainException(ErrorCodes.invalidAmount, 'اسم المنتج مطلوب');
     }
-    final bc = barcode?.trim();
+    final bc = barcode == null ? null : LedgerDb.normalizeBarcode(barcode);
     if (bc != null && bc.isNotEmpty) {
       final dup = db.activeProducts.any((p) => p.id != id && p.barcode == bc);
       if (dup) {
@@ -113,7 +116,8 @@ class InventoryService {
     return db.run(() {
       final p = old.copyWith(
         name: name?.trim(),
-        barcode: bc,
+        // null → unchanged (sentinel kept); '' → clear; else → set.
+        barcode: bc == null ? old.barcode : (bc.isEmpty ? null : bc),
         unit: unit?.trim(),
         purchasePrice: purchasePrice,
         salePrice: salePrice,

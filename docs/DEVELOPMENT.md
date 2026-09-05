@@ -57,8 +57,18 @@ Object? expiryDate = _unset,
 // ...
 expiryDate: identical(expiryDate, _unset) ? this.expiryDate : expiryDate as DateTime?,
 ```
-عدم التمرير يُبقي القيمة، تمرير `null` يمسحها. مطبَّق في `Product.copyWith` وغيره.
-وعلى مستوى الخدمة: `updateProduct(expiryDate:, clearExpiry: bool)`.
+عدم التمرير يُبقي القيمة، تمرير `null` يمسحها. مطبَّق في `Product.copyWith` على `expiryDate` **و`barcode`** (v2.2.1).
+وعلى مستوى الخدمة: `updateProduct(expiryDate:, clearExpiry: bool)` و`updateProduct(barcode: '')` يمسح الباركود (`null` = بلا تغيير).
+
+> ⚠️ **لا تستخدم `x ?? this.x` لحقل nullable قابل للمسح** — يخلط بين «بلا تغيير» و«امسح». هذا بالضبط ما سبّب تخزين `''` في الباركود قبل 2.2.1.
+
+### 3.8 صندوق (Box) جديد = 3 أماكن إلزامية
+عند إضافة مجموعة بيانات جديدة (مثل `vouchers`، `cashSessions`):
+1. `Boxes.all` + `_hydrate` في `LedgerDb.load()`.
+2. **`LedgerDb._allCollections`** — تُستخدم في `wipeAll()`. هناك `assert` يفشل في الاختبارات إن نسيتها (`_allCollections.length == Boxes.all.length - 1`).
+3. `SettingsService.exportJson/importJson`.
+
+> 🐞 **الدرس (v2.2.1)**: `cashSessions` أُضيفت في 1 و3 ونُسيت في 2 → «وردية شبح» تعود بعد الاستعادة لأن `importJson` يكتب الذاكرة كلها للقرص بعد `wipeAll`. الاختبار `regression v2.2.1` في `cash_session_test.dart` يحرس هذا.
 
 ### 3.7 التجميد عند الإغلاق (م3)
 `expectedCash` يُحسب **لحظة إغلاق الوردية ويُخزَّن** في `CashSession` — الإلغاءات اللاحقة لا تغيّر تقرير Z الرسمي.
@@ -103,7 +113,7 @@ lib/
 وقت التشغيل مع **إعادة المحاولة بعد المنح** (pendingSms) + تقسيم الرسائل الطويلة (multipart).
 `AndroidManifest.xml`: `SEND_SMS` + `telephony required=false`.
 
-## 5. الاختبارات (144/144)
+## 5. الاختبارات (157/157)
 
 ```bash
 flutter analyze && flutter test   # يجب أن يكونا نظيفين قبل أي commit
@@ -113,15 +123,18 @@ flutter analyze && flutter test   # يجب أن يكونا نظيفين قبل �
 |---|---|
 | test/domain/money_test.dart · ledger_test.dart · units_and_guards_test.dart | المحرك |
 | test/domain/voucher_test.dart · tafqit_test.dart | السندات والتفقيط |
-| test/domain/cash_session_test.dart | الورديات (6) |
+| test/domain/cash_session_test.dart | الورديات (8) — منها regression الوردية الشبح + wipeAll |
 | test/domain/expiry_test.dart | الصلاحية (6) |
-| test/domain/backup_service_test.dart | النسخ اليومي (3) |
+| test/domain/backup_service_test.dart | النسخ اليومي gzip (7) |
+| test/domain/ui_settings_test.dart | إعدادات م6 (5) |
 | test/features/* | شاشات + SMS |
 
 **خطافات الاختبار**: `SmsService.sender` · `NativeBridge.spy` · `ShareService.spy` ·
 `AppServices.withBackend(MemoryBackend())` ثم `await app.init()`.
 
 **فخاخ معروفة**:
+- `PeriodSummary.cashIn` يشمل `otherReceipts` (سندات قبض لجهات خارجية) منذ 2.2.1 — يطابق `ZReport.cashIn`. سندات العملاء تُعدّ ضمن `customerPayments` (سطر دفتر) ولا تُحسب مرتين.
+- الباركود يُطبَّع دائمًا بـ `LedgerDb.normalizeBarcode` (إنشاء/تعديل/بحث) — لا تقارن نصًا خامًا.
 - `createCustomer(openingBalance:)` — ليس openingDebt.
 - `createSale(paymentType:, mode: DocMode.totalOnly, totalAmount:)`.
 - `Money.abs` getter — بدون أقواس.
@@ -146,7 +159,7 @@ flutter build apk --release --split-per-abi   # موقّع تلقائيًا via 
 - build.gradle.kts مضبوط: minify + shrinkResources + legacy jniLibs + خط عربي واحد.
 - ⚠ حجم المستودع كان 276MB وخُفض إلى ~42MB — **لا تعد إضافة** legacy/dist/web للتتبع.
 
-## 8. حالة المتطلبات (م1–م5 من الملاحظات الصوتية «جعبوس1»)
+## 8. حالة المتطلبات (م1–م6 من الملاحظات الصوتية «جعبوس1»)
 
 | # | المتطلب | الحالة | Commit |
 |---|---|---|---|
@@ -155,7 +168,8 @@ flutter build apk --release --split-per-abi   # موقّع تلقائيًا via 
 | م3 | ورديات صندوق + تقرير Z مجمّد + طباعة 80mm | ✅ | 59cee53 |
 | م4 | تواريخ صلاحية + تنبيهات لوحة التحكم + وسوم | ✅ | aea5e2e |
 | م5 | نسخ يومي تلقائي (backup-YYYY-MM-DD.json، آخر 7) | ✅ | 8dc8f90 |
-| م6 | نسخ .glbak مضغوط بمجلد مرئي (Android/media) + استعادة فورية بقائمة + إشعار صلاحية محلي + تقرير أرباح PDF + معاينة لكل التقارير + شبكة أيقونات للمزيد + hideScanner/largeFont + ثيم أزرق + أيقونة جديدة + حفظ في Download/دفتر البقالة | (هذا الكوميت) | 152/152 |
+| م6 | نسخ .glbak مضغوط بمجلد مرئي (Android/media) + استعادة فورية بقائمة + إشعار صلاحية محلي + تقرير أرباح PDF + معاينة لكل التقارير + شبكة أيقونات للمزيد + hideScanner/largeFont + ثيم أزرق + أيقونة جديدة + حفظ في Download/دفتر البقالة | ✅ | 6cfb779 |
+| تدقيق | إصلاح وردية شبح، مسح الباركود، otherReceipts، تحذير الاستعادة، تنظيف Gradle، توثيق | ✅ 2.2.1+5 | 157/157 |
 
 ## 9. أفكار مستقبلية (لم يطلبها المالك بعد — اقترحها قبل التنفيذ)
 

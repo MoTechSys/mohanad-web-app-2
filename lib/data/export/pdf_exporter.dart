@@ -427,6 +427,7 @@ class PdfExporter {
             ('دخل يومي مجمّع', b.money(s.dailyIncome)),
             ('عدد الفواتير', '${s.salesCount}'),
             ('مقبوضات من العملاء', b.money(s.customerPayments)),
+            ('مقبوضات أخرى (سندات)', b.money(s.otherReceipts)),
             ('مصروفات تشغيلية', b.money(s.operatingExpenses)),
             ('مشتريات نقدية', b.money(s.cashPurchases)),
             ('مشتريات آجلة', b.money(s.creditPurchases)),

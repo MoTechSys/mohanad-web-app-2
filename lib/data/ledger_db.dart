@@ -140,27 +140,36 @@ class LedgerDb extends ChangeNotifier {
     await flush();
   }
 
+  /// Every in-memory collection. Single source for [wipeAll] so a new box
+  /// can never be forgotten there (see the v2.2.1 cash-session ghost bug).
+  List<Map<String, Object>> get _allCollections => [
+    customers,
+    suppliers,
+    customerTx,
+    supplierTx,
+    sales,
+    purchases,
+    expenses,
+    categories,
+    dailyIncomes,
+    products,
+    stockMoves,
+    audit,
+    vouchers,
+    cashSessions,
+  ];
+
   Future<void> wipeAll({bool seedDefaults = true}) async {
     await _backend.clearAll();
     _pending.clear();
     _barcodeIndex = null;
-    for (final m in [
-      customers,
-      suppliers,
-      customerTx,
-      supplierTx,
-      sales,
-      purchases,
-      expenses,
-      categories,
-      dailyIncomes,
-      products,
-      stockMoves,
-      audit,
-      vouchers,
-    ]) {
+    for (final m in _allCollections) {
       m.clear();
     }
+    assert(
+      _allCollections.length == Boxes.all.length - 1, // -1: settings box
+      'wipeAll: a box exists without a matching in-memory collection',
+    );
     settings = const AppSettings();
     _custBal.clear();
     _supBal.clear();
