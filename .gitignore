@@ -25,3 +25,12 @@ android/app/.cxx/
 .pub-resolve-policy
 pubspec.lock.backup
 pubspec.yaml.original
+
+# Android-only project: no other platforms, no shipped binaries in git
+legacy/
+dist/
+web/
+ios/
+linux/
+macos/
+windows/
