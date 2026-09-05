@@ -14,7 +14,9 @@
 | Flutter | **3.35.4** (لا `flutter upgrade`) |
 | Dart | **3.9.2** |
 | Java | OpenJDK 17.0.2 |
-| compileSdk / buildTools | 35 / 35.0.0 |
+| compileSdk / targetSdk / minSdk | 36 / 36 / 24 (افتراضيات Flutter 3.35 — `flutter.compileSdkVersion` إلخ) |
+| Gradle / AGP / Kotlin | 8.12 / 8.9.1 / 2.1.0 |
+| Gradle JVM | `-Xmx4G` (كان 8G — OOM على أجهزة 8GB) |
 | مسار المشروع | `/home/user/flutter_app` |
 
 **المنصة أندرويد فقط.** مجلدات `web/ ios/ linux/ macos/ windows/` محذوفة ومحجوبة في `.gitignore`.

@@ -136,7 +136,7 @@ flutter build apk --release --split-per-abi --obfuscate --split-debug-info=build
 الناتج في `build/app/outputs/flutter-apk/`.
 التوقيع: `android/key.properties` + `android/release-key.jks` (غير مرفوعين — راجع `.gitignore`).
 
-**البيئة المثبتة:** Flutter 3.35.4 · Dart 3.9.2 · compileSdk 35 · minSdk 24 · Java 17 · Gradle 8.12 · AGP 8.9.1 · Kotlin 2.1.0.
+**البيئة المثبتة:** Flutter 3.35.4 · Dart 3.9.2 · compileSdk 36 · targetSdk 36 · minSdk 24 · Java 17 · Gradle 8.12 · AGP 8.9.1 · Kotlin 2.1.0.
 
 > إصدارات الحزم مقفولة عمدًا على ما هو في `pubspec.yaml` — لا تُحدَّث دون اختبار كامل.
 
