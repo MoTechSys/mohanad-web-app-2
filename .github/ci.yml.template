@@ -1,0 +1,66 @@
+# ⚠️ قالب — لتفعيله: git mv .github/ci.yml.template .github/workflows/ci.yml  (من حساب المالك؛ توكن الأتمتة بلا صلاحية workflows)
+# CI — يعمل على كل push/PR إلى main أو genspark_ai_developer.
+# يضمن أن أي commit يصل للمستودع يمرّ نفس الفحوص التي نجريها محليًا.
+name: CI
+
+on:
+  push:
+    branches: [main, genspark_ai_developer]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: analyze + test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.4'   # مقفول — يطابق البيئة المحلية (Dart 3.9.2)
+          channel: stable
+          cache: true
+
+      - run: flutter --version
+      - run: flutter pub get
+      - name: dart format (check only)
+        run: dart format --output=none --set-exit-if-changed lib test
+      - run: flutter analyze --fatal-infos
+      - run: flutter test --reporter expanded
+
+  build-apk:
+    name: build release APK (arm64) — smoke
+    needs: check
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.4'
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      # بدون كيستور الإصدار (غير موجود في CI) → build.gradle.kts يقرأ key.properties
+      # إن وُجد فقط؛ هنا نبني بتوقيع debug للتأكد أن Gradle/R8/ProGuard سليمة.
+      - name: Build (unsigned-release smoke)
+        run: |
+          flutter build apk --release --split-per-abi --target-platform android-arm64 \
+            --obfuscate --split-debug-info=build/debug-info || \
+          flutter build apk --debug --target-platform android-arm64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk-smoke-${{ github.sha }}
+          path: build/app/outputs/flutter-apk/*.apk
+          retention-days: 7

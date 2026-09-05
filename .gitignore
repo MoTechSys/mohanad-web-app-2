@@ -34,3 +34,7 @@ ios/
 linux/
 macos/
 windows/
+
+# Signing material & its encrypted backups — NEVER in git (see docs/RELEASE.md)
+*.gpg
+keystore-backup*

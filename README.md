@@ -12,6 +12,7 @@
 | **المنصة** | Android 7.0+ (API 24) · armv7 / arm64 / x86_64 |
 | **الحجم** | **13.3MB** arm64 · 12.7MB armv7 (ماسح مضمّن، أوفلاين كليًا) — أو **10.2MB / 9.9MB** نسخة *lite* (نموذج الباركود عبر Play Services) |
 | **الجودة** | `flutter analyze` 0 مشاكل · **157 اختبار ناجح** |
+| **التنزيل** | [**Releases → v2.2.1**](https://github.com/MoTechSys/mohanad-web-app-2/releases/tag/v2.2.1) |
 | **المطوّر** | **معين العباسي** · [alabbasi.uk](https://alabbasi.uk) · +967770941666 |
 
 ---
@@ -164,7 +165,10 @@ flutter build apk --release --split-per-abi --obfuscate --split-debug-info=build
 - [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) — **دليل المطوّر / وثيقة التسليم**: المعمارية، المبادئ غير القابلة للكسر، خريطة الكود، الفخاخ المعروفة — **اقرأها أولًا قبل أي تطوير**
 - [`docs/RESEARCH.md`](docs/RESEARCH.md) — دراسة سوق البقالات، تدفق الكاشير، النموذج المحاسبي، الهوية والتصدير، قرار الإدخال الصوتي
 - [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) — دليل صاحب المحل خطوة بخطوة
+- [`docs/RELEASE.md`](docs/RELEASE.md) — **دليل الإصدار والتوقيع**: الكيستور وبصمته، أوامر البناء (قياسي/lite)، النشر على Releases، جدول الإصدارات
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — قواعد المساهمة، سير العمل، أسلوب commit
 - [`CHANGELOG.md`](CHANGELOG.md) — سجل الإصدارات
+- [**Releases**](https://github.com/MoTechSys/mohanad-web-app-2/releases) — ملفات APK الجاهزة للتثبيت (+ SHA256)
 
 ## الترخيص والحقوق
 جميع الحقوق محفوظة © 2026 معين العباسي — [alabbasi.uk](https://alabbasi.uk)

@@ -144,22 +144,59 @@ flutter analyze && flutter test   # يجب أن يكونا نظيفين قبل �
 
 ## 6. سير العمل مع Git/GitHub (توجيه المالك: كل شيء في GitHub)
 
-- **المستودع**: `https://github.com/MoTechSys/mohanad-web-app-2.git` · الفرع: `genspark_ai_developer`
-- بعد كل معلم: `analyze` نظيف + الاختبارات كلها ناجحة + قسم في CHANGELOG + **commit + push**.
-- **لا نسخ احتياطية محلية للمشروع** (ProjectBackup) — GitHub هو المرجع الوحيد بقرار المالك.
-- التاريخ أُعيدت كتابته بـ `git filter-repo` (حُذفت APKs القديمة و legacy) — لا تدفع ملفات ثنائية كبيرة.
-- ملفات التوقيع `android/key.properties` + `android/release-key.jks` موجودة محليًا **وغير مرفوعة** (gitignore).
-- إن فشل push بمصادقة: أعد تشغيل أداة إعداد GitHub (يُعرف أنها قد تترك `~/.git-credentials` فارغًا أول مرة).
+- **المستودع**: `https://github.com/MoTechSys/mohanad-web-app-2` — عام.
+- **الفروع**: `main` = المستقر والمنشور (الافتراضي) · `genspark_ai_developer` = التطوير. عند اكتمال مرحلة: PR → `main` (قالب PR جاهز في `.github/`).
+- **CI**: القالب جاهز في `.github/ci.yml.template` (format check + `analyze --fatal-infos` + `test` + APK smoke). **تفعيله خطوة واحدة من حساب المالك**: `git mv .github/ci.yml.template .github/workflows/ci.yml && git push` — توكن الأتمتة (GitHub App) لا يملك صلاحية `workflows` فلا يستطيع رفعه. بعد التفعيل أعد ضبط حماية `main` لتطلب فحص `analyze + test`.
+- بعد كل معلم: analyze نظيف + الاختبارات كلها + CHANGELOG + **commit + push**.
+- **GitHub هو المرجع الوحيد** بقرار المالك. الإصدارات (APK) على **Releases** فقط، لا في المستودع (`dist/` مُتجاهَل).
+- التاريخ أُعيدت كتابته مرة بـ `git filter-repo` (حُذفت APKs/legacy) — **لا تدفع ملفات ثنائية كبيرة** إطلاقًا.
+- ملفات التوقيع `android/key.properties` + `android/release-key.jks` **غير مرفوعة** (gitignore) — إدارتها وبصمتها في [`RELEASE.md`](RELEASE.md).
+- إن فشل push بمصادقة: أعد تشغيل أداة إعداد GitHub (قد تترك `~/.git-credentials` فارغًا أول مرة).
+
+### 6.1 الاستئناف من الصفر على جهاز/جلسة جديدة (خطوة بخطوة)
+```bash
+# 1) الأدوات — نفس الإصدارات تمامًا (لا أحدث)
+#    Flutter 3.35.4 (stable) · Java 17 · Android SDK: platform 36 + build-tools 35.0.0
+git clone https://github.com/MoTechSys/mohanad-web-app-2.git flutter_app && cd flutter_app
+flutter --version          # يجب 3.35.4 / Dart 3.9.2
+
+# 2) التبعيات والتحقق (يجب أن يكون كل شيء أخضر قبل أي تعديل)
+flutter pub get && flutter analyze && flutter test
+
+# 3) (للإصدار فقط) استرجع الكيستور من النسخة المشفَّرة — RELEASE.md §1
+gpg -d keystore-backup.tar.gz.gpg | tar xzf - -C android/
+keytool -list -v -keystore android/release-key.jks -alias release | grep SHA256   # طابق البصمة
+
+# 4) اقرأ بالترتيب: README → هذا الملف (§3 المبادئ، §3.8 الفخ) → CHANGELOG (آخر مدخل) → RELEASE.md
+# 5) ابدأ على فرع التطوير
+git checkout genspark_ai_developer
+```
+> **معاينة ويب للتطوير فقط** (لا تُرفع): `flutter create . --platforms web` ثم `flutter build web --release` وسيرفر بايثون على 5060. بعدها احذف مخلفات `flutter create` (`web/` مُتجاهَل أصلًا؛ استرجع `.metadata` و`test/widget_test.dart` إن أُنشئا).
+
+### 6.2 خريطة الوثائق — أين أجد ماذا؟
+| السؤال | الملف |
+|---|---|
+| ما هذا التطبيق وماذا يفعل؟ | `README.md` |
+| كيف أطوّر دون أن أكسر المحاسبة؟ | `docs/DEVELOPMENT.md` (هذا) |
+| كيف أبني وأوقّع وأنشر إصدارًا؟ أين الكيستور؟ | `docs/RELEASE.md` |
+| قواعد المساهمة ورسائل commit | `CONTRIBUTING.md` |
+| ماذا تغيّر في كل إصدار؟ | `CHANGELOG.md` |
+| كيف يستخدمه صاحب المحل؟ | `docs/USER_GUIDE.md` |
+| لماذا صُمّم هكذا؟ (دراسة السوق، القرارات) | `docs/RESEARCH.md` |
+| الملفات الجاهزة للتثبيت | GitHub → Releases |
 
 ## 7. البناء والإصدار
 
+التفاصيل الكاملة (الكيستور، الأوامر، lite، النشر، جدول الإصدارات) في **[`RELEASE.md`](RELEASE.md)**. المختصر:
+
 ```bash
-flutter build apk --release --split-per-abi   # موقّع تلقائيًا via key.properties
-# الناتج: build/app/outputs/flutter-apk/  (~13.4-14.4MB لكل معمارية)
+flutter build apk --release --split-per-abi --obfuscate --split-debug-info=build/debug-info \
+  --target-platform android-arm64,android-arm          # موقّع تلقائيًا via key.properties
+# lite (نموذج الباركود عبر Play Services): أضف -Pdev.steenbakker.mobile_scanner.useUnbundled=true
 ```
-- الإصدار الحالي: **2.1.0+3** — ارفع `version:` في pubspec عند كل إصدار.
-- build.gradle.kts مضبوط: minify + shrinkResources + legacy jniLibs + خط عربي واحد.
-- ⚠ حجم المستودع كان 276MB وخُفض إلى ~42MB — **لا تعد إضافة** legacy/dist/web للتتبع.
+- الإصدار الحالي: **2.2.1+5** — ارفع `version:` في pubspec **و** `AboutScreen.version` عند كل إصدار.
+- الحجم: 13.3MB arm64 (قياسي) / 10.2MB (lite). تفصيل «أين تذهب الميغابايتات» في README.
+- ⚠ **لا تعد إضافة** legacy/dist/web للتتبع.
 
 ## 8. حالة المتطلبات (م1–م6 من الملاحظات الصوتية «جعبوس1»)
 
