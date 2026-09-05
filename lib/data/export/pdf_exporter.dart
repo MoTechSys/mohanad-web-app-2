@@ -10,6 +10,8 @@ import '../../domain/models/documents.dart';
 import '../../domain/models/inventory.dart';
 import '../../domain/models/party.dart';
 import '../ledger_db.dart';
+import '../../core/utils/tafqit.dart';
+import '../../domain/models/voucher.dart';
 import '../services/report_service.dart';
 import 'pdf_theme.dart';
 
@@ -456,8 +458,179 @@ class PdfExporter {
     RefType.sale => 'فاتورة بيع',
     RefType.purchase => 'فاتورة شراء',
     RefType.expense => 'دفعة',
+    RefType.voucher => 'سند',
     _ => t.type.label,
   };
+
+  // ───────────────────────────── Vouchers ─────────────────────────────
+
+  /// سند قبض/صرف رسمي — A5 أفقي بتصميم مستندي معتمد:
+  /// ترويسة المحل، رقم تسلسلي، المبلغ رقمًا وكتابة (تفقيط)، وخانات توقيع.
+  Future<Uint8List> voucherA5(Voucher v, {required String partyName}) async {
+    final b = await _brand();
+    final doc = b.document();
+    final isReceipt = v.type == VoucherType.receipt;
+    final accent = isReceipt ? PdfBrand.primary : const PdfColor.fromInt(0xFFB3541E);
+    const fmt = PdfPageFormat(
+      210 * PdfPageFormat.mm, 148 * PdfPageFormat.mm,
+      marginAll: 10 * PdfPageFormat.mm,
+    );
+    doc.addPage(pw.Page(
+      pageFormat: fmt,
+      textDirection: pw.TextDirection.rtl,
+      build: (_) => pw.Container(
+        decoration: pw.BoxDecoration(
+          border: pw.Border.all(color: accent, width: 1.2),
+          borderRadius: pw.BorderRadius.circular(8),
+        ),
+        padding: const pw.EdgeInsets.all(14),
+        child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.stretch, children: [
+          // ── Header: store identity + voucher No/date ──
+          pw.Row(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+            pw.Expanded(
+              child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+                pw.Text(b.settings.storeName, style: b.h1),
+                if ((b.settings.ownerName ?? '').isNotEmpty)
+                  pw.Text(b.settings.ownerName!, style: b.small),
+                if ((b.settings.phone ?? '').isNotEmpty)
+                  pw.Text('هاتف: ${b.settings.phone}', style: b.small),
+              ]),
+            ),
+            if (b.logo != null) pw.SizedBox(height: 46, child: pw.Image(b.logo!)),
+            pw.SizedBox(width: 10),
+            pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.end, children: [
+              pw.Container(
+                padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: pw.BoxDecoration(color: accent, borderRadius: pw.BorderRadius.circular(6)),
+                child: pw.Text(v.type.label,
+                    style: pw.TextStyle(color: PdfColors.white, fontSize: 15, fontWeight: pw.FontWeight.bold)),
+              ),
+              pw.SizedBox(height: 4),
+              pw.Text('رقم: ${v.voucherNo}', style: b.bold),
+              pw.Text('التاريخ: ${Fmt.date(v.voucherDate)}', style: b.small),
+            ]),
+          ]),
+          pw.Divider(color: accent),
+          pw.SizedBox(height: 6),
+          // ── Amount box (digits) ──
+          pw.Row(children: [
+            pw.Expanded(
+              child: _voucherField(
+                b,
+                isReceipt ? 'استلمنا من السيد/السادة' : 'صرفنا إلى السيد/السادة',
+                partyName,
+              ),
+            ),
+            pw.SizedBox(width: 8),
+            pw.Container(
+              padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: pw.BoxDecoration(
+                border: pw.Border.all(color: accent, width: 1),
+                borderRadius: pw.BorderRadius.circular(6),
+              ),
+              child: pw.Column(children: [
+                pw.Text('المبلغ', style: b.small),
+                pw.Text(b.money(v.amount),
+                    style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: accent)),
+              ]),
+            ),
+          ]),
+          pw.SizedBox(height: 6),
+          _voucherField(b, 'المبلغ كتابةً',
+              tafqit(v.amount.minor ~/ Money.scale, currency: b.settings.currency)),
+          pw.SizedBox(height: 6),
+          _voucherField(b, 'وذلك مقابل', v.details ?? (isReceipt ? 'سداد دفعة من الحساب' : 'دفعة من الحساب')),
+          pw.SizedBox(height: 6),
+          pw.Row(children: [
+            pw.Expanded(child: _voucherField(b, 'طريقة الدفع', v.method.label)),
+            if (v.isCancelled) ...[
+              pw.SizedBox(width: 8),
+              pw.Expanded(
+                child: pw.Container(
+                  padding: const pw.EdgeInsets.all(6),
+                  decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.red, width: 1)),
+                  child: pw.Text('ملغى — ${v.cancelReason ?? ''}',
+                      style: const pw.TextStyle(color: PdfColors.red, fontSize: 10)),
+                ),
+              ),
+            ],
+          ]),
+          pw.Spacer(),
+          // ── Signatures ──
+          pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
+            _signature(b, isReceipt ? 'توقيع المستلم' : 'توقيع الصارف'),
+            _signature(b, isReceipt ? 'توقيع الدافع' : 'توقيع المستلم'),
+            _signature(b, 'المحاسب'),
+          ]),
+        ]),
+      ),
+    ));
+    return doc.save();
+  }
+
+  /// سند حراري 80mm للطابعات الصغيرة.
+  Future<Uint8List> voucherReceipt80(Voucher v, {required String partyName}) async {
+    final b = await _brand();
+    final doc = b.document();
+    final isReceipt = v.type == VoucherType.receipt;
+    const fmt = PdfPageFormat(80 * PdfPageFormat.mm, double.infinity, marginAll: 4 * PdfPageFormat.mm);
+    doc.addPage(pw.Page(
+      pageFormat: fmt,
+      textDirection: pw.TextDirection.rtl,
+      build: (_) => pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.stretch, children: [
+        if (b.logo != null) pw.Center(child: pw.SizedBox(height: 36, child: pw.Image(b.logo!))),
+        pw.Center(child: pw.Text(b.settings.storeName, style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold))),
+        if ((b.settings.phone ?? '').isNotEmpty)
+          pw.Center(child: pw.Text(b.settings.phone!, style: const pw.TextStyle(fontSize: 8))),
+        pw.Divider(),
+        pw.Center(child: pw.Text(v.type.label, style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold))),
+        pw.SizedBox(height: 2),
+        pw.Text('رقم: ${v.voucherNo}', style: const pw.TextStyle(fontSize: 9)),
+        pw.Text('التاريخ: ${Fmt.dateTime(v.voucherDate)}', style: const pw.TextStyle(fontSize: 9)),
+        pw.Text('${isReceipt ? 'من' : 'إلى'}: $partyName', style: const pw.TextStyle(fontSize: 9)),
+        pw.Text('طريقة الدفع: ${v.method.label}', style: const pw.TextStyle(fontSize: 9)),
+        pw.Divider(),
+        pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
+          pw.Text('المبلغ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+          pw.Text(b.money(v.amount), style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold)),
+        ]),
+        pw.SizedBox(height: 2),
+        pw.Text(tafqit(v.amount.minor ~/ Money.scale, currency: b.settings.currency),
+            style: const pw.TextStyle(fontSize: 8)),
+        if ((v.details ?? '').isNotEmpty) ...[
+          pw.SizedBox(height: 2),
+          pw.Text('مقابل: ${v.details}', style: const pw.TextStyle(fontSize: 8.5)),
+        ],
+        if (v.isCancelled)
+          pw.Center(child: pw.Text('*** ملغى — ${v.cancelReason ?? ''} ***', style: const pw.TextStyle(fontSize: 9, color: PdfColors.red))),
+        pw.Divider(),
+        pw.SizedBox(height: 18),
+        pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
+          pw.Text('التوقيع: ____________', style: const pw.TextStyle(fontSize: 8.5)),
+          pw.Text('دفتر البقالة', style: const pw.TextStyle(fontSize: 7.5, color: PdfBrand.muted)),
+        ]),
+      ]),
+    ));
+    return doc.save();
+  }
+
+  pw.Widget _voucherField(PdfBrand b, String label, String value) => pw.Container(
+    padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+    decoration: pw.BoxDecoration(
+      color: PdfBrand.zebra,
+      borderRadius: pw.BorderRadius.circular(5),
+    ),
+    child: pw.Row(children: [
+      pw.Text('$label: ', style: b.small),
+      pw.Expanded(child: pw.Text(value, style: b.bold.copyWith(fontSize: 10.5))),
+    ]),
+  );
+
+  pw.Widget _signature(PdfBrand b, String title) => pw.Column(children: [
+    pw.Container(width: 110, height: 0.8, color: PdfBrand.muted),
+    pw.SizedBox(height: 3),
+    pw.Text(title, style: b.small),
+  ]);
 
   pw.Widget _metaBlock(PdfBrand b, List<(String, String)> items) => pw.Container(
     padding: const pw.EdgeInsets.all(8),
