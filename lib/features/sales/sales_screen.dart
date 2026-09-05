@@ -286,8 +286,7 @@ class SaleTile extends StatelessWidget {
                   children: [
                     Expanded(child: Text(l.name)),
                     Text(
-                      '${l.qty.format()} × ${l.unitPrice.format()}',
-                      textDirection: TextDirection.ltr,
+                      '${l.qtyLabel()} × ${l.unitPrice.format()}',
                       style: TextStyle(color: context.c.textMuted),
                     ),
                     const SizedBox(width: 12),

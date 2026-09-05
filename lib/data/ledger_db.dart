@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../core/ids/id_gen.dart';
 import '../core/money/money.dart';
+import '../core/utils/arabic_text.dart';
 import '../domain/enums/enums.dart';
 import '../domain/models/documents.dart';
 import '../domain/models/inventory.dart';
@@ -359,9 +360,13 @@ class LedgerDb extends ChangeNotifier {
   Iterable<Product> get activeProducts =>
       products.values.where((p) => !p.isDeleted);
 
-  /// Name/barcode search for the cashier (case-insensitive, prefix-first).
+  /// Name/barcode search for the cashier and invoice editors.
+  ///
+  /// Typo-tolerant per the voice-note requirement («لو تغير حرف حرفين
+  /// يقبل»): Arabic normalisation (أ/ا, ة/ه, ى/ي…) + bounded edit
+  /// distance. Exact prefix > contains > fuzzy, then alphabetical.
   List<Product> searchProducts(String query, {int limit = 30}) {
-    final q = query.trim().toLowerCase();
+    final q = query.trim();
     final sellable = activeProducts.where(
       (p) => p.status == ProductStatus.active,
     );
@@ -369,19 +374,24 @@ class LedgerDb extends ChangeNotifier {
       return sellable.toList()..sort((a, b) => a.name.compareTo(b.name));
     }
     final code = normalizeBarcode(q);
-    final starts = <Product>[];
-    final contains = <Product>[];
+    final scored = <(int, Product)>[];
     for (final p in sellable) {
-      final n = p.name.toLowerCase();
-      if (n.startsWith(q) || (p.barcode ?? '').startsWith(code)) {
-        starts.add(p);
-      } else if (n.contains(q) || (p.barcode ?? '').contains(code)) {
-        contains.add(p);
+      var s = ArabicText.matchScore(q, p.name);
+      final bc = p.barcode ?? '';
+      if (bc.isNotEmpty && code.isNotEmpty) {
+        if (bc.startsWith(code)) {
+          if (s < 100) s = 100;
+        } else if (bc.contains(code)) {
+          if (s < 80) s = 80;
+        }
       }
+      if (s > 0) scored.add((s, p));
     }
-    starts.sort((a, b) => a.name.compareTo(b.name));
-    contains.sort((a, b) => a.name.compareTo(b.name));
-    return [...starts, ...contains].take(limit).toList();
+    scored.sort((a, b) {
+      final d = b.$1.compareTo(a.$1);
+      return d != 0 ? d : a.$2.name.compareTo(b.$2.name);
+    });
+    return scored.take(limit).map((e) => e.$2).toList();
   }
 
   List<PartyTx> customerStatement(String id) =>

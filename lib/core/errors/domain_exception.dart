@@ -28,4 +28,7 @@ class ErrorCodes {
   static const hasBalance = 'HAS_BALANCE';
   static const insufficientStock = 'INSUFFICIENT_STOCK';
   static const invalidDate = 'INVALID_DATE';
+  static const belowCost = 'BELOW_COST';
+  static const sessionOpen = 'SESSION_OPEN';
+  static const sessionClosed = 'SESSION_CLOSED';
 }

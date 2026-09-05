@@ -19,6 +19,7 @@ class InventoryService {
     Qty minQty = Qty.zero,
     bool trackInventory = true,
     Qty openingQty = Qty.zero,
+    List<PackUnit> packUnits = const [],
   }) {
     final n = name.trim();
     if (n.isEmpty) {
@@ -30,6 +31,7 @@ class InventoryService {
         'الأسعار لا يمكن أن تكون سالبة',
       );
     }
+    _validatePackUnits(packUnits, unit);
     final bc = barcode?.trim();
     if (bc != null && bc.isNotEmpty) {
       final dup = db.activeProducts.any((p) => p.barcode == bc);
@@ -51,6 +53,7 @@ class InventoryService {
         salePrice: salePrice,
         minQty: minQty,
         trackInventory: trackInventory,
+        packUnits: packUnits,
         createdAt: now,
         updatedAt: now,
       );
@@ -84,8 +87,12 @@ class InventoryService {
     Qty? minQty,
     bool? trackInventory,
     ProductStatus? status,
+    List<PackUnit>? packUnits,
   }) {
     final old = _product(id);
+    if (packUnits != null) {
+      _validatePackUnits(packUnits, unit ?? old.unit);
+    }
     if (name != null && name.trim().isEmpty) {
       throw const DomainException(ErrorCodes.invalidAmount, 'اسم المنتج مطلوب');
     }
@@ -109,6 +116,7 @@ class InventoryService {
         minQty: minQty,
         trackInventory: trackInventory,
         status: status,
+        packUnits: packUnits,
       );
       db.putProduct(p);
       db.log(
@@ -291,5 +299,39 @@ class InventoryService {
       throw const DomainException(ErrorCodes.notFound, 'المنتج غير موجود');
     }
     return p;
+  }
+
+  /// Pack units must have a name, a factor > 1 base unit, unique names and
+  /// must not duplicate the base unit's name.
+  void _validatePackUnits(List<PackUnit> units, String baseUnit) {
+    final seen = <String>{baseUnit.trim()};
+    for (final u in units) {
+      final nm = u.name.trim();
+      if (nm.isEmpty) {
+        throw const DomainException(
+          ErrorCodes.invalidAmount,
+          'اسم الوحدة مطلوب',
+        );
+      }
+      if (u.factor <= Qty.one) {
+        throw DomainException(
+          ErrorCodes.invalidQuantity,
+          'معامل الوحدة «$nm» يجب أن يكون أكبر من 1',
+        );
+      }
+      if ((u.salePrice?.isNegative ?? false) ||
+          (u.purchasePrice?.isNegative ?? false)) {
+        throw DomainException(
+          ErrorCodes.invalidAmount,
+          'أسعار الوحدة «$nm» لا يمكن أن تكون سالبة',
+        );
+      }
+      if (!seen.add(nm)) {
+        throw DomainException(
+          ErrorCodes.duplicate,
+          'اسم الوحدة «$nm» مكرر',
+        );
+      }
+    }
   }
 }

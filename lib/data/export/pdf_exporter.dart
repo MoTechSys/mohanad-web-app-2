@@ -49,7 +49,7 @@ class PdfExporter {
               widths: {0: const pw.FixedColumnWidth(24), 1: const pw.FlexColumnWidth(3), 2: const pw.FlexColumnWidth(1), 3: const pw.FlexColumnWidth(1.4), 4: const pw.FlexColumnWidth(1.4)},
               rows: [
                 for (var i = 0; i < lines.length; i++)
-                  ['${i + 1}', lines[i].name, lines[i].qty.format(), lines[i].unitPrice.format(), lines[i].lineTotal.format()],
+                  ['${i + 1}', lines[i].name, lines[i].qtyLabel(), lines[i].unitPrice.format(), lines[i].lineTotal.format()],
               ],
             )
           else
@@ -99,7 +99,7 @@ class PdfExporter {
           for (final l in sale.lines) ...[
             pw.Text(l.name, style: const pw.TextStyle(fontSize: 9)),
             pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-              pw.Text('${l.qty.format()} × ${l.unitPrice.format()}', style: const pw.TextStyle(fontSize: 8)),
+              pw.Text('${l.qtyLabel()} × ${l.unitPrice.format()}', style: const pw.TextStyle(fontSize: 8)),
               pw.Text(l.lineTotal.format(), style: const pw.TextStyle(fontSize: 9)),
             ]),
           ],

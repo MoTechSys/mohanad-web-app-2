@@ -296,6 +296,7 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
   late final _min = TextEditingController(text: widget.existing?.minQty.format());
   final _opening = TextEditingController();
   late bool _track = widget.existing?.trackInventory ?? true;
+  late List<PackUnit> _packUnits = [...?widget.existing?.packUnits];
   bool get isEdit => widget.existing != null;
 
   @override
@@ -345,7 +346,23 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
             ),
           ),
           const SizedBox(width: 10),
-          Expanded(child: TextFormField(controller: _unit, decoration: const InputDecoration(labelText: 'الوحدة'))),
+          Expanded(
+            child: TextFormField(
+              controller: _unit,
+              decoration: InputDecoration(
+                labelText: 'الوحدة الأساسية',
+                suffixIcon: PopupMenuButton<String>(
+                  tooltip: 'وحدات شائعة',
+                  icon: const Icon(Icons.arrow_drop_down),
+                  onSelected: (u) => setState(() => _unit.text = u),
+                  itemBuilder: (_) => [
+                    for (final u in kCommonUnits)
+                      PopupMenuItem(value: u, child: Text(u)),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ]),
         const SizedBox(height: 12),
         Row(children: [
@@ -368,6 +385,47 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
               Expanded(child: QtyField(controller: _opening, label: 'الكمية الافتتاحية', allowZero: true, optional: true)),
             ],
           ]),
+        const SizedBox(height: 8),
+        // ── وحدات العبوة (كرتون / جوتة / قرطاس …) ──
+        Row(children: [
+          const Expanded(
+            child: Text('وحدات العبوة (اختياري)',
+                style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+          TextButton.icon(
+            onPressed: () => _editPackUnit(null),
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('إضافة عبوة'),
+          ),
+        ]),
+        if (_packUnits.isEmpty)
+          Text(
+            'مثال: كرتون = 24 ${_unit.text.trim().isEmpty ? 'حبة' : _unit.text.trim()} — يتيح البيع والشراء بالعبوة مع خصم المخزون بدقة',
+            style: TextStyle(fontSize: 12, color: Theme.of(context).hintColor),
+          )
+        else
+          for (var i = 0; i < _packUnits.length; i++)
+            Card(
+              margin: const EdgeInsets.only(bottom: 6),
+              child: ListTile(
+                dense: true,
+                onTap: () => _editPackUnit(i),
+                leading: const Icon(Icons.inventory_2_outlined),
+                title: Text(
+                  '${_packUnits[i].name} = ${_packUnits[i].factor.format()} ${_unit.text.trim().isEmpty ? 'حبة' : _unit.text.trim()}',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                subtitle: Text(
+                  'بيع: ${_packUnits[i].salePrice?.format() ?? 'تلقائي (×العامل)'} • شراء: ${_packUnits[i].purchasePrice?.format() ?? 'تلقائي'}',
+                ),
+                trailing: IconButton(
+                  icon: Icon(Icons.delete_outline, color: context.c.danger),
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () =>
+                      setState(() => _packUnits = [..._packUnits]..removeAt(i)),
+                ),
+              ),
+            ),
         const SizedBox(height: 20),
         FilledButton(
           onPressed: () async {
@@ -380,16 +438,174 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
             final ok = await guarded(context, () async {
               if (isEdit) {
                 result = await app.inventory.updateProduct(widget.existing!.id, name: _name.text, barcode: barcode,
-                    unit: _unit.text, purchasePrice: m(_buy), salePrice: m(_sell), minQty: qq(_min), trackInventory: _track);
+                    unit: _unit.text, purchasePrice: m(_buy), salePrice: m(_sell), minQty: qq(_min),
+                    trackInventory: _track, packUnits: _packUnits);
               } else {
                 result = await app.inventory.createProduct(name: _name.text, barcode: barcode.isEmpty ? null : barcode,
                     unit: _unit.text.trim().isEmpty ? 'حبة' : _unit.text, purchasePrice: m(_buy), salePrice: m(_sell),
-                    minQty: qq(_min), trackInventory: _track, openingQty: qq(_opening));
+                    minQty: qq(_min), trackInventory: _track, openingQty: qq(_opening), packUnits: _packUnits);
               }
             }, successMessage: isEdit ? 'تم التحديث' : 'تمت الإضافة');
             if (ok && context.mounted) Navigator.pop(context, result);
           },
           child: Text(isEdit ? 'حفظ' : 'إضافة'),
+        ),
+      ]),
+    );
+  }
+
+  Future<void> _editPackUnit(int? index) async {
+    final result = await showFormSheet<PackUnit>(
+      context,
+      _PackUnitForm(
+        existing: index == null ? null : _packUnits[index],
+        baseUnit: _unit.text.trim().isEmpty ? 'حبة' : _unit.text.trim(),
+        takenNames: [
+          _unit.text.trim(),
+          for (var i = 0; i < _packUnits.length; i++)
+            if (i != index) _packUnits[i].name,
+        ],
+      ),
+    );
+    if (result == null || !mounted) return;
+    setState(() {
+      final n = [..._packUnits];
+      if (index == null) {
+        n.add(result);
+      } else {
+        n[index] = result;
+      }
+      _packUnits = n;
+    });
+  }
+}
+
+/// Add/edit one packaging unit: name + factor + optional pack prices.
+class _PackUnitForm extends StatefulWidget {
+  const _PackUnitForm({
+    this.existing,
+    required this.baseUnit,
+    required this.takenNames,
+  });
+  final PackUnit? existing;
+  final String baseUnit;
+  final List<String> takenNames;
+  @override
+  State<_PackUnitForm> createState() => _PackUnitFormState();
+}
+
+class _PackUnitFormState extends State<_PackUnitForm> {
+  final _form = GlobalKey<FormState>();
+  late final _name = TextEditingController(text: widget.existing?.name);
+  late final _factor = TextEditingController(
+    text: widget.existing?.factor.format() ?? '',
+  );
+  late final _sell = TextEditingController(
+    text: widget.existing?.salePrice?.toEditable() ?? '',
+  );
+  late final _buy = TextEditingController(
+    text: widget.existing?.purchasePrice?.toEditable() ?? '',
+  );
+
+  @override
+  void dispose() {
+    for (final c in [_name, _factor, _sell, _buy]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Form(
+      key: _form,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        SheetTitle(widget.existing == null ? 'إضافة عبوة' : 'تعديل عبوة'),
+        Row(children: [
+          Expanded(
+            child: TextFormField(
+              controller: _name,
+              autofocus: widget.existing == null,
+              decoration: InputDecoration(
+                labelText: 'اسم العبوة *',
+                hintText: 'كرتون / جوتة / قرطاس …',
+                suffixIcon: PopupMenuButton<String>(
+                  tooltip: 'وحدات شائعة',
+                  icon: const Icon(Icons.arrow_drop_down),
+                  onSelected: (u) => setState(() => _name.text = u),
+                  itemBuilder: (_) => [
+                    for (final u in kCommonUnits)
+                      if (!widget.takenNames.contains(u))
+                        PopupMenuItem(value: u, child: Text(u)),
+                  ],
+                ),
+              ),
+              validator: (v) {
+                final t = v?.trim() ?? '';
+                if (t.isEmpty) return 'الاسم مطلوب';
+                if (widget.takenNames.contains(t)) return 'الاسم مستخدم مسبقاً';
+                return null;
+              },
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: QtyField(
+              controller: _factor,
+              label: 'كم ${widget.baseUnit} بالعبوة؟ *',
+              onChanged: (_) => setState(() {}),
+            ),
+          ),
+        ]),
+        const SizedBox(height: 12),
+        Row(children: [
+          Expanded(
+            child: MoneyField(
+              controller: _sell,
+              label: 'سعر بيع العبوة',
+              optional: true,
+              allowZero: true,
+              hint: 'تلقائي',
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: MoneyField(
+              controller: _buy,
+              label: 'سعر شراء العبوة',
+              optional: true,
+              allowZero: true,
+              hint: 'تلقائي',
+            ),
+          ),
+        ]),
+        const SizedBox(height: 6),
+        Text(
+          'اترك السعر فارغاً ليُحسب تلقائياً = سعر الـ${widget.baseUnit} × العدد',
+          style: TextStyle(fontSize: 12, color: Theme.of(context).hintColor),
+        ),
+        const SizedBox(height: 16),
+        FilledButton(
+          onPressed: () {
+            if (!(_form.currentState?.validate() ?? false)) return;
+            final factor = Qty.tryParse(_factor.text) ?? Qty.zero;
+            if (!(factor > Qty.one)) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('عدد الوحدات بالعبوة يجب أن يكون أكبر من 1')),
+              );
+              return;
+            }
+            Navigator.pop(
+              context,
+              PackUnit(
+                name: _name.text.trim(),
+                factor: factor,
+                salePrice: Money.tryParse(_sell.text),
+                purchasePrice: Money.tryParse(_buy.text),
+              ),
+            );
+          },
+          child: const Text('تأكيد'),
         ),
       ]),
     );

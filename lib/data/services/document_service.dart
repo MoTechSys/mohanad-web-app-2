@@ -32,6 +32,8 @@ class DocumentService {
     String? invoiceNo,
     DateTime? date,
     bool approveOverLimit = false,
+    bool approveOversell = false,
+    bool approveBelowCost = false,
   }) {
     // ── validate ──
     if (discount.isNegative) {
@@ -69,6 +71,8 @@ class DocumentService {
         cost = cost + l.lineCost;
       }
       gross = g;
+      _checkStockAvailability(finalLines, approveOversell: approveOversell);
+      _checkBelowCost(finalLines, approveBelowCost: approveBelowCost);
     } else {
       if (totalAmount == null || !totalAmount.isPositive) {
         throw const DomainException(
@@ -165,11 +169,11 @@ class DocumentService {
           inventory.applyDocumentMove(
             l.productId!,
             StockMoveType.outbound,
-            -l.qty,
+            -l.baseQty,
             refType: RefType.sale,
             refId: sale.id,
             now: now,
-            notes: 'بيع',
+            notes: 'بيع${l.unitName != null ? ' (${l.qtyLabel()})' : ''}',
           );
         }
       }
@@ -190,13 +194,74 @@ class DocumentService {
     if (l.productId == null) return l;
     final p = db.products[l.productId];
     if (p == null) return l;
+    // Cost snapshot must match the line's unit: base cost × unit factor.
+    final unitCost = l.unitCost.isZero
+        ? p.purchasePrice.timesQty(l.unitFactor)
+        : l.unitCost;
     return DocLine(
       productId: l.productId,
       name: l.name.trim().isEmpty ? p.name : l.name,
       qty: l.qty,
       unitPrice: l.unitPrice,
-      unitCost: l.unitCost.isZero ? p.purchasePrice : l.unitCost,
+      unitCost: unitCost,
+      unitName: l.unitName,
+      unitFactor: l.unitFactor,
     );
+  }
+
+  /// Voice-note rule: «اشتريت ٥5 كرتون، تجي تبيع ٥10 يقبل! المفروض ما يقبلش».
+  /// Aggregates ALL lines of the same product (in base units) before
+  /// comparing with available stock, so two lines of the same item cannot
+  /// sneak past the check.
+  void _checkStockAvailability(
+    List<DocLine> lines, {
+    required bool approveOversell,
+  }) {
+    if (!db.settings.inventoryEnabled) return;
+    if (approveOversell) return;
+    final needed = <String, Qty>{};
+    for (final l in lines) {
+      final pid = l.productId;
+      if (pid == null) continue;
+      final p = db.products[pid];
+      if (p == null || p.isDeleted || !p.trackInventory) continue;
+      needed[pid] = (needed[pid] ?? Qty.zero) + l.baseQty;
+    }
+    for (final e in needed.entries) {
+      final available = db.stockOf(e.key);
+      if (e.value > available) {
+        final p = db.products[e.key]!;
+        if (db.settings.blockOversell) {
+          throw DomainException(
+            ErrorCodes.insufficientStock,
+            'المخزون لا يكفي لـ «${p.name}» — المتاح ${available.format()} ${p.unit} والمطلوب ${e.value.format()} ${p.unit}',
+            meta: {'productId': e.key, 'available': available.milli, 'needed': e.value.milli},
+          );
+        } else {
+          // Oversell allowed but requires explicit confirmation.
+          throw DomainException(
+            ErrorCodes.insufficientStock,
+            'تنبيه: المخزون لا يكفي لـ «${p.name}» (المتاح ${available.format()}) — هل تريد المتابعة بمخزون سالب؟',
+            meta: {'productId': e.key, 'confirmable': true},
+          );
+        }
+      }
+    }
+  }
+
+  /// Voice-note rule: «أقل من سعر الشراء يدهيلك رسالة تحذير، إذا أنت موافق ولا لا».
+  void _checkBelowCost(List<DocLine> lines, {required bool approveBelowCost}) {
+    if (!db.settings.warnBelowCost || approveBelowCost) return;
+    for (final l in lines) {
+      if (l.productId == null) continue;
+      if (l.unitCost.isPositive && l.unitPrice < l.unitCost) {
+        throw DomainException(
+          ErrorCodes.belowCost,
+          'سعر بيع «${l.name}» (${l.unitPrice.format()}) أقل من التكلفة (${l.unitCost.format()}) — هل تؤكد البيع بالخسارة؟',
+          meta: {'confirmable': true, 'line': l.name},
+        );
+      }
+    }
   }
 
   Future<void> cancelSale(String id, String? reason) {
@@ -354,16 +419,24 @@ class DocumentService {
           inventory.applyDocumentMove(
             l.productId!,
             StockMoveType.inbound,
-            l.qty,
+            l.baseQty,
             refType: RefType.purchase,
             refId: p.id,
             now: now,
-            notes: 'شراء',
+            notes: 'شراء${l.unitName != null ? ' (${l.qtyLabel()})' : ''}',
           );
-          // Keep last purchase cost current for future COGS snapshots.
-          final prod = db.products[l.productId];
-          if (prod != null && !prod.isDeleted && prod.purchasePrice != l.unitPrice) {
-            db.putProduct(prod.copyWith(purchasePrice: l.unitPrice));
+          // Voice-note rule: purchase lines carry buy price (and may update
+          // sale price). Costs are per line-unit — convert to base cost.
+          if (db.settings.updatePricesFromPurchase) {
+            final prod = db.products[l.productId];
+            if (prod != null && !prod.isDeleted) {
+              final baseCost = l.unitFactor == Qty.one
+                  ? l.unitPrice
+                  : Money((l.unitPrice.minor * Qty.scale) ~/ l.unitFactor.milli);
+              if (prod.purchasePrice != baseCost && baseCost.isPositive) {
+                db.putProduct(prod.copyWith(purchasePrice: baseCost));
+              }
+            }
           }
         }
       }

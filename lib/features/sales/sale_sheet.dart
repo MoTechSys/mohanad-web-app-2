@@ -58,7 +58,7 @@ class _SaleSheetState extends State<SaleSheet> {
   Money get _disc => Money.tryParse(_discount.text) ?? Money.zero;
   Money get _net => _gross - _disc;
 
-  Future<void> _save({bool approveOverLimit = false}) async {
+  Future<void> _save() async {
     if (!(_form.currentState?.validate() ?? false)) return;
     if (_mode == DocMode.detailedItems && _lines.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -68,54 +68,86 @@ class _SaleSheetState extends State<SaleSheet> {
     }
     final app = context.read<AppServices>();
     setState(() => _busy = true);
-    try {
-      await app.documents.createSale(
-        customerId: _customer?.id,
-        paymentType: _pay,
-        mode: _mode,
-        totalAmount: _mode == DocMode.totalOnly ? _gross : null,
-        lines: _lines,
-        discount: _disc,
-        details: _details.text,
-        invoiceNo: _invoice.text,
-        date: _date,
-        approveOverLimit: approveOverLimit,
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            _pay == PaymentType.cash
-                ? 'تم تسجيل بيع نقدي بمبلغ ${_net.format()}'
-                : 'تم تسجيل بيع آجل على ${_customer?.name} بمبلغ ${_net.format()}',
-          ),
-          backgroundColor: context.c.primaryDark,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      Navigator.pop(context, true);
-    } on DomainException catch (e) {
-      if (!mounted) return;
-      setState(() => _busy = false);
-      if (e.code == ErrorCodes.creditLimitExceeded) {
-        final ok = await confirm(
-          context,
-          title: 'تجاوز حد الائتمان',
-          message: '${e.message}\nهل تريد الموافقة على تجاوز الحد؟',
-          confirmLabel: 'موافقة والمتابعة',
-          destructive: true,
+
+    // Accumulating approval flags: each confirmable guard the user approves
+    // stays approved on retry, so multiple guards can fire one after another.
+    var overLimit = false, oversell = false, belowCost = false;
+    Future<void> doIt() => app.documents.createSale(
+          customerId: _customer?.id,
+          paymentType: _pay,
+          mode: _mode,
+          totalAmount: _mode == DocMode.totalOnly ? _gross : null,
+          lines: _lines,
+          discount: _disc,
+          details: _details.text,
+          invoiceNo: _invoice.text,
+          date: _date,
+          approveOverLimit: overLimit,
+          approveOversell: oversell,
+          approveBelowCost: belowCost,
         );
-        if (ok && mounted) await _save(approveOverLimit: true);
-      } else {
+
+    for (var attempt = 0; attempt < 4; attempt++) {
+      try {
+        await doIt();
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.message),
-            backgroundColor: context.c.danger,
+            content: Text(
+              _pay == PaymentType.cash
+                  ? 'تم تسجيل بيع نقدي بمبلغ ${_net.format()}'
+                  : 'تم تسجيل بيع آجل على ${_customer?.name} بمبلغ ${_net.format()}',
+            ),
+            backgroundColor: context.c.primaryDark,
             behavior: SnackBarBehavior.floating,
           ),
         );
+        Navigator.pop(context, true);
+        return;
+      } on DomainException catch (e) {
+        if (!mounted) return;
+        final (title, canConfirm) = switch (e.code) {
+          ErrorCodes.creditLimitExceeded => ('تجاوز حد الائتمان', true),
+          ErrorCodes.insufficientStock => (
+              'المخزون لا يكفي',
+              !app.db.settings.blockOversell,
+            ),
+          ErrorCodes.belowCost => ('بيع بأقل من التكلفة', true),
+          _ => ('', false),
+        };
+        if (!canConfirm) {
+          setState(() => _busy = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(e.message),
+              backgroundColor: context.c.danger,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          return;
+        }
+        final ok = await confirm(
+          context,
+          title: title,
+          message: '${e.message}\n\nهل تريد المتابعة على مسؤوليتك؟',
+          confirmLabel: 'موافقة والمتابعة',
+          destructive: true,
+        );
+        if (!ok || !mounted) {
+          if (mounted) setState(() => _busy = false);
+          return;
+        }
+        switch (e.code) {
+          case ErrorCodes.creditLimitExceeded:
+            overLimit = true;
+          case ErrorCodes.insufficientStock:
+            oversell = true;
+          case ErrorCodes.belowCost:
+            belowCost = true;
+        }
       }
     }
+    if (mounted) setState(() => _busy = false);
   }
 
   @override

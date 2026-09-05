@@ -2,6 +2,51 @@ import '../../core/money/money.dart';
 import '../enums/enums.dart';
 import 'serde.dart';
 
+/// Common Yemeni grocery units offered in pickers (free text also allowed).
+const kCommonUnits = <String>[
+  'حبة', 'كرتون', 'جوتة', 'قرطاس', 'كيس', 'دبة', 'قارورة', 'سطل',
+  'علبة', 'ربطة', 'درزن', 'شدة', 'كجم', 'جرام', 'لتر',
+];
+
+/// A packaging unit for a product (e.g. كرتون = 24 حبة).
+/// Stock is ALWAYS stored in the product's base unit; pack units only
+/// convert at document-entry time — so totals never drift.
+class PackUnit {
+  const PackUnit({
+    required this.name,
+    required this.factor,
+    this.salePrice,
+    this.purchasePrice,
+  });
+
+  /// Display name (كرتون / جوتة / قرطاس …).
+  final String name;
+
+  /// How many base units one pack contains (must be > 0).
+  final Qty factor;
+
+  /// Optional pack-level prices. When null, price = base price × factor.
+  final Money? salePrice;
+  final Money? purchasePrice;
+
+  Money saleOf(Money basePrice) => salePrice ?? basePrice.timesQty(factor);
+  Money purchaseOf(Money baseCost) => purchasePrice ?? baseCost.timesQty(factor);
+
+  Map<String, dynamic> toMap() => {
+    'name': name,
+    'factor': factor.milli,
+    'salePrice': Serde.money(salePrice),
+    'purchasePrice': Serde.money(purchasePrice),
+  };
+
+  factory PackUnit.fromMap(Map<String, dynamic> m) => PackUnit(
+    name: m['name'] as String,
+    factor: Serde.qtyReq(m['factor']),
+    salePrice: Serde.moneyOpt(m['salePrice']),
+    purchasePrice: Serde.moneyOpt(m['purchasePrice']),
+  );
+}
+
 class Product {
   const Product({
     required this.id,
@@ -13,6 +58,7 @@ class Product {
     this.minQty = Qty.zero,
     this.trackInventory = true,
     this.status = ProductStatus.active,
+    this.packUnits = const [],
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -27,6 +73,10 @@ class Product {
   final Qty minQty;
   final bool trackInventory;
   final ProductStatus status;
+
+  /// Larger packaging units (كرتون…). Base unit is [unit]; stock is kept
+  /// in base units only.
+  final List<PackUnit> packUnits;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
@@ -35,6 +85,12 @@ class Product {
 
   /// Unit margin using current prices (informational only).
   Money get unitMargin => salePrice - purchasePrice;
+
+  /// All sellable units: base unit (factor 1) followed by pack units.
+  List<PackUnit> get allUnits => [
+    PackUnit(name: unit, factor: Qty.one, salePrice: salePrice, purchasePrice: purchasePrice),
+    ...packUnits,
+  ];
 
   Product copyWith({
     String? name,
@@ -45,6 +101,7 @@ class Product {
     Qty? minQty,
     bool? trackInventory,
     ProductStatus? status,
+    List<PackUnit>? packUnits,
     DateTime? updatedAt,
     DateTime? deletedAt,
   }) => Product(
@@ -57,6 +114,7 @@ class Product {
     minQty: minQty ?? this.minQty,
     trackInventory: trackInventory ?? this.trackInventory,
     status: status ?? this.status,
+    packUnits: packUnits ?? this.packUnits,
     createdAt: createdAt,
     updatedAt: updatedAt ?? DateTime.now(),
     deletedAt: deletedAt ?? this.deletedAt,
@@ -72,6 +130,7 @@ class Product {
     'minQty': minQty.milli,
     'trackInventory': trackInventory,
     'status': status.index,
+    'packUnits': packUnits.map((u) => u.toMap()).toList(),
     'createdAt': Serde.dt(createdAt),
     'updatedAt': Serde.dt(updatedAt),
     'deletedAt': Serde.dt(deletedAt),
@@ -91,6 +150,7 @@ class Product {
       m['status'],
       ProductStatus.active,
     ),
+    packUnits: Serde.listOfMaps(m['packUnits']).map(PackUnit.fromMap).toList(),
     createdAt: Serde.dtReq(m['createdAt']),
     updatedAt: Serde.dtReq(m['updatedAt']),
     deletedAt: Serde.dtFrom(m['deletedAt']),

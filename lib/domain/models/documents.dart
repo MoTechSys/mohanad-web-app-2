@@ -4,6 +4,11 @@ import 'serde.dart';
 
 /// A line on a sale or purchase. Prices/costs are *snapshots* taken at the
 /// time of the document so later product edits never rewrite history.
+///
+/// [qty] is expressed in the unit named [unitName] (e.g. 2 كرتون).
+/// [unitFactor] converts to the product's base unit for stock purposes:
+/// `baseQty = qty × unitFactor`. Legacy rows (no unit fields) default to
+/// factor 1 so history is untouched.
 class DocLine {
   const DocLine({
     this.productId,
@@ -11,6 +16,8 @@ class DocLine {
     required this.qty,
     required this.unitPrice,
     this.unitCost = Money.zero,
+    this.unitName,
+    this.unitFactor = Qty.one,
   });
 
   final String? productId;
@@ -18,13 +25,27 @@ class DocLine {
   final Qty qty;
 
   /// For sales: selling price. For purchases: purchase cost.
+  /// Always per ONE [unitName] (i.e. per pack when a pack is chosen).
   final Money unitPrice;
 
-  /// For sales only: cost snapshot used for accurate COGS.
+  /// For sales only: cost snapshot used for accurate COGS (per [unitName]).
   final Money unitCost;
+
+  /// Display unit (حبة / كرتون …). Null = product base unit (legacy).
+  final String? unitName;
+
+  /// Base units per one [unitName]. 1 for the base unit itself.
+  final Qty unitFactor;
 
   Money get lineTotal => unitPrice.timesQty(qty);
   Money get lineCost => unitCost.timesQty(qty);
+
+  /// Quantity converted to the product's base unit (for stock moves).
+  Qty get baseQty => qty.times(unitFactor);
+
+  /// "2 كرتون" or plain "2" when no unit name is known.
+  String qtyLabel() =>
+      unitName == null ? qty.format() : '${qty.format()} $unitName';
 
   Map<String, dynamic> toMap() => {
     'productId': productId,
@@ -32,6 +53,8 @@ class DocLine {
     'qty': qty.milli,
     'unitPrice': unitPrice.minor,
     'unitCost': unitCost.minor,
+    'unitName': unitName,
+    'unitFactor': unitFactor.milli,
   };
 
   factory DocLine.fromMap(Map<String, dynamic> m) => DocLine(
@@ -40,6 +63,8 @@ class DocLine {
     qty: Serde.qtyReq(m['qty']),
     unitPrice: Serde.moneyReq(m['unitPrice']),
     unitCost: Serde.moneyReq(m['unitCost']),
+    unitName: Serde.str(m['unitName']),
+    unitFactor: m['unitFactor'] == null ? Qty.one : Serde.qtyReq(m['unitFactor']),
   );
 }
 

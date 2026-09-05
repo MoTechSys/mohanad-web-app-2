@@ -123,6 +123,15 @@ extension type const Qty(int milli) implements Object {
   Qty operator +(Qty o) => Qty(milli + o.milli);
   Qty operator -(Qty o) => Qty(milli - o.milli);
   Qty operator -() => Qty(-milli);
+
+  /// Multiply two quantities (e.g. 2 cartons × 24 pieces/carton = 48 pieces).
+  /// Rounds half away from zero to the nearest thousandth.
+  Qty times(Qty o) {
+    final num = milli * o.milli;
+    final abs = num.abs();
+    final rounded = (abs + scale ~/ 2) ~/ scale;
+    return Qty(num < 0 ? -rounded : rounded);
+  }
   bool operator <(Qty o) => milli < o.milli;
   bool operator <=(Qty o) => milli <= o.milli;
   bool operator >(Qty o) => milli > o.milli;

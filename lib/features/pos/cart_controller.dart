@@ -212,6 +212,8 @@ class CartController extends ChangeNotifier {
     String? customerId,
     String? details,
     bool approveOverLimit = false,
+    bool approveOversell = false,
+    bool approveBelowCost = false,
   }) async {
     if (_lines.isEmpty) {
       throw const DomainException(ErrorCodes.itemsRequired, 'السلة فارغة');
@@ -224,6 +226,8 @@ class CartController extends ChangeNotifier {
       discount: _discount,
       details: details,
       approveOverLimit: approveOverLimit,
+      approveOversell: approveOversell,
+      approveBelowCost: approveBelowCost,
     );
     clear();
     return sale;

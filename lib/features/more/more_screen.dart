@@ -180,6 +180,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late final _pin = TextEditingController(text: s0.pinCode);
   late bool _inv = s0.inventoryEnabled;
   late bool _cashCogs = s0.cashPurchaseAsCogs;
+  late bool _blockOversell = s0.blockOversell;
+  late bool _warnBelowCost = s0.warnBelowCost;
+  late bool _updatePrices = s0.updatePricesFromPurchase;
   late ProfitMode _mode = s0.profitMode;
   late AppThemeMode _theme = s0.themeMode;
 
@@ -224,6 +227,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
         SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('اعتبار المشتريات النقدية تكلفة بضاعة'),
             subtitle: const Text('في وضع الربح الدقيق', style: TextStyle(fontSize: 12)),
             value: _cashCogs, onChanged: (v) => setState(() => _cashCogs = v)),
+        if (_inv) ...[
+          const SectionTitle('ضوابط البيع'),
+          SwitchListTile(contentPadding: EdgeInsets.zero,
+              title: const Text('منع البيع بأكثر من المخزون'),
+              subtitle: const Text('اشتريت 5 كرتون؟ لن يُقبل بيع 10 — إيقافه يحوّله إلى تنبيه مع تأكيد', style: TextStyle(fontSize: 12)),
+              value: _blockOversell, onChanged: (v) => setState(() => _blockOversell = v)),
+          SwitchListTile(contentPadding: EdgeInsets.zero,
+              title: const Text('تنبيه عند البيع بأقل من التكلفة'),
+              subtitle: const Text('يطلب تأكيداً قبل إتمام بيع خاسر', style: TextStyle(fontSize: 12)),
+              value: _warnBelowCost, onChanged: (v) => setState(() => _warnBelowCost = v)),
+          SwitchListTile(contentPadding: EdgeInsets.zero,
+              title: const Text('تحديث أسعار المنتجات من فاتورة الشراء'),
+              subtitle: const Text('عند إدخال مشتريات مفصّلة تُحدّث أسعار الشراء تلقائياً', style: TextStyle(fontSize: 12)),
+              value: _updatePrices, onChanged: (v) => setState(() => _updatePrices = v)),
+        ],
         const SizedBox(height: 8),
         MoneyField(controller: _threshold, label: 'حد المعاملة الكبيرة (تنبيه في السجل)', optional: true, allowZero: true, hint: 'بدون'),
         const SizedBox(height: 12),
@@ -247,6 +265,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final s = s0.copyWith(
       storeName: _store.text.trim(), ownerName: _owner.text.trim(), phone: _phone.text.trim(),
       currency: _cur.text.trim(), inventoryEnabled: _inv, profitMode: _mode, cashPurchaseAsCogs: _cashCogs,
+      blockOversell: _blockOversell, warnBelowCost: _warnBelowCost, updatePricesFromPurchase: _updatePrices,
       themeMode: _theme,
       largeTxThreshold: th.isEmpty ? null : Money.tryParse(th), clearLargeTx: th.isEmpty,
       dailyTarget: tg.isEmpty ? null : Money.tryParse(tg), clearDailyTarget: tg.isEmpty,

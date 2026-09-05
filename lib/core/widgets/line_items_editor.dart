@@ -94,7 +94,10 @@ class LineItemsEditor extends StatelessWidget {
       return;
     }
     final n = [...lines];
-    final i = n.indexWhere((l) => l.productId == p.id);
+    // Merge only with a base-unit line of the same product (pack lines stay).
+    final i = n.indexWhere(
+      (l) => l.productId == p.id && l.unitFactor == Qty.one,
+    );
     if (i >= 0) {
       final l = n[i];
       n[i] = DocLine(
@@ -103,6 +106,8 @@ class LineItemsEditor extends StatelessWidget {
         qty: l.qty + Qty.one,
         unitPrice: l.unitPrice,
         unitCost: l.unitCost,
+        unitName: l.unitName,
+        unitFactor: l.unitFactor,
       );
     } else {
       n.add(DocLine(
@@ -157,8 +162,7 @@ class _LineTile extends StatelessWidget {
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         subtitle: Text(
-          '${line.qty.format()} × ${line.unitPrice.format()}',
-          textDirection: TextDirection.ltr,
+          '${line.qtyLabel()} × ${line.unitPrice.format()}',
           textAlign: TextAlign.right,
         ),
         trailing: Row(
@@ -196,11 +200,24 @@ class _LineFormState extends State<_LineForm> {
   );
   Product? _product;
 
+  /// Selected sale/purchase unit. Null ⇒ the product's base unit (or a
+  /// free-text line without a product).
+  PackUnit? _unit;
+
   @override
   void initState() {
     super.initState();
     final pid = widget.existing?.productId;
     if (pid != null) _product = context.read<LedgerDb>().products[pid];
+    final uName = widget.existing?.unitName;
+    if (uName != null && _product != null) {
+      for (final u in _product!.allUnits) {
+        if (u.name == uName) {
+          _unit = u;
+          break;
+        }
+      }
+    }
   }
 
   @override
@@ -214,11 +231,33 @@ class _LineFormState extends State<_LineForm> {
   void _pickProduct(Product? p) {
     setState(() {
       _product = p;
+      _unit = null; // reset to base unit on product change
       if (p != null) {
         _name.text = p.name;
         _price.text =
             (widget.forPurchase ? p.purchasePrice : p.salePrice).toEditable();
       }
+    });
+  }
+
+  /// Change the selling unit and auto-fill its price (pack price if set,
+  /// otherwise base price × factor).
+  void _pickUnit(PackUnit? u) {
+    final p = _product;
+    if (p == null) return;
+    setState(() {
+      _unit = (u != null && u.factor == Qty.one && u.name == p.unit) ? null : u;
+      final chosen = _unit ??
+          PackUnit(
+            name: p.unit,
+            factor: Qty.one,
+            salePrice: p.salePrice,
+            purchasePrice: p.purchasePrice,
+          );
+      _price.text = (widget.forPurchase
+              ? chosen.purchaseOf(p.purchasePrice)
+              : chosen.saleOf(p.salePrice))
+          .toEditable();
     });
   }
 
@@ -284,6 +323,44 @@ class _LineFormState extends State<_LineForm> {
                 (v == null || v.trim().isEmpty) ? 'الاسم مطلوب' : null,
           ),
           const SizedBox(height: 12),
+          if (_product != null && _product!.packUnits.isNotEmpty) ...[
+            DropdownButtonFormField<String>(
+              initialValue: _unit?.name ?? _product!.unit,
+              decoration: const InputDecoration(
+                labelText: 'الوحدة',
+                prefixIcon: Icon(Icons.inventory_2_outlined),
+              ),
+              items: [
+                for (final u in _product!.allUnits)
+                  DropdownMenuItem(
+                    value: u.name,
+                    child: Text(
+                      u.factor == Qty.one
+                          ? u.name
+                          : '${u.name} (${u.factor.format()} ${_product!.unit})',
+                    ),
+                  ),
+              ],
+              onChanged: (name) {
+                if (name == null) return;
+                final p = _product!;
+                PackUnit chosen = PackUnit(
+                  name: p.unit,
+                  factor: Qty.one,
+                  salePrice: p.salePrice,
+                  purchasePrice: p.purchasePrice,
+                );
+                for (final u in p.allUnits) {
+                  if (u.name == name) {
+                    chosen = u;
+                    break;
+                  }
+                }
+                _pickUnit(chosen);
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
           Row(
             children: [
               Expanded(
@@ -297,22 +374,41 @@ class _LineFormState extends State<_LineForm> {
               Expanded(
                 child: MoneyField(
                   controller: _price,
-                  label: widget.forPurchase ? 'سعر الشراء *' : 'سعر البيع *',
+                  label: _unit == null
+                      ? (widget.forPurchase ? 'سعر الشراء *' : 'سعر البيع *')
+                      : (widget.forPurchase
+                          ? 'سعر شراء الـ${_unit!.name} *'
+                          : 'سعر بيع الـ${_unit!.name} *'),
                   allowZero: true,
                   onChanged: (_) => setState(() {}),
                 ),
               ),
             ],
           ),
-          if (_product != null &&
-              !widget.forPurchase &&
-              _product!.trackInventory &&
-              qty > db.stockOf(_product!.id))
+          if (_product != null && (_unit?.factor ?? Qty.one) > Qty.one)
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text(
-                'تنبيه: الكمية أكبر من المخزون المتاح (${db.stockOf(_product!.id).format()}) — سيصبح المخزون سالباً',
-                style: TextStyle(color: context.c.warning, fontSize: 12),
+                '= ${qty.times(_unit!.factor).format()} ${_product!.unit} من المخزون',
+                style: TextStyle(color: context.c.primaryDark, fontSize: 12),
+              ),
+            ),
+          if (_product != null &&
+              !widget.forPurchase &&
+              _product!.trackInventory &&
+              qty.times(_unit?.factor ?? Qty.one) > db.stockOf(_product!.id))
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                db.settings.blockOversell
+                    ? '⛔ الكمية أكبر من المخزون المتاح (${db.stockOf(_product!.id).format()} ${_product!.unit}) — لن يُقبل البيع'
+                    : 'تنبيه: الكمية أكبر من المخزون المتاح (${db.stockOf(_product!.id).format()} ${_product!.unit}) — سيصبح المخزون سالباً',
+                style: TextStyle(
+                  color: db.settings.blockOversell
+                      ? context.c.danger
+                      : context.c.warning,
+                  fontSize: 12,
+                ),
               ),
             ),
           const SizedBox(height: 14),
@@ -327,6 +423,7 @@ class _LineFormState extends State<_LineForm> {
             onPressed: () {
               if (!(_form.currentState?.validate() ?? false)) return;
               final p = _product;
+              final u = _unit;
               Navigator.pop(
                 context,
                 DocLine(
@@ -334,7 +431,12 @@ class _LineFormState extends State<_LineForm> {
                   name: _name.text.trim(),
                   qty: Qty.tryParse(_qty.text)!,
                   unitPrice: Money.tryParse(_price.text)!,
-                  unitCost: p?.purchasePrice ?? Money.zero,
+                  // Cost per chosen unit = base cost × factor (pack cost if set).
+                  unitCost: p == null
+                      ? Money.zero
+                      : (u?.purchaseOf(p.purchasePrice) ?? p.purchasePrice),
+                  unitName: u?.name,
+                  unitFactor: u?.factor ?? Qty.one,
                 ),
               );
             },

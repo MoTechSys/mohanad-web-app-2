@@ -19,6 +19,9 @@ class AppSettings {
     this.receiptHeader,
     this.receiptFooter = 'شكراً لتسوقكم معنا',
     this.logoBase64,
+    this.blockOversell = true,
+    this.warnBelowCost = true,
+    this.updatePricesFromPurchase = true,
   });
 
   final String storeName;
@@ -50,6 +53,17 @@ class AppSettings {
   /// PNG/JPEG logo, base64 (kept small; ≤ 512px recommended).
   final String? logoBase64;
 
+  /// Reject selling more than available stock (voice-note requirement).
+  /// When false the cashier may oversell after an explicit confirmation.
+  final bool blockOversell;
+
+  /// Warn (confirmation dialog) when selling below purchase cost.
+  final bool warnBelowCost;
+
+  /// After a detailed purchase, update the product's purchase/sale prices
+  /// from the invoice lines.
+  final bool updatePricesFromPurchase;
+
   bool get hasLogo => logoBase64 != null && logoBase64!.isNotEmpty;
 
   AppSettings copyWith({
@@ -72,6 +86,9 @@ class AppSettings {
     String? receiptFooter,
     String? logoBase64,
     bool clearLogo = false,
+    bool? blockOversell,
+    bool? warnBelowCost,
+    bool? updatePricesFromPurchase,
   }) => AppSettings(
     storeName: storeName ?? this.storeName,
     ownerName: ownerName ?? this.ownerName,
@@ -90,6 +107,10 @@ class AppSettings {
     receiptHeader: receiptHeader ?? this.receiptHeader,
     receiptFooter: receiptFooter ?? this.receiptFooter,
     logoBase64: clearLogo ? null : (logoBase64 ?? this.logoBase64),
+    blockOversell: blockOversell ?? this.blockOversell,
+    warnBelowCost: warnBelowCost ?? this.warnBelowCost,
+    updatePricesFromPurchase:
+        updatePricesFromPurchase ?? this.updatePricesFromPurchase,
   );
 
   Map<String, dynamic> toMap() => {
@@ -108,6 +129,9 @@ class AppSettings {
     'receiptHeader': receiptHeader,
     'receiptFooter': receiptFooter,
     'logoBase64': logoBase64,
+    'blockOversell': blockOversell,
+    'warnBelowCost': warnBelowCost,
+    'updatePricesFromPurchase': updatePricesFromPurchase,
   };
 
   factory AppSettings.fromMap(Map<String, dynamic> m) => AppSettings(
@@ -134,6 +158,10 @@ class AppSettings {
     receiptHeader: Serde.str(m['receiptHeader']),
     receiptFooter: (m['receiptFooter'] as String?) ?? 'شكراً لتسوقكم معنا',
     logoBase64: Serde.str(m['logoBase64']),
+    blockOversell: (m['blockOversell'] as bool?) ?? true,
+    warnBelowCost: (m['warnBelowCost'] as bool?) ?? true,
+    updatePricesFromPurchase:
+        (m['updatePricesFromPurchase'] as bool?) ?? true,
   );
 }
 

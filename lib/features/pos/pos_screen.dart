@@ -199,35 +199,56 @@ class _PosScreenState extends State<PosScreen> {
     );
     if (result == null || !mounted) return;
     final app = context.read<AppServices>();
-    Future<Sale> doIt(bool approve) => _cart.checkout(
+    // Approval flags accumulate: each confirmed warning is remembered so the
+    // cashier answers every distinct question at most once per checkout.
+    var overLimit = false, oversell = false, belowCost = false;
+    Future<Sale> doIt() => _cart.checkout(
       paymentType: result.paymentType,
       customerId: result.customer?.id,
       details: result.note,
-      approveOverLimit: approve,
+      approveOverLimit: overLimit,
+      approveOversell: oversell,
+      approveBelowCost: belowCost,
     );
-    try {
-      final sale = await doIt(false);
-      _afterSale(sale, result, app);
-    } on DomainException catch (e) {
-      if (e.code == ErrorCodes.creditLimitExceeded && mounted) {
+    // At most 3 rounds (one per distinct guard).
+    for (var attempt = 0; attempt < 4; attempt++) {
+      try {
+        final sale = await doIt();
+        _afterSale(sale, result, app);
+        return;
+      } on DomainException catch (e) {
+        if (!mounted) return;
+        final (title, canConfirm) = switch (e.code) {
+          ErrorCodes.creditLimitExceeded => ('تجاوز حد الائتمان', true),
+          ErrorCodes.insufficientStock => (
+            'المخزون لا يكفي',
+            !app.db.settings.blockOversell,
+          ),
+          ErrorCodes.belowCost => ('بيع بأقل من التكلفة', true),
+          _ => ('', false),
+        };
+        if (!canConfirm) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.message), backgroundColor: context.c.danger),
+          );
+          return;
+        }
         final ok = await confirm(
           context,
-          title: 'تجاوز حد الائتمان',
+          title: title,
           message: '${e.message}\n\nهل تريد المتابعة على مسؤوليتك؟',
           confirmLabel: 'متابعة',
           destructive: true,
         );
-        if (ok && mounted) {
-          final done = await guarded(context, () async {
-            final sale = await doIt(true);
-            _afterSale(sale, result, app);
-          });
-          if (!done) return;
+        if (!ok || !mounted) return;
+        switch (e.code) {
+          case ErrorCodes.creditLimitExceeded:
+            overLimit = true;
+          case ErrorCodes.insufficientStock:
+            oversell = true;
+          case ErrorCodes.belowCost:
+            belowCost = true;
         }
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message), backgroundColor: context.c.danger),
-        );
       }
     }
   }
