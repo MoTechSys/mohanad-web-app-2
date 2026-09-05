@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +11,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/common.dart';
 import '../../data/ledger_db.dart';
+import '../../data/services/backup_service.dart';
 import '../../domain/enums/enums.dart';
 import '../expenses/expense_sheet.dart';
 import '../pos/pos_screen.dart';
@@ -284,8 +287,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
-class BackupScreen extends StatelessWidget {
+class BackupScreen extends StatefulWidget {
   const BackupScreen({super.key});
+  @override
+  State<BackupScreen> createState() => _BackupScreenState();
+}
+
+class _BackupScreenState extends State<BackupScreen> {
+  List<File> _autoBackups = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAuto();
+  }
+
+  Future<void> _loadAuto() async {
+    try {
+      final app = context.read<AppServices>();
+      final dir = await app.backup.defaultDir();
+      final files = await app.backup.listBackups(dir);
+      if (mounted) setState(() => _autoBackups = files);
+    } catch (_) {/* غير متاح على هذه المنصة */}
+  }
+
   @override
   Widget build(BuildContext context) {
     final app = context.read<AppServices>();
@@ -332,6 +357,54 @@ class BackupScreen extends StatelessWidget {
             await guarded(context, () => app.settings.importJson(text), successMessage: 'تمت الاستعادة بنجاح');
           },
         ),
+        const SizedBox(height: 24),
+        const SectionTitle('النسخ اليومية التلقائية'),
+        Text('يحفظ التطبيق نسخة تلقائية عند أول تشغيل كل يوم ويحتفظ بآخر ${BackupService.keepLast} نسخ.',
+            style: TextStyle(fontSize: 12, color: context.c.textMuted)),
+        const SizedBox(height: 8),
+        if (_autoBackups.isEmpty)
+          Text('لا توجد نسخ تلقائية بعد — ستُنشأ أول نسخة مع التشغيل القادم.',
+              style: TextStyle(color: context.c.textMuted))
+        else
+          for (final f in _autoBackups)
+            Card(
+              margin: const EdgeInsets.only(bottom: 6),
+              child: ListTile(
+                dense: true,
+                leading: const Icon(Icons.history),
+                title: Text(f.uri.pathSegments.last,
+                    textDirection: TextDirection.ltr,
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                  IconButton(
+                    tooltip: 'نسخ للحافظة',
+                    icon: const Icon(Icons.copy, size: 20),
+                    onPressed: () async {
+                      final txt = await f.readAsString();
+                      await Clipboard.setData(ClipboardData(text: txt));
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('تم نسخ النسخة إلى الحافظة')));
+                    },
+                  ),
+                  IconButton(
+                    tooltip: 'استعادة من هذه النسخة',
+                    icon: Icon(Icons.restore, size: 20, color: context.c.danger),
+                    onPressed: () async {
+                      final ok = await confirm(context,
+                          title: 'استعادة نسخة تلقائية',
+                          message: 'سيُستبدل كل بياناتك الحالية بمحتوى ${f.uri.pathSegments.last}. متأكد؟',
+                          destructive: true);
+                      if (!ok || !context.mounted) return;
+                      final txt = await f.readAsString();
+                      if (!context.mounted) return;
+                      await guarded(context, () => app.settings.importJson(txt),
+                          successMessage: 'تمت الاستعادة بنجاح');
+                    },
+                  ),
+                ]),
+              ),
+            ),
       ])),
     );
   }

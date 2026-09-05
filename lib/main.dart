@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -16,6 +18,8 @@ Future<void> main() async {
   await initializeDateFormatting('ar');
   final services = AppServices.withBackend(HiveBackend());
   await services.init();
+  // م5: نسخة احتياطية يومية تلقائية (آخر 7) — لا تعطل الإقلاع أبدًا.
+  unawaited(services.backup.runDailyBackup());
   runApp(GroceryLedgerApp(services: services));
 }
 

@@ -3,6 +3,7 @@ import '../data/export/pdf_exporter.dart';
 import '../data/export/share_service.dart';
 import '../data/kv_backend.dart';
 import '../data/ledger_db.dart';
+import '../data/services/backup_service.dart';
 import '../data/services/cash_session_service.dart';
 import '../data/services/document_service.dart';
 import '../data/services/inventory_service.dart';
@@ -22,6 +23,7 @@ class AppServices {
       vouchers = VoucherService(db),
       sms = SmsService(db),
       shifts = CashSessionService(db) {
+    backup = BackupService(settings);
     documents = DocumentService(db, parties, inventory);
     pdf = PdfExporter(db, reports);
     excel = ExcelExporter(db, reports);
@@ -39,6 +41,7 @@ class AppServices {
   final VoucherService vouchers;
   final SmsService sms;
   final CashSessionService shifts;
+  late final BackupService backup;
   late final PdfExporter pdf;
   late final ExcelExporter excel;
   final ShareService share = const ShareService();
