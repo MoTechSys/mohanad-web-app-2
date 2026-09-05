@@ -10,7 +10,7 @@
 | **الإصدار** | **2.2.1 (build 5)** — كل المراحل م1–م6 مكتملة + تدقيق شامل |
 | **الحزمة** | `com.groceryledger.accounts` |
 | **المنصة** | Android 7.0+ (API 24) · armv7 / arm64 / x86_64 |
-| **الحجم** | ~13.9MB (arm64، release split-per-abi) |
+| **الحجم** | **13.3MB** arm64 · 12.7MB armv7 (ماسح مضمّن، أوفلاين كليًا) — أو **10.2MB / 9.9MB** نسخة *lite* (نموذج الباركود عبر Play Services) |
 | **الجودة** | `flutter analyze` 0 مشاكل · **157 اختبار ناجح** |
 | **المطوّر** | **معين العباسي** · [alabbasi.uk](https://alabbasi.uk) · +967770941666 |
 
@@ -130,10 +130,28 @@ android/app/src/main/kotlin/com/groceryledger/accounts/MainActivity.kt   الج�
 flutter pub get
 flutter analyze                    # 0 مشاكل
 flutter test                       # 157 اختبار
-flutter build apk --release --split-per-abi --obfuscate --split-debug-info=build/debug-info
+
+# الإصدار القياسي (نموذج الباركود مضمّن — يعمل بلا إنترنت من أول ثانية)
+flutter build apk --release --split-per-abi --obfuscate --split-debug-info=build/debug-info \
+  --target-platform android-arm64,android-arm
+
+# الإصدار lite (أصغر بـ ~3MB — Play Services يحمّل نموذج الباركود مرة واحدة عند أول مسح)
+flutter build apk --release --split-per-abi --obfuscate --split-debug-info=build/debug-info \
+  --target-platform android-arm64,android-arm -Pdev.steenbakker.mobile_scanner.useUnbundled=true
 ```
 
-الناتج في `build/app/outputs/flutter-apk/`.
+الناتج في `build/app/outputs/flutter-apk/`. الملفات الجاهزة على صفحة **Releases** في GitHub (لا تُرفع للمستودع).
+
+**أين تذهب الـ 13MB؟** (arm64، مضغوط داخل APK)
+| المكوّن | الحجم | ملاحظة |
+|---|---|---|
+| `libflutter.so` (محرك Flutter) | 5.2MB | ثابت — لا يمكن تقليصه |
+| `libapp.so` (كود Dart AOT مُعمّى) | 4.0MB | PDF + Excel + المحرك + الشاشات |
+| ML Kit barcode (`libbarhopper` + نماذج) | 3.0MB | يُزال في نسخة lite |
+| `classes.dex` (Kotlin/AndroidX/CameraX) | 1.2MB | بعد R8 بـ 5 تمريرات |
+| موارد + خط عربي + أيقونات | 0.5MB | أيقونات بدقة كل كثافة، خط واحد |
+
+**تحسينات الحجم المطبَّقة**: `--split-per-abi` · `--obfuscate` · R8 minify+shrinkResources (5 تمريرات، repackage) · ضغط المكتبات الأصلية · `localeFilters=ar` · تشذير أيقونات Material (98.5%) · استبعاد `*.properties/kotlin/**/META-INF` · أيقونات لانشر بحجم كل كثافة (164KB بدل 500KB).
 التوقيع: `android/key.properties` + `android/release-key.jks` (غير مرفوعين — راجع `.gitignore`).
 
 **البيئة المثبتة:** Flutter 3.35.4 · Dart 3.9.2 · compileSdk 36 · targetSdk 36 · minSdk 24 · Java 17 · Gradle 8.12 · AGP 8.9.1 · Kotlin 2.1.0.

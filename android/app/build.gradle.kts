@@ -57,16 +57,33 @@ android {
         }
     }
 
-    // Compress native libs inside the APK (much smaller download).
     packaging {
+        // Compress native libs inside the APK (much smaller download).
         jniLibs {
             useLegacyPackaging = true
         }
+        // Metadata nobody reads at runtime.
+        resources {
+            excludes += setOf(
+                "DebugProbesKt.bin",
+                "kotlin-tooling-metadata.json",
+                "kotlin/**",
+                "META-INF/*.version",
+                "META-INF/*.kotlin_module",
+                "META-INF/LICENSE*",
+                "META-INF/NOTICE*",
+                "META-INF/AL2.0",
+                "META-INF/LGPL2.1",
+                "META-INF/com/android/build/gradle/app-metadata.properties",
+                "**/*.properties",
+            )
+        }
     }
 
-    // Local-only single-user app: ship only the languages we actually use.
+    // Arabic-only UI (Flutter supplies its own localizations); Android-side
+    // resources are only the launcher label + system dialogs.
     androidResources {
-        localeFilters += listOf("ar", "en")
+        localeFilters += listOf("ar")
     }
 }
 
